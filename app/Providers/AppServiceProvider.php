@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Schema;
 use App\Models\WebsiteSetting;
 use App\Models\Category;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -20,15 +22,37 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-    $setting = WebsiteSetting::first();
-    view()->share('setting', $setting);
+        /*
+        |--------------------------------------------------------------------------
+        | Website Settings
+        |--------------------------------------------------------------------------
+        */
 
-    
+        $setting = null;
 
-view()->share('footerCategories', Category::where('status', 1)
-    ->whereNull('parent_id')
-    ->orderBy('sort_order')
-    ->take(5)
-    ->get());
+        if (Schema::hasTable('website_settings')) {
+            $setting = WebsiteSetting::first();
+        }
+
+        view()->share('setting', $setting);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Footer Categories
+        |--------------------------------------------------------------------------
+        */
+
+        $footerCategories = collect();
+
+        if (Schema::hasTable('categories')) {
+            $footerCategories = Category::where('status', 1)
+                ->whereNull('parent_id')
+                ->orderBy('sort_order')
+                ->take(5)
+                ->get();
+        }
+
+        view()->share('footerCategories', $footerCategories);
     }
 }
