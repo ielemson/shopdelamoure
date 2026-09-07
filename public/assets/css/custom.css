@@ -1,0 +1,47 @@
+/* Parsley Validation */
+.parsley-errors-list {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 0;
+}
+
+.parsley-errors-list li {
+    font-size: 13px;
+    line-height: 1.4;
+    color: #dc3545;
+}
+
+.parsley-error {
+    border-color: #dc3545 !important;
+}
+
+.parsley-error:focus {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.08) !important;
+}
+
+.parsley-success {
+    border-color: #198754 !important;
+}
+
+.parsley-success:focus {
+    border-color: #198754 !important;
+    box-shadow: 0 0 0 0.15rem rgba(25, 135, 84, 0.08) !important;
+}
+
+/* Remove browser validation appearance */
+.form-control.parsley-error,
+.form-control.parsley-success {
+    background-image: none !important;
+}
+
+/* Password field error spacing */
+.position-relative + .parsley-errors-list,
+.position-relative .parsley-errors-list {
+    margin-top: 6px;
+}
+
+/* Smooth validation transition */
+.form-control {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
