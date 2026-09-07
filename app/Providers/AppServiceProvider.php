@@ -24,6 +24,19 @@ class AppServiceProvider extends ServiceProvider
     {
         /*
         |--------------------------------------------------------------------------
+        | Database Compatibility
+        |--------------------------------------------------------------------------
+        |
+        | Prevent "Specified key was too long" errors on hosting environments
+        | with lower MySQL/MariaDB index limits.
+        |
+        */
+
+        Schema::defaultStringLength(191);
+
+
+        /*
+        |--------------------------------------------------------------------------
         | Website Settings
         |--------------------------------------------------------------------------
         */
