@@ -1,5 +1,12 @@
 @extends('layouts.app')
 
+@section('meta_title', 'Checkout | Dela Moure Luxury Fragrances')
+
+@section('meta_description', 'Complete your Dela Moure order securely. Review your cart, enter your delivery details and
+    choose your preferred payment or WhatsApp ordering option.')
+
+    {{-- @section('meta_image', asset('assets/images/others/social-share.jpg')) --}}
+
 @section('PageContent')
 
     @include('frontend.partials.breadcrumb', [

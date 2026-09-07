@@ -3,49 +3,170 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width,user-scalable=no,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Dela Moure | Luxury Fragrances, Perfumes & Home Scents</title>
-    <meta name="description"
-        content="Discover Dela Moure's collection of luxury perfumes, home fragrances, diffusers, essential oils, room sprays, candles and premium scenting essentials.">
-    <meta name="keywords"
-        content="Dela Moure,shop Dela Moure,luxury perfumes,fragrances,home fragrances,diffusers,essential oils,room sprays,reed diffusers,candles,car diffusers,perfume Nigeria,luxury scents Nigeria">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    @php
+        /*
+        |--------------------------------------------------------------------------
+        | SEO / Social Sharing Defaults
+        |--------------------------------------------------------------------------
+        */
+
+        $defaultTitle = 'Dela Moure | Luxury Fragrances, Perfumes & Home Scents';
+
+        $defaultDescription =
+            "Discover Dela Moure's collection of luxury perfumes, home fragrances, diffusers, essential oils, room sprays, candles, gift sets and premium scenting essentials.";
+
+        $defaultKeywords =
+            'Dela Moure, shop Dela Moure, luxury perfumes, fragrances, home fragrances, diffusers, essential oils, room sprays, reed diffusers, candles, gift sets, car diffusers, perfume Nigeria, luxury scents Nigeria';
+
+        $defaultImage = asset('assets/images/others/social-share.jpg');
+
+        $favicon = asset('assets/images/others/favicon.ico');
+
+        $pageTitle = trim($__env->yieldContent('meta_title')) ?: $defaultTitle;
+
+        $pageDescription = trim($__env->yieldContent('meta_description')) ?: $defaultDescription;
+
+        $pageKeywords = trim($__env->yieldContent('meta_keywords')) ?: $defaultKeywords;
+
+        $pageImage = trim($__env->yieldContent('meta_image')) ?: $defaultImage;
+
+        $canonicalUrl = url()->current();
+    @endphp
+
+
+    {{-- =========================================================
+        PRIMARY SEO
+    ========================================================== --}}
+
+    <title>{{ $pageTitle }}</title>
+
+    <meta name="description" content="{{ $pageDescription }}">
+
+    <meta name="keywords" content="{{ $pageKeywords }}">
+
     <meta name="author" content="Dela Moure">
-    <meta name="robots" content="index,follow">
-    <meta name="googlebot" content="index,follow">
-    <meta name="theme-color" content="#ffffff">
+
+    <meta name="robots" content="index, follow, max-image-preview:large">
+
+    <meta name="googlebot" content="index, follow, max-image-preview:large">
+
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+
+
+    {{-- =========================================================
+        BRAND / BROWSER
+    ========================================================== --}}
+
     <meta name="application-name" content="Dela Moure">
-    <link rel="canonical" href="{{ url()->current() }}">
+
+    <meta name="apple-mobile-web-app-title" content="Dela Moure">
+
+    <meta name="theme-color" content="#ffffff">
+
+    <meta name="msapplication-TileColor" content="#ffffff">
+
+
+    {{-- =========================================================
+        FAVICON
+    ========================================================== --}}
+
+    <link rel="shortcut icon" href="{{ asset('assets/images/others/favicon.ico') }}">
+
     <link rel="icon" type="image/x-icon" href="{{ asset('assets/images/others/favicon.ico') }}">
-    {{-- <link rel="apple-touch-icon" href="{{asset('assets/images/others/apple-touch-icon.png')}}"> --}}
+
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/images/others/favicon-32x32.png') }}">
+
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/images/others/favicon-16x16.png') }}">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('assets/images/others/apple-touch-icon.png') }}">
+
+
+    {{-- =========================================================
+        OPEN GRAPH
+        WhatsApp / Facebook / LinkedIn / Messenger etc.
+    ========================================================== --}}
+
     <meta property="og:type" content="website">
+
     <meta property="og:site_name" content="Dela Moure">
-    <meta property="og:title" content="Dela Moure | Luxury Fragrances, Perfumes & Home Scents">
-    <meta property="og:description"
-        content="Elevate your everyday experience with luxury perfumes, home fragrances, diffusers, essential oils, room sprays and premium scenting essentials from Dela Moure.">
-    <meta property="og:url" content="{{ url()->current() }}">
-    {{-- <meta property="og:image" content="{{asset('assets/images/others/social-share.jpg')}}"> --}}
-    <meta property="og:image:alt" content="Dela Moure Luxury Fragrances">
+
+    <meta property="og:title" content="{{ $pageTitle }}">
+
+    <meta property="og:description" content="{{ $pageDescription }}">
+
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+
+    <meta property="og:image" content="{{ $pageImage }}">
+
+    <meta property="og:image:secure_url" content="{{ $pageImage }}">
+
+    <meta property="og:image:type" content="image/jpeg">
+
+    <meta property="og:image:width" content="1200">
+
+    <meta property="og:image:height" content="630">
+
+    <meta property="og:image:alt" content="Dela Moure Luxury Fragrances, Perfumes and Home Scents">
+
     <meta property="og:locale" content="en_NG">
+
+
+    {{-- =========================================================
+        X / TWITTER
+    ========================================================== --}}
+
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Dela Moure | Luxury Fragrances, Perfumes & Home Scents">
-    <meta name="twitter:description"
-        content="Discover luxury perfumes, fragrances, diffusers, essential oils, room sprays, candles and premium scenting essentials from Dela Moure.">
+
+    <meta name="twitter:title" content="{{ $pageTitle }}">
+
+    <meta name="twitter:description" content="{{ $pageDescription }}">
+
+    <meta name="twitter:image" content="{{ $pageImage }}">
+
+    <meta name="twitter:image:alt" content="Dela Moure Luxury Fragrances, Perfumes and Home Scents">
+
+
+    {{-- =========================================================
+        SECURITY
+    ========================================================== --}}
+
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    {{-- <meta name="twitter:image" content="{{asset('assets/images/others/social-share.jpg')}}"> --}}
+
+
+    {{-- =========================================================
+        STYLES
+    ========================================================== --}}
+
     <link rel="stylesheet" href="{{ asset('assets/vendors/lightgallery/css/lightgallery-bundle.min.css') }}">
+
     <link rel="stylesheet" href="{{ asset('assets/vendors/fontawesome/css/all.min.css') }}">
+
     <link rel="stylesheet" href="{{ asset('assets/vendors/animate/animate.min.css') }}">
+
     <link rel="stylesheet" href="{{ asset('assets/vendors/slick/slick.css') }}">
+
     <link rel="stylesheet" href="{{ asset('assets/vendors/mapbox-gl/mapbox-gl.min.css') }}">
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <link
         href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
         rel="stylesheet">
+
     <link rel="stylesheet" href="{{ asset('assets/css/theme-black.css') }}">
+
     <link rel="stylesheet" href="{{ asset('assets/css/custom.css') }}">
 
+    @stack('styles')
 
 </head>
 
@@ -82,7 +203,6 @@
     @include('frontend.partials.products.quick-view-modal')
     @include('frontend.partials.header.mobile-header')
     @stack('scripts')
-
 
     <script>
         const notyf = new Notyf({

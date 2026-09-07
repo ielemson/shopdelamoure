@@ -15,11 +15,13 @@
                 </div>
             </div>
             <div class="lazy-bg bg-overlay position-absolute z-index-1 w-100 h-100 light-mode-img"
-                data-bg-src="./assets/images/hero-slider/hero-slider-01.jpg"></div>
+                data-bg-src="{{ asset('assets/images/hero-slider/main-slider.png') }}"></div>
             <div class="lazy-bg bg-overlay dark-mode-img position-absolute z-index-1 w-100 h-100"
-                data-bg-src="./assets/images/hero-slider/hero-slider-white-01.jpg"></div>
+                data-bg-src="{{ asset('assets/images/hero-slider/main-slider.png') }}}"></div>
         </div>
-        <div class="vh-100 d-flex align-items-center">
+
+
+        {{-- <div class="vh-100 d-flex align-items-center">
             <div class="z-index-2 container container-xxl py-21 pt-xl-10 pb-xl-11">
                 <div class="hero-content text-start">
                     <div data-animate="fadeInDown">
@@ -36,25 +38,7 @@
                 data-bg-src="./assets/images/hero-slider/hero-slider-02.jpg"></div>
             <div class="lazy-bg bg-overlay dark-mode-img position-absolute z-index-1 w-100 h-100"
                 data-bg-src="./assets/images/hero-slider/hero-slider-white-02.jpg"></div>
-        </div>
-        <div class="vh-100 d-flex align-items-center">
-            <div class="z-index-2 container container-xxl py-21 pt-xl-10 pb-xl-11">
-                <div class="hero-content text-start">
-                    <div data-animate="fadeInDown">
-                        <p class="text-body-emphasis mb-8 text-uppercase fw-semibold fs-15px">The Dela Moure Experience
-                        </p>
-                        <h1 class="mb-7 hero-title">Luxury In<br>Every Note</h1>
-                        <p class="hero-desc text-body-calculate fs-18px mb-11">From personal fragrance to home scenting,
-                            discover premium scents created for everyday luxury.</p>
-                    </div>
-                    <a href="javascript:void(0);" data-animate="fadeInUp"
-                        class="btn btn-lg btn-dark btn-hover-bg-primary btn-hover-border-primary">Discover More</a>
-                </div>
-            </div>
-            <div class="lazy-bg bg-overlay position-absolute z-index-1 w-100 h-100 light-mode-img"
-                data-bg-src="./assets/images/hero-slider/hero-slider-03.jpg"></div>
-            <div class="lazy-bg bg-overlay dark-mode-img position-absolute z-index-1 w-100 h-100"
-                data-bg-src="./assets/images/hero-slider/hero-slider-white-03.jpg"></div>
-        </div>
+        </div> --}}
+
     </div>
 </section>

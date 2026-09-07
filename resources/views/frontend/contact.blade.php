@@ -1,5 +1,10 @@
 @extends('layouts.app')
 
+@section('meta_title', 'Contact Us | Dela Moure Luxury Fragrances & Home Scents')
+@section('meta_description',
+    'Contact Dela Moure for enquiries, product assistance, orders, delivery support and help
+    with our luxury perfumes, diffusers, candles, essential oils and gift sets.')
+
 @section('PageContent')
     <section class="pb-lg-20 pb-16">
 

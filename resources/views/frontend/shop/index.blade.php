@@ -1,5 +1,13 @@
 @extends('layouts.app')
 
+
+@section('meta_title', 'Shop Dela Moure | Perfumes, Diffusers, Candles & Gift Sets')
+
+@section('meta_description', 'Shop Dela Moure for luxury perfumes, diffusers, essential oils, candles, room fragrances,
+    gift sets and premium scenting essentials designed for everyday elegance.')
+
+    {{-- @section('meta_image', asset('assets/images/others/social-share.jpg')) --}}
+
 @section('PageContent')
     <section class="pb-lg-20 pb-16">
 

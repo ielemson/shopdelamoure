@@ -1,5 +1,20 @@
 @extends('layouts.app')
 
+@section('meta_title', $product->name . ' | Dela Moure Luxury Fragrances')
+
+@section('meta_description',
+    Str::limit(
+    strip_tags(
+    $product->short_description ??
+    ($product->description ??
+    'Shop
+    premium fragrances and scenting essentials from Dela Moure.'),
+    ),
+    155,
+    ))
+
+    {{-- @section('meta_image', $product->image ? asset('storage/' . $product->image) : asset('assets/images/others/social-share.jpg')) --}}
+
 @section('PageContent')
 
     <section class="pb-lg-20 pb-16">
@@ -863,7 +878,6 @@
     @endif
 
 @endsection
-
 
 @push('scripts')
     <script>
