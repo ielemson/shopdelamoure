@@ -893,6 +893,123 @@
 
             });
 
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+
+            /*
+            |--------------------------------------------------------------------------
+            | Currency Switch
+            |--------------------------------------------------------------------------
+            */
+
+            document.addEventListener('click', async function(event) {
+
+                const currencyButton = event.target.closest('.currency-option');
+
+                if (!currencyButton) {
+                    return;
+                }
+
+                event.preventDefault();
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Prevent Multiple Requests
+                |--------------------------------------------------------------------------
+                */
+
+                if (currencyButton.classList.contains('currency-loading')) {
+                    return;
+                }
+
+
+                const currency = currencyButton.dataset.currency;
+
+                if (!currency) {
+                    return;
+                }
+
+
+                const csrfToken = document
+                    .querySelector('meta[name="csrf-token"]')
+                    ?.getAttribute('content');
+
+
+                currencyButton.classList.add('currency-loading');
+
+
+                try {
+
+                    const response = await fetch(
+                        "{{ route('currency.switch') }}", {
+                            method: 'POST',
+
+                            headers: {
+                                'X-CSRF-TOKEN': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            },
+
+                            credentials: 'same-origin',
+
+                            body: JSON.stringify({
+                                currency: currency
+                            })
+                        }
+                    );
+
+
+                    const data = await response.json();
+
+
+                    if (!response.ok || data.status !== true) {
+
+                        throw new Error(
+                            data.message || 'Unable to change currency.'
+                        );
+
+                    }
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Reload Page
+                    |--------------------------------------------------------------------------
+                    |
+                    | Reloading is intentional because every product price,
+                    | shipping amount, cart amount and total should be rendered
+                    | using the newly selected currency.
+                    |
+                    */
+
+                    window.location.reload();
+
+
+                } catch (error) {
+
+                    console.error(
+                        'Currency Switch Error:',
+                        error
+                    );
+
+                    alert(
+                        error.message ||
+                        'Unable to change currency. Please try again.'
+                    );
+
+
+                } finally {
+
+                    currencyButton.classList.remove(
+                        'currency-loading'
+                    );
+
+                }
+
+            });
 
         });
     </script>

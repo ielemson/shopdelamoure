@@ -6,12 +6,6 @@ return [
     |--------------------------------------------------------------------------
     | Third Party Services
     |--------------------------------------------------------------------------
-    |
-    | This file is for storing the credentials for third party services such
-    | as Mailgun, Postmark, AWS and more. This file provides the de facto
-    | location for this type of information, allowing packages to have
-    | a conventional file to locate the various service credentials.
-    |
     */
 
     'postmark' => [
@@ -38,28 +32,89 @@ return [
     'paystack' => [
         'public_key' => env('PAYSTACK_PUBLIC_KEY'),
         'secret_key' => env('PAYSTACK_SECRET_KEY'),
-        'payment_url' => env('PAYSTACK_PAYMENT_URL', 'https://api.paystack.co'),
+        'payment_url' => env(
+            'PAYSTACK_PAYMENT_URL',
+            'https://api.paystack.co'
+        ),
     ],
-
 
     'whatsapp' => [
         'number' => env('DELAMOURE_WHATSAPP_NUMBER'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Currency Conversion
+    |--------------------------------------------------------------------------
+    */
+
     'currency' => [
 
+        /*
+        |--------------------------------------------------------------------------
+        | CurrencyBeacon
+        |--------------------------------------------------------------------------
+        */
+
         'currencybeacon' => [
+
             'key' => env('CURRENCYBEACON_API_KEY'),
-            'url' => 'https://api.currencybeacon.com/v1',
+
+            'url' => env(
+                'CURRENCYBEACON_API_URL',
+                'https://api.currencybeacon.com/v1'
+            ),
+
         ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Frankfurter / CBN Fallback
+        |--------------------------------------------------------------------------
+        */
 
         'frankfurter' => [
-            'url' => 'https://api.frankfurter.dev/v2',
+
+            'url' => env(
+                'FRANKFURTER_API_URL',
+                'https://api.frankfurter.dev/v2'
+            ),
+
         ],
 
-        'cache_hours' => (int) env('CURRENCY_CACHE_HOURS', 6),
+        /*
+        |--------------------------------------------------------------------------
+        | Cache Duration
+        |--------------------------------------------------------------------------
+        */
 
-        'fallback_rate' => (float) env('USD_NGN_FALLBACK_RATE', 1500),
+        'cache_hours' => (int) env(
+            'CURRENCY_CACHE_HOURS',
+            6
+        ),
 
-        'usd_buffer_percent' => (float) env('USD_PRICE_BUFFER_PERCENT', 0),
+        /*
+        |--------------------------------------------------------------------------
+        | Emergency USD / NGN Rate
+        |--------------------------------------------------------------------------
+        */
+
+        'fallback_rate' => (float) env(
+            'USD_NGN_FALLBACK_RATE',
+            1500
+        ),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Optional USD Price Buffer
+        |--------------------------------------------------------------------------
+        */
+
+        'usd_buffer_percent' => (float) env(
+            'USD_PRICE_BUFFER_PERCENT',
+            0
+        ),
+
     ],
+
 ];

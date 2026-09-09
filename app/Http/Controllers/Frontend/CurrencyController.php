@@ -9,6 +9,12 @@ class CurrencyController extends Controller
 {
     public function switch(Request $request)
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Currency
+        |--------------------------------------------------------------------------
+        */
+
         $validated = $request->validate([
             'currency' => [
                 'required',
@@ -17,15 +23,41 @@ class CurrencyController extends Controller
             ],
         ]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Selected Currency
+        |--------------------------------------------------------------------------
+        */
+
+        $currency = strtoupper(
+            $validated['currency']
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Store Manual Selection
+        |--------------------------------------------------------------------------
+        |
+        | currency_manual tells DetectCurrency middleware not to override
+        | the customer's chosen currency.
+        |
+        */
+
         session([
-            'currency' => strtoupper(
-                $validated['currency']
-            ),
+            'currency' => $currency,
+            'currency_manual' => true,
         ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Response
+        |--------------------------------------------------------------------------
+        */
 
         return response()->json([
             'status' => true,
-            'currency' => session('currency'),
+            'currency' => $currency,
+            'symbol' => $currency === 'USD' ? '$' : '₦',
             'message' => 'Currency changed successfully.',
         ]);
     }

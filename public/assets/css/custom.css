@@ -313,3 +313,8 @@
 .compare-table .cart-loading {
     display: inline-block;
 }
+
+.currency-option.currency-loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
