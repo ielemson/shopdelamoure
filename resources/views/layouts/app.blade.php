@@ -175,6 +175,7 @@
     @include('frontend.partials.main_header')
     <main id="content" class="wrapper layout-page">
         @yield('PageContent')
+        @include('frontend.partials.infosection')
     </main>
     @include('frontend.partials.footer.footer-main')
 
@@ -509,6 +510,390 @@
                     );
                 }
             }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+
+            document.querySelectorAll('.currency-option').forEach(function(item) {
+
+                item.addEventListener('click', function() {
+
+                    const currency = this.dataset.currency;
+
+                    fetch('{{ route('currency.switch') }}', {
+                            method: 'POST',
+
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+
+                            body: JSON.stringify({
+                                currency: currency
+                            })
+                        })
+                        .then(response => {
+
+                            if (!response.ok) {
+                                throw new Error('Unable to switch currency.');
+                            }
+
+                            return response.json();
+                        })
+                        .then(data => {
+
+                            if (data.status) {
+                                window.location.reload();
+                            }
+
+                        })
+                        .catch(error => {
+                            console.error('Currency switch error:', error);
+                        });
+
+                });
+
+            });
+
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+
+            /*
+            |--------------------------------------------------------------------------
+            | Compare Notification
+            |--------------------------------------------------------------------------
+            */
+
+            function compareNotify(message, type = 'success') {
+
+                // Toastr
+                if (typeof toastr !== 'undefined') {
+
+                    if (type === 'success') {
+                        toastr.success(message);
+                    } else if (type === 'error') {
+                        toastr.error(message);
+                    } else {
+                        toastr.info(message);
+                    }
+
+                    return;
+                }
+
+
+                // Notify.js
+                if (typeof $ !== 'undefined' && typeof $.notify === 'function') {
+
+                    $.notify(message, {
+                        className: type,
+                        globalPosition: 'top right'
+                    });
+
+                    return;
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Bootstrap Fallback
+                |--------------------------------------------------------------------------
+                */
+
+                const oldAlert = document.querySelector('.compare-notification-alert');
+
+                if (oldAlert) {
+                    oldAlert.remove();
+                }
+
+
+                const alertType = type === 'error' ? 'danger' : type;
+
+                const alert = document.createElement('div');
+
+                alert.className =
+                    `alert alert-${alertType} alert-dismissible fade show compare-notification-alert position-fixed`;
+
+                alert.style.cssText = `
+                top: 90px;
+                right: 20px;
+                z-index: 99999;
+                min-width: 280px;
+                max-width: 400px;
+                box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+            `;
+
+                alert.innerHTML = `
+                <div>${message}</div>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+                </button>
+            `;
+
+                document.body.appendChild(alert);
+
+
+                setTimeout(function() {
+
+                    if (alert.parentNode) {
+
+                        alert.classList.remove('show');
+
+                        setTimeout(function() {
+                            alert.remove();
+                        }, 300);
+
+                    }
+
+                }, 3000);
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Compare Toggle
+            |--------------------------------------------------------------------------
+            */
+
+            document.addEventListener('click', async function(event) {
+
+                const compareButton = event.target.closest('.compare-toggle');
+
+                if (!compareButton) {
+                    return;
+                }
+
+                event.preventDefault();
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Prevent Multiple Requests
+                |--------------------------------------------------------------------------
+                */
+
+                if (compareButton.classList.contains('compare-loading')) {
+                    return;
+                }
+
+
+                const productId = compareButton.dataset.productId;
+                const url = compareButton.dataset.url;
+                const csrfToken = compareButton.dataset.csrf;
+
+
+                if (!productId || !url) {
+
+                    console.error('Compare configuration is missing.');
+
+                    compareNotify(
+                        'Unable to update compare. Please try again.',
+                        'error'
+                    );
+
+                    return;
+                }
+
+
+                compareButton.classList.add('compare-loading');
+
+
+                try {
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Send Request
+                    |--------------------------------------------------------------------------
+                    */
+
+                    const response = await fetch(url, {
+
+                        method: 'POST',
+
+                        headers: {
+
+                            'X-CSRF-TOKEN': csrfToken,
+
+                            'X-Requested-With': 'XMLHttpRequest',
+
+                            'Accept': 'application/json'
+
+                        },
+
+                        credentials: 'same-origin'
+
+                    });
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Read JSON Response
+                    |--------------------------------------------------------------------------
+                    */
+
+                    const data = await response.json();
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Handle Compare Limit / Errors
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (!response.ok || data.success === false) {
+
+                        compareNotify(
+                            data.message ||
+                            'Unable to update product comparison.',
+                            data.limit ? 'info' : 'error'
+                        );
+
+                        return;
+                    }
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Update Every Copy Of This Product
+                    |--------------------------------------------------------------------------
+                    */
+
+                    document
+                        .querySelectorAll(
+                            `.compare-toggle[data-product-id="${productId}"]`
+                        )
+                        .forEach(function(button) {
+
+                            if (data.compared) {
+
+                                /*
+                                |--------------------------------------------------------------------------
+                                | Product Is Now Compared
+                                |--------------------------------------------------------------------------
+                                */
+
+                                button.classList.add('compare-active');
+
+                                button.setAttribute(
+                                    'data-bs-title',
+                                    'Remove From Compare'
+                                );
+
+                                button.setAttribute(
+                                    'aria-label',
+                                    'Remove From Compare'
+                                );
+
+                            } else {
+
+                                /*
+                                |--------------------------------------------------------------------------
+                                | Product Removed From Compare
+                                |--------------------------------------------------------------------------
+                                */
+
+                                button.classList.remove('compare-active');
+
+                                button.setAttribute(
+                                    'data-bs-title',
+                                    'Add To Compare'
+                                );
+
+                                button.setAttribute(
+                                    'aria-label',
+                                    'Add To Compare'
+                                );
+
+                            }
+
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Refresh Bootstrap Tooltip
+                            |--------------------------------------------------------------------------
+                            */
+
+                            if (typeof bootstrap !== 'undefined') {
+
+                                const tooltip =
+                                    bootstrap.Tooltip.getInstance(button);
+
+                                if (tooltip) {
+                                    tooltip.dispose();
+                                }
+
+                                new bootstrap.Tooltip(button);
+                            }
+
+                        });
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Update Header Compare Count
+                    |--------------------------------------------------------------------------
+                    */
+
+                    document
+                        .querySelectorAll('.compare-count')
+                        .forEach(function(counter) {
+
+                            counter.textContent = data.count;
+
+                            if (data.count > 0) {
+
+                                counter.classList.remove('d-none');
+
+                            } else {
+
+                                counter.classList.add('d-none');
+
+                            }
+
+                        });
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Notification
+                    |--------------------------------------------------------------------------
+                    */
+
+                    compareNotify(
+                        data.message ||
+                        (
+                            data.compared ?
+                            'Product added to compare.' :
+                            'Product removed from compare.'
+                        ),
+                        'success'
+                    );
+
+
+                } catch (error) {
+
+                    console.error('Compare Error:', error);
+
+                    compareNotify(
+                        'Something went wrong. Please try again.',
+                        'error'
+                    );
+
+
+                } finally {
+
+                    compareButton.classList.remove('compare-loading');
+
+                }
+
+            });
+
+
         });
     </script>
 

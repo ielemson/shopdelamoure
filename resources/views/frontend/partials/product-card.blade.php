@@ -111,7 +111,7 @@
         <a href="{{ $productUrl }}" class="hover-zoom-in d-block" title="{{ $product->name }}">
 
             @if ($productImage)
-                <img src="#" data-src="{{ asset($productImage) }}" class="img-fluid lazy-image w-100"
+                <img src="javascript:;" data-src="{{ asset($productImage) }}" class="img-fluid lazy-image w-100"
                     alt="{{ $product->name }}" width="330" height="440"
                     style="
                         aspect-ratio: 3 / 4;
@@ -205,7 +205,7 @@
 
             {{-- Quick View --}}
 
-            <a href="#"
+            <a href="javascript:;"
                 class="text-body-emphasis
            bg-body
            bg-dark-hover
@@ -230,19 +230,39 @@
 
 
             {{-- Wishlist --}}
+            @php
+
+                if (auth()->check()) {
+                    $isWishlisted = \App\Models\Wishlist::where('user_id', auth()->id())
+                        ->where('product_id', $product->id)
+                        ->exists();
+                } else {
+                    $isWishlisted = collect(session()->get('wishlist', []))
+                        ->map(fn($id) => (int) $id)
+                        ->contains((int) $product->id);
+                }
+
+            @endphp
+
+
             <a class="text-body-emphasis
-                       bg-body
-                       bg-dark-hover
-                       text-light-hover
-                       rounded-circle
-                       square
-                       product-action
-                       shadow-sm
-                       wishlist
-                       {{ $actionSizeClass }}"
-                href="#" data-bs-toggle="tooltip"
-                data-bs-placement="{{ $actionLayout === 'vertical' ? 'left' : 'top' }}"
-                data-bs-title="Add To Wishlist">
+          bg-body
+          bg-dark-hover
+          text-light-hover
+          rounded-circle
+          square
+          product-action
+          shadow-sm
+          wishlist
+          wishlist-toggle
+          {{ $actionSizeClass }}
+          {{ $isWishlisted ? 'wishlist-active' : '' }}"
+                href="javascript:;" data-product-id="{{ $product->id }}"
+                data-url="{{ route('wishlist.toggle', $product->id) }}" data-csrf="{{ csrf_token() }}"
+                data-bs-toggle="tooltip" data-bs-placement="{{ $actionLayout === 'vertical' ? 'left' : 'top' }}"
+                data-bs-title="{{ $isWishlisted ? 'Remove From Wishlist' : 'Add To Wishlist' }}"
+                aria-label="{{ $isWishlisted ? 'Remove From Wishlist' : 'Add To Wishlist' }}">
+
 
                 <svg class="icon icon-star-light">
 
@@ -252,32 +272,40 @@
 
             </a>
 
+            {{-- @if ($showCompare)
+            
+                @php
+                    $compareIds = array_map('intval', session('compare', []));
 
-            {{-- Compare --}}
-            @if ($showCompare)
+                    $isCompared = in_array((int) $product->id, $compareIds, true);
+                @endphp
+
+
                 <a class="text-body-emphasis
-                           bg-body
-                           bg-dark-hover
-                           text-light-hover
-                           rounded-circle
-                           square
-                           product-action
-                           shadow-sm
-                           compare
-                           {{ $actionSizeClass }}"
-                    href="#" data-bs-toggle="tooltip"
-                    data-bs-placement="{{ $actionLayout === 'vertical' ? 'left' : 'top' }}" data-bs-title="Compare">
+              bg-body
+              bg-dark-hover
+              text-light-hover
+              rounded-circle
+              square
+              product-action
+              shadow-sm
+              compare-toggle
+              {{ $isCompared ? 'compare-active' : '' }}
+              {{ $actionSizeClass }}"
+                    href="javascript:void(0);" data-product-id="{{ $product->id }}"
+                    data-url="{{ route('compare.toggle', $product->id) }}" data-csrf="{{ csrf_token() }}"
+                    data-bs-toggle="tooltip" data-bs-placement="{{ $actionLayout === 'vertical' ? 'left' : 'top' }}"
+                    data-bs-title="{{ $isCompared ? 'Remove From Compare' : 'Add To Compare' }}"
+                    aria-label="{{ $isCompared ? 'Remove From Compare' : 'Add To Compare' }}">
 
                     <svg class="icon icon-arrows-left-right-light">
 
-                        <use xlink:href="#icon-arrows-left-right-light">
-                        </use>
+                        <use xlink:href="#icon-arrows-left-right-light"></use>
 
                     </svg>
 
                 </a>
-            @endif
-
+            @endif --}}
         </div>
 
     </figure>
@@ -376,3 +404,290 @@
     </div>
 
 </div>
+
+@once
+
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+
+                /*
+                |--------------------------------------------------------------------------
+                | Wishlist Notification
+                |--------------------------------------------------------------------------
+                */
+
+                function wishlistNotify(message, type = 'success') {
+
+                    // Toastr
+                    if (typeof toastr !== 'undefined') {
+
+                        if (type === 'success') {
+                            toastr.success(message);
+                        } else if (type === 'error') {
+                            toastr.error(message);
+                        } else {
+                            toastr.info(message);
+                        }
+
+                        return;
+                    }
+
+
+                    // Notify.js
+                    if (typeof $ !== 'undefined' && typeof $.notify === 'function') {
+
+                        $.notify(message, {
+                            className: type,
+                            globalPosition: 'top right'
+                        });
+
+                        return;
+                    }
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Bootstrap Fallback Alert
+                    |--------------------------------------------------------------------------
+                    */
+
+                    const oldAlert = document.querySelector('.wishlist-notification-alert');
+
+                    if (oldAlert) {
+                        oldAlert.remove();
+                    }
+
+
+                    const alertType = type === 'error' ? 'danger' : type;
+
+                    const alert = document.createElement('div');
+
+                    alert.className =
+                        `alert alert-${alertType} alert-dismissible fade show wishlist-notification-alert position-fixed`;
+
+                    alert.style.cssText = `
+                top: 90px;
+                right: 20px;
+                z-index: 99999;
+                min-width: 280px;
+                max-width: 400px;
+                box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+            `;
+
+                    alert.innerHTML = `
+                <div>${message}</div>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+                </button>
+            `;
+
+                    document.body.appendChild(alert);
+
+
+                    setTimeout(function() {
+
+                        if (alert && alert.parentNode) {
+
+                            alert.classList.remove('show');
+
+                            setTimeout(function() {
+                                alert.remove();
+                            }, 300);
+
+                        }
+
+                    }, 3000);
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Wishlist Toggle
+                |--------------------------------------------------------------------------
+                */
+
+                document.addEventListener('click', async function(event) {
+
+                    const wishlistButton = event.target.closest('.wishlist-toggle');
+
+                    if (!wishlistButton) {
+                        return;
+                    }
+
+                    event.preventDefault();
+
+
+                    if (wishlistButton.classList.contains('wishlist-loading')) {
+                        return;
+                    }
+
+
+                    const productId = wishlistButton.dataset.productId;
+                    const url = wishlistButton.dataset.url;
+                    const csrfToken = wishlistButton.dataset.csrf;
+
+
+                    wishlistButton.classList.add('wishlist-loading');
+
+
+                    try {
+
+                        const response = await fetch(url, {
+
+                            method: 'POST',
+
+                            headers: {
+
+                                'X-CSRF-TOKEN': csrfToken,
+
+                                'X-Requested-With': 'XMLHttpRequest',
+
+                                'Accept': 'application/json'
+
+                            },
+
+                            credentials: 'same-origin'
+
+                        });
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Parse Response
+                        |--------------------------------------------------------------------------
+                        */
+
+                        const data = await response.json();
+
+
+                        if (!response.ok) {
+
+                            throw new Error(
+                                data.message || 'Unable to update your wishlist.'
+                            );
+
+                        }
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Update Every Copy Of Product
+                        |--------------------------------------------------------------------------
+                        */
+
+                        document
+                            .querySelectorAll(
+                                `.wishlist-toggle[data-product-id="${productId}"]`
+                            )
+                            .forEach(function(button) {
+
+                                if (data.wishlisted) {
+
+                                    button.classList.add('wishlist-active');
+
+                                    button.setAttribute(
+                                        'data-bs-title',
+                                        'Remove From Wishlist'
+                                    );
+
+                                    button.setAttribute(
+                                        'aria-label',
+                                        'Remove From Wishlist'
+                                    );
+
+                                } else {
+
+                                    button.classList.remove('wishlist-active');
+
+                                    button.setAttribute(
+                                        'data-bs-title',
+                                        'Add To Wishlist'
+                                    );
+
+                                    button.setAttribute(
+                                        'aria-label',
+                                        'Add To Wishlist'
+                                    );
+
+                                }
+
+                            });
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Header Wishlist Count
+                        |--------------------------------------------------------------------------
+                        */
+
+                        document
+                            .querySelectorAll('.wishlist-count')
+                            .forEach(function(counter) {
+
+                                counter.textContent = data.count;
+
+                                if (data.count > 0) {
+
+                                    counter.classList.remove('d-none');
+
+                                } else {
+
+                                    counter.classList.add('d-none');
+
+                                }
+
+                            });
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Notify Customer
+                        |--------------------------------------------------------------------------
+                        */
+
+                        if (data.wishlisted) {
+
+                            wishlistNotify(
+                                data.message || 'Product added to your wishlist.',
+                                'success'
+                            );
+
+                        } else {
+
+                            wishlistNotify(
+                                data.message || 'Product removed from your wishlist.',
+                                'success'
+                            );
+
+                        }
+
+
+                    } catch (error) {
+
+                        console.error('Wishlist Error:', error);
+
+
+                        wishlistNotify(
+                            error.message || 'Something went wrong. Please try again.',
+                            'error'
+                        );
+
+
+                    } finally {
+
+                        wishlistButton.classList.remove('wishlist-loading');
+
+                    }
+
+                });
+
+            });
+        </script>
+    @endpush
+
+@endonce

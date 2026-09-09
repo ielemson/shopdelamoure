@@ -115,9 +115,35 @@ class Order extends Model
     public function getCustomerNameAttribute(): string
     {
         return trim(
-            ($this->first_name ?? '') . ' ' .
+            ($this->first_name ?? '').' '.
                 ($this->last_name ?? '')
         );
+    }
+
+    /**
+     * Determine whether this order was placed by a guest.
+     */
+    public function isGuest(): bool
+    {
+        return is_null($this->user_id);
+    }
+
+    /**
+     * Determine whether this order belongs to a registered customer.
+     */
+    public function isRegisteredCustomer(): bool
+    {
+        return ! is_null($this->user_id);
+    }
+
+    /**
+     * Customer type label.
+     */
+    public function getCustomerTypeAttribute(): string
+    {
+        return $this->isGuest()
+            ? 'Guest'
+            : 'Registered Customer';
     }
 
     /*
@@ -131,7 +157,7 @@ class Order extends Model
         return match (strtoupper($this->currency ?? 'NGN')) {
             'NGN' => '₦',
             'USD' => '$',
-            default => strtoupper($this->currency ?? 'NGN') . ' ',
+            default => strtoupper($this->currency ?? 'NGN').' ',
         };
     }
 
@@ -163,7 +189,7 @@ class Order extends Model
     protected function formatMoney($amount): string
     {
         return $this->currency_symbol
-            . number_format((float) $amount, 2);
+            .number_format((float) $amount, 2);
     }
 
     /*
@@ -242,6 +268,22 @@ class Order extends Model
     public function scopeUnpaid($query)
     {
         return $query->where('payment_status', 'unpaid');
+    }
+
+    /**
+     * Guest orders only.
+     */
+    public function scopeGuests($query)
+    {
+        return $query->whereNull('user_id');
+    }
+
+    /**
+     * Registered customer orders only.
+     */
+    public function scopeRegisteredCustomers($query)
+    {
+        return $query->whereNotNull('user_id');
     }
 
     public function scopeRecent($query)

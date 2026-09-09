@@ -1,12 +1,22 @@
-<section id="shop_categories">
+</section>
+<section id="shop_categories" class="shop-categories-section">
 
-    <div class="pt-14 pb-14 pt-lg-19">
+    <div class="container container-xxl py-8 py-lg-10">
 
-        <div class="container container-xxl mb-13 d-xl-flex">
+        {{-- =========================================================
+            SECTION HEADING
+        ========================================================== --}}
+        <div class="mb-7 d-xl-flex">
 
-            <div class="flex-grow-1 text-left" data-animate="fadeInUp">
+            <div class="flex-grow-1 text-start" data-animate="fadeInUp">
 
-                <h2 class="mb-5">Shop our Collections</h2>
+                <span class="text-uppercase fs-13px fw-semibold ls-2 text-primary d-block mb-3">
+                    Explore Dela Moure
+                </span>
+
+                <h2 class="mb-4">
+                    Shop Our Collections
+                </h2>
 
                 <p class="fs-18px mb-0 mw-xl-40 mw-lg-50 mw-md-75">
                     Explore our collections and discover your perfect fragrance.
@@ -16,78 +26,178 @@
 
         </div>
 
-        @if ($categories->isNotEmpty())
+        @if (isset($categories) && $categories->isNotEmpty())
 
             <div class="container-fluid mb-4">
 
-                <div class="slick-slider our-best-seller-4"
+                <div class="slick-slider dela-category-slider"
                     data-slick-options='{
                         "arrows": true,
                         "centerMode": true,
                         "centerPadding": "calc((100% - 1440px) / 2)",
                         "dots": true,
                         "infinite": true,
+                        "speed": 600,
+                        "slidesToShow": 4,
+                        "slidesToScroll": 1,
+                        "autoplay": true,
+                        "autoplaySpeed": 4500,
+                        "pauseOnHover": true,
+
                         "responsive": [
+
                             {
                                 "breakpoint": 1200,
                                 "settings": {
                                     "arrows": false,
                                     "dots": false,
+                                    "centerMode": false,
                                     "slidesToShow": 3
                                 }
                             },
+
                             {
                                 "breakpoint": 992,
                                 "settings": {
                                     "arrows": false,
                                     "dots": false,
+                                    "centerMode": false,
                                     "slidesToShow": 2
                                 }
                             },
+
                             {
                                 "breakpoint": 576,
                                 "settings": {
                                     "arrows": false,
                                     "dots": false,
+                                    "centerMode": false,
                                     "slidesToShow": 1
                                 }
                             }
-                        ],
-                        "slidesToShow": 4
+
+                        ]
                     }'>
 
+
                     @foreach ($categories as $category)
-                        <div data-animate="fadeInUp">
+                        @php
 
-                            <div class="card card-product grid-1 bg-transparent border-0">
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Placeholder
+                            |--------------------------------------------------------------------------
+                            */
 
-                                <figure class="card-img-top position-relative mb-5 overflow-hidden">
+                            $placeholder = asset('assets/images/products/product-placeholder.jpg');
 
-                                    <a href="#" class="hover-zoom-in d-block" title="{{ $category->name }}">
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Category Image
+                            |--------------------------------------------------------------------------
+                            |
+                            | Keep the same logic that worked previously.
+                            |
+                            */
 
-                                        <img src="{{ $category->image ? asset($category->image) : asset('assets/images/products/product-01-330x440.jpg') }}"
-                                            class="img-fluid w-100" alt="{{ $category->name }}" width="330"
-                                            height="440" style="aspect-ratio: 3 / 4; object-fit: cover;">
+                            $categoryImage = null;
 
-                                    </a>
+                            if (!empty($category->image)) {
+                                /*
+                                |--------------------------------------------------------------------------
+                                | Remove leading slash
+                                |--------------------------------------------------------------------------
+                                */
 
-                                </figure>
+                                $imagePath = ltrim($category->image, '/');
 
-                                <div class="card-body text-center p-0">
+                                /*
+                                |--------------------------------------------------------------------------
+                                | Check public directory directly
+                                |--------------------------------------------------------------------------
+                                */
 
-                                    <h4 class="card-title text-primary-hover text-body-emphasis fs-18px fw-500 mb-0">
+                                if (file_exists(public_path($imagePath))) {
+                                    $categoryImage = asset($imagePath);
+                                }
+                            }
 
-                                        <a class="text-decoration-none text-reset" href="#">
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Fallback
+                            |--------------------------------------------------------------------------
+                            */
 
+                            $categoryImage = $categoryImage ?: $placeholder;
+
+                        @endphp
+
+
+                        <div class="px-2 px-lg-3" data-animate="fadeInUp">
+
+                            <article class="dela-category-card position-relative overflow-hidden">
+
+                                <a href="{{ route('shop.category', $category->slug) }}"
+                                    class="d-block position-relative text-decoration-none"
+                                    title="Shop {{ $category->name }}">
+
+                                    {{-- =====================================================
+                                        CATEGORY IMAGE
+                                    ====================================================== --}}
+                                    <figure class="dela-category-image mb-0">
+
+                                        <img src="{{ $categoryImage }}" alt="{{ $category->name }}" width="420"
+                                            height="540" loading="lazy" class="w-100"
+                                            onerror="
+                                                this.onerror=null;
+                                                this.src='{{ $placeholder }}';
+                                            ">
+
+                                    </figure>
+
+
+                                    {{-- =====================================================
+                                        OVERLAY
+                                    ====================================================== --}}
+                                    <div class="dela-category-overlay"></div>
+
+
+                                    {{-- =====================================================
+                                        CATEGORY CONTENT
+                                    ====================================================== --}}
+                                    <div class="dela-category-content">
+
+                                        @if (isset($category->products_count))
+                                            <span class="dela-category-count d-block mb-2">
+
+                                                {{ $category->products_count }}
+
+                                                {{ \Illuminate\Support\Str::plural('Product', $category->products_count) }}
+
+                                            </span>
+                                        @endif
+
+
+                                        <h3 class="dela-category-title mb-4">
                                             {{ $category->name }}
+                                        </h3>
 
-                                        </a>
 
-                                    </h4>
+                                        <span class="dela-category-link">
 
-                                </div>
+                                            Shop Collection
 
-                            </div>
+                                            <span class="ms-2 dela-category-arrow">
+                                                &rarr;
+                                            </span>
+
+                                        </span>
+
+                                    </div>
+
+                                </a>
+
+                            </article>
 
                         </div>
                     @endforeach

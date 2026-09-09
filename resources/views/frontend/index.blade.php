@@ -3,23 +3,35 @@
 @section('PageContent')
     @include('frontend.partials.header_slider')
 
-    @include('frontend.partials.infosection')
+    @include('frontend.partials.collection')
 
-    {{-- Standard Product Sections --}}
     @foreach ($productSections as $section)
         @if ($section['products']->isNotEmpty())
             @include('frontend.partials.products', [
                 'title' => $section['title'],
-                'subtitle' => $section['subtitle'],
+            
+                'subtitle' => $section['subtitle'] ?? null,
+            
                 'products' => $section['products'],
+            
+                'viewAllUrl' => $section['view_all_url'] ?? (Route::has('shop') ? route('shop') : url('/shop')),
             ])
         @endif
     @endforeach
 
-    {{-- Most Loved / Best Sellers --}}
+    {{-- =========================================================
+    MOST LOVED / BEST SELLERS
+========================================================= --}}
+
     @if ($bestSellers->isNotEmpty())
         @include('frontend.partials.bestseller', [
+            'title' => 'Most Loved',
+        
+            'subtitle' => 'Discover the Dela Moure favourites our customers keep coming back to.',
+        
             'products' => $bestSellers,
+        
+            'viewAllUrl' => Route::has('shop') ? route('shop') : url('/shop'),
         ])
     @endif
 @endsection

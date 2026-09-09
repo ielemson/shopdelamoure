@@ -1,4 +1,4 @@
-<section class="pt-12 pb-lg-13 pb-13">
+<section class="bg-body-tertiary pt-12 pb-lg-13 pb-13">
     <div class="container container-xxl">
         <div class="row g-8">
 

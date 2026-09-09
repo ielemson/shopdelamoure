@@ -3,41 +3,13 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
 use Darryldecode\Cart\Facades\CartFacade as Cart;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-
-
-    // public function show($slug)
-    // {
-    //     $product = Product::with([
-    //         'category',
-    //         'subcategory',
-    //         'images',
-    //         'variants'
-    //     ])
-    //         ->where('slug', $slug)
-    //         ->where('status', 1)
-    //         ->firstOrFail();
-
-    //     $relatedProducts = Product::with(['category', 'images'])
-    //         ->where('category_id', $product->category_id)
-    //         ->where('id', '!=', $product->id)
-    //         ->where('status', 1)
-    //         ->latest()
-    //         ->take(8)
-    //         ->get();
-
-    //     return view(
-    //         'frontend.product.show',
-    //         compact('product', 'relatedProducts')
-    //     );
-    // }
-
     public function show($slug)
     {
         $product = Product::with([
@@ -60,7 +32,6 @@ class ProductController extends Controller
             ->where('slug', $slug)
             ->where('status', 1)
             ->firstOrFail();
-
 
         $relatedProducts = Product::with([
             'category',
@@ -93,14 +64,12 @@ class ProductController extends Controller
                 });
             });
 
-
         return view('frontend.product.show', compact(
             'product',
             'relatedProducts',
             'variantCartQuantities'
         ));
     }
-
 
     public function shop(Request $request)
     {
@@ -120,7 +89,6 @@ class ProductController extends Controller
             ? 'sale_price_usd'
             : 'sale_price_ngn';
 
-
         /*
     |--------------------------------------------------------------------------
     | Categories
@@ -132,12 +100,11 @@ class ProductController extends Controller
             ->withCount([
                 'products' => function ($query) {
                     $query->where('status', 1);
-                }
+                },
             ])
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
-
 
         /*
     |--------------------------------------------------------------------------
@@ -151,7 +118,6 @@ class ProductController extends Controller
             'variants',
         ])
             ->where('status', 1)
-
 
             /*
         |--------------------------------------------------------------------------
@@ -169,7 +135,6 @@ class ProductController extends Controller
                     );
                 });
             })
-
 
             /*
         |--------------------------------------------------------------------------
@@ -192,7 +157,6 @@ class ProductController extends Controller
                 );
             })
 
-
             /*
         |--------------------------------------------------------------------------
         | Maximum Price
@@ -214,7 +178,6 @@ class ProductController extends Controller
                 );
             })
 
-
             /*
         |--------------------------------------------------------------------------
         | Sorting
@@ -223,17 +186,17 @@ class ProductController extends Controller
 
             ->when(
                 $request->sort === 'name_asc',
-                fn($query) => $query->orderBy('name', 'asc')
+                fn ($query) => $query->orderBy('name', 'asc')
             )
 
             ->when(
                 $request->sort === 'name_desc',
-                fn($query) => $query->orderBy('name', 'desc')
+                fn ($query) => $query->orderBy('name', 'desc')
             )
 
             ->when(
                 $request->sort === 'price_low',
-                fn($query) => $query->orderByRaw(
+                fn ($query) => $query->orderByRaw(
                     "COALESCE(
                     NULLIF({$salePriceField}, 0),
                     {$priceField}
@@ -243,7 +206,7 @@ class ProductController extends Controller
 
             ->when(
                 $request->sort === 'price_high',
-                fn($query) => $query->orderByRaw(
+                fn ($query) => $query->orderByRaw(
                     "COALESCE(
                     NULLIF({$salePriceField}, 0),
                     {$priceField}
@@ -253,17 +216,16 @@ class ProductController extends Controller
 
             ->when(
                 $request->sort === 'latest',
-                fn($query) => $query->latest()
+                fn ($query) => $query->latest()
             )
 
             ->when(
-                !$request->filled('sort'),
-                fn($query) => $query->latest()
+                ! $request->filled('sort'),
+                fn ($query) => $query->latest()
             )
 
             ->paginate(12)
             ->withQueryString();
-
 
         return view('frontend.shop.index', compact(
             'products',
@@ -295,7 +257,6 @@ class ProductController extends Controller
 
         return view('frontend.shop.index', compact('products', 'search'));
     }
-
 
     // public function quickView(Product $product)
     // {
@@ -336,6 +297,24 @@ class ProductController extends Controller
             'price',
             'salePrice',
             'symbol'
+        ));
+    }
+
+    public function category($slug)
+    {
+        $category = Category::where('slug', $slug)
+            ->where('status', 1)
+            ->firstOrFail();
+
+        $products = Product::query()
+            ->where('category_id', $category->id)
+            ->where('status', 1)
+            ->latest()
+            ->paginate(12);
+
+        return view('frontend.shop.index', compact(
+            'category',
+            'products'
         ));
     }
 }

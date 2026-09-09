@@ -45,5 +45,21 @@ return [
     'whatsapp' => [
         'number' => env('DELAMOURE_WHATSAPP_NUMBER'),
     ],
+    'currency' => [
 
+        'currencybeacon' => [
+            'key' => env('CURRENCYBEACON_API_KEY'),
+            'url' => 'https://api.currencybeacon.com/v1',
+        ],
+
+        'frankfurter' => [
+            'url' => 'https://api.frankfurter.dev/v2',
+        ],
+
+        'cache_hours' => (int) env('CURRENCY_CACHE_HOURS', 6),
+
+        'fallback_rate' => (float) env('USD_NGN_FALLBACK_RATE', 1500),
+
+        'usd_buffer_percent' => (float) env('USD_PRICE_BUFFER_PERCENT', 0),
+    ],
 ];

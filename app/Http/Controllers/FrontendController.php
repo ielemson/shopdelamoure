@@ -2,14 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\Product;
 
-
 class FrontendController extends Controller
 {
-
     public function index()
     {
 
@@ -51,7 +48,6 @@ class FrontendController extends Controller
                 ->where('status', 1);
         };
 
-
         /*
 |--------------------------------------------------------------------------
 | Standard Product Sections
@@ -68,24 +64,24 @@ class FrontendController extends Controller
         $productSections = [
 
             [
-                'title' => 'Featured Products',
-
-                'subtitle' => 'Discover our specially selected fragrances.',
-
-                'products' => $productQuery()
-                    ->where('is_featured', 1)
-                    ->latest()
-                    ->take(8)
-                    ->get(),
-            ],
-
-            [
                 'title' => 'New Arrivals',
 
                 'subtitle' => 'Discover the latest additions to our collection.',
 
                 'products' => $productQuery()
                     ->where('is_new_arrival', 1)
+                    ->latest()
+                    ->take(8)
+                    ->get(),
+            ],
+
+            [
+                'title' => 'Featured Products',
+
+                'subtitle' => 'Discover our specially selected fragrances.',
+
+                'products' => $productQuery()
+                    ->where('is_featured', 1)
                     ->latest()
                     ->take(8)
                     ->get(),
@@ -105,7 +101,6 @@ class FrontendController extends Controller
 
         ];
 
-
         /*
 |--------------------------------------------------------------------------
 | Most Loved / Best Sellers
@@ -121,7 +116,6 @@ class FrontendController extends Controller
             ->latest()
             ->take(6)
             ->get();
-
 
         /*
 |--------------------------------------------------------------------------

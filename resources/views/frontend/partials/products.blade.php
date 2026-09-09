@@ -1,34 +1,64 @@
-<section>
+<section class="dela-product-section">
 
-    <div class="container container-xxl py-lg-17 pt-14 pb-16">
+    <div class="container container-xxl py-8 py-lg-10">
 
-        <div class="mb-13 pb-3 text-center" data-animate="fadeInUp">
+        <div class="row align-items-end mb-7">
 
-            <h2 class="mb-5">
-                {{ $title }}
-            </h2>
+            <div class="col-sm-8" data-animate="fadeInUp">
 
-            @if (!empty($subtitle))
-                <p class="fs-18px mb-0">
-                    {{ $subtitle }}
-                </p>
-            @endif
+                <h2 class="h3 mb-0">
+                    {{ $title }}
+                </h2>
+
+                @if (!empty($subtitle))
+                    <p class="fs-16px text-body mb-0 mt-3 mw-lg-75">
+                        {{ $subtitle }}
+                    </p>
+                @endif
+
+            </div>
+
+
+            <div class="col-md-4 col-sm-4 text-sm-end mt-4 mt-sm-0" data-animate="fadeInUp">
+
+                <a href="{{ $viewAllUrl ?? (Route::has('shop') ? route('shop') : url('/shop')) }}"
+                    class="btn btn-link p-0 text-body-emphasis text-decoration-none fw-semibold text-primary-hover dela-shop-all">
+
+                    Shop All Products
+
+                    <svg class="icon ms-1">
+                        <use xlink:href="#icon-arrow-right"></use>
+                    </svg>
+
+                </a>
+
+            </div>
 
         </div>
 
 
-        <div class="slick-slider"
+        {{-- =========================================================
+            PRODUCT SLIDER
+        ========================================================== --}}
+        <div class="slick-slider dela-product-slider" data-animate="fadeInUp"
             data-slick-options='{
                 "arrows": true,
                 "dots": false,
+                "infinite": true,
+                "speed": 500,
+                "slidesToShow": 5,
+                "slidesToScroll": 1,
                 "responsive": [
+
                     {
                         "breakpoint": 1560,
                         "settings": {
                             "arrows": false,
-                            "dots": true
+                            "dots": true,
+                            "slidesToShow": 5
                         }
                     },
+
                     {
                         "breakpoint": 1200,
                         "settings": {
@@ -37,6 +67,7 @@
                             "slidesToShow": 3
                         }
                     },
+
                     {
                         "breakpoint": 992,
                         "settings": {
@@ -45,6 +76,7 @@
                             "slidesToShow": 2
                         }
                     },
+
                     {
                         "breakpoint": 576,
                         "settings": {
@@ -53,8 +85,8 @@
                             "slidesToShow": 1
                         }
                     }
-                ],
-                "slidesToShow": 4
+
+                ]
             }'>
 
 
@@ -63,11 +95,17 @@
 
                     @include('frontend.partials.product-card', [
                         'product' => $product,
+                    
                         'gridStyle' => 'grid-1',
+                    
                         'actionLayout' => 'horizontal',
+                    
                         'compact' => false,
+                    
                         'showCategory' => false,
+                    
                         'showVariantCount' => false,
+                    
                         'showCompare' => true,
                     ])
 

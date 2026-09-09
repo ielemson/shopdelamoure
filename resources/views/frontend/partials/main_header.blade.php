@@ -37,10 +37,10 @@
                     @endif
 
 
-                    @if (!empty($setting?->support_phone))
+                    @if (!empty($setting?->phone))
                         <li class="list-inline-item ms-6">
-                            <a href="https://wa.me/{{ preg_replace('/\D+/', '', $setting->support_phone) }}"
-                                target="_blank" rel="noopener noreferrer" title="WhatsApp">
+                            <a href="https://wa.me/{{ preg_replace('/\D+/', '', $setting->phone) }}" target="_blank"
+                                rel="noopener noreferrer" title="WhatsApp">
                                 <svg class="icon">
                                     <use xlink:href="#whatsapp"></use>
                                 </svg>
@@ -49,6 +49,8 @@
                     @endif
 
                 </ul>
+
+
             </div>
 
 
@@ -61,30 +63,126 @@
 
             </div>
 
-
             <!-- Currency Switch -->
+            @php
+                $activeCurrency = strtoupper(session('currency', 'NGN'));
+
+                $currencySymbol = $activeCurrency === 'USD' ? '$' : '₦';
+            @endphp
+
+
+            {{-- ================= DESKTOP CURRENCY SWITCH ================= --}}
             <div class="w-50 d-none d-lg-block">
 
                 <div class="d-flex align-items-center justify-content-end">
 
-                    <div class="dropdown">
+                    <div class="dropdown currency-switcher">
 
-                        <button class="btn btn-link dropdown-toggle fw-semibold text-uppercase ls-1 p-0 fs-13px"
-                            type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="dropdown-toggle currency-switcher-trigger d-flex align-items-center"
+                            data-bs-toggle="dropdown" aria-expanded="false">
 
-                            NGN
+                            <span class="currency-main-code">
+                                {{ $activeCurrency }} ({{ $currencySymbol }})
+                            </span>
 
-                        </button>
+                        </a>
 
-                        <div class="dropdown-menu dropdown-menu-end py-4" style="min-width: 120px;">
 
-                            <a class="dropdown-item py-2" href="#">
-                                NGN
-                            </a>
+                        <div class="dropdown-menu dropdown-menu-end py-3 currency-menu" style="min-width: 135px;">
 
-                            <a class="dropdown-item py-2" href="#">
-                                USD
-                            </a>
+                            {{-- NGN --}}
+                            <button type="button"
+                                class="dropdown-item py-2 currency-option d-flex align-items-center justify-content-between
+                        {{ $activeCurrency === 'NGN' ? 'currency-active' : '' }}"
+                                data-currency="NGN">
+
+                                <span>
+                                    NGN (₦)
+                                </span>
+
+                                @if ($activeCurrency === 'NGN')
+                                    <span class="currency-check">✓</span>
+                                @endif
+
+                            </button>
+
+
+                            {{-- USD --}}
+                            <button type="button"
+                                class="dropdown-item py-2 currency-option d-flex align-items-center justify-content-between
+                        {{ $activeCurrency === 'USD' ? 'currency-active' : '' }}"
+                                data-currency="USD">
+
+                                <span>
+                                    USD ($)
+                                </span>
+
+                                @if ($activeCurrency === 'USD')
+                                    <span class="currency-check">✓</span>
+                                @endif
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {{-- ================= MOBILE CURRENCY SWITCH ================= --}}
+            <div class="d-lg-none w-100 mobile-currency-switch">
+
+                <div class="d-flex align-items-center justify-content-between">
+
+                    <div class="dropdown currency-switcher">
+
+                        <a href="#" class="dropdown-toggle currency-switcher-trigger d-flex align-items-center"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+
+                            <span class="currency-main-code">
+                                {{ $activeCurrency }} ({{ $currencySymbol }})
+                            </span>
+
+                        </a>
+
+
+                        <div class="dropdown-menu dropdown-menu-end py-3 currency-menu" style="min-width: 135px;">
+
+                            {{-- NGN --}}
+                            <button type="button"
+                                class="dropdown-item py-2 currency-option d-flex align-items-center justify-content-between
+                        {{ $activeCurrency === 'NGN' ? 'currency-active' : '' }}"
+                                data-currency="NGN">
+
+                                <span>
+                                    NGN (₦)
+                                </span>
+
+                                @if ($activeCurrency === 'NGN')
+                                    <span class="currency-check">✓</span>
+                                @endif
+
+                            </button>
+
+
+                            {{-- USD --}}
+                            <button type="button"
+                                class="dropdown-item py-2 currency-option d-flex align-items-center justify-content-between
+                        {{ $activeCurrency === 'USD' ? 'currency-active' : '' }}"
+                                data-currency="USD">
+
+                                <span>
+                                    USD ($)
+                                </span>
+
+                                @if ($activeCurrency === 'USD')
+                                    <span class="currency-check">✓</span>
+                                @endif
+
+                            </button>
 
                         </div>
 
@@ -96,8 +194,6 @@
 
         </div>
     </div>
-
-
 
     <!-- =========================================================
          MAIN HEADER
@@ -166,7 +262,8 @@
                         <div class="ps-4">
 
                             <a class="position-relative lh-1 color-inherit text-decoration-none" href="#"
-                                data-bs-toggle="offcanvas" data-bs-target="#shoppingCart" aria-controls="shoppingCart">
+                                data-bs-toggle="offcanvas" data-bs-target="#shoppingCart"
+                                aria-controls="shoppingCart">
 
                                 <svg class="icon">
                                     <use xlink:href="#icon-shopping-bag-open-light"></use>
@@ -284,8 +381,6 @@
 
                     </div>
 
-
-
                     <!-- =================================================
                          RIGHT SIDE
                     ================================================== -->
@@ -294,20 +389,6 @@
 
                         <!-- Right Navigation -->
                         <ul class="navbar-nav w-auto">
-
-
-                            <!-- Best Sellers -->
-                            <li class="nav-item transition-all-xl-1 py-xl-11 py-0 px-xxl-7 px-xl-5">
-
-                                <a class="nav-link position-relative py-xl-0 px-xl-0 text-uppercase fw-semibold ls-1 fs-14px"
-                                    href="#">
-
-                                    Best Sellers
-
-                                </a>
-
-                            </li>
-
 
                             <!-- About -->
                             <li class="nav-item transition-all-xl-1 py-xl-11 py-0 px-xxl-7 px-xl-5">
@@ -320,7 +401,6 @@
                                 </a>
 
                             </li>
-
 
                             <!-- Contact -->
                             <li class="nav-item transition-all-xl-1 py-xl-11 py-0 px-xxl-7 px-xl-5">
@@ -335,27 +415,76 @@
 
                         </ul>
 
-
-
                         <!-- Account / Cart -->
                         <div class="icons-actions d-flex justify-content-end ms-auto fs-28px text-body-emphasis">
-
-
                             <!-- Account -->
                             <div class="px-4">
 
-                                <a class="lh-1 color-inherit text-decoration-none" href="{{ route('login') }}"
-                                    title="My Account">
+                                @guest
 
-                                    <svg class="icon icon-user-light">
-                                        <use xlink:href="#icon-user-light"></use>
+                                    {{-- Guest --}}
+                                    <a class="lh-1 color-inherit text-decoration-none" href="{{ route('login') }}"
+                                        title="Login / My Account">
+
+                                        <svg class="icon icon-user-light">
+                                            <use xlink:href="#icon-user-light"></use>
+                                        </svg>
+
+                                    </a>
+                                @else
+                                    @php
+                                        $user = auth()->user();
+                                        $isAdmin = $user->hasRole('Admin');
+                                    @endphp
+
+                                    {{-- Authenticated User --}}
+                                    <a class="lh-1 color-inherit text-decoration-none" href="{{ route('home') }}"
+                                        title="{{ $isAdmin ? 'Admin Dashboard' : 'My Account' }}">
+
+                                        <svg class="icon icon-user-light">
+                                            <use xlink:href="#icon-user-light"></use>
+                                        </svg>
+
+                                    </a>
+
+                                @endguest
+
+                            </div>
+                            @php
+
+                                if (auth()->check()) {
+                                    $wishlistCount = \App\Models\Wishlist::where('user_id', auth()->id())->count();
+                                } else {
+                                    $wishlistCount = collect(session()->get('wishlist', []))
+                                        ->unique()
+                                        ->count();
+                                }
+
+                            @endphp
+
+
+                            <div class="px-5 d-none d-xl-inline-block">
+
+                                <a class="position-relative lh-1 color-inherit text-decoration-none"
+                                    href="{{ route('wishlist.index') }}" title="Wishlist" aria-label="Wishlist">
+
+                                    <svg class="icon icon-star-light">
+                                        <use xlink:href="#icon-star-light"></use>
                                     </svg>
+
+
+                                    <span
+                                        class="wishlist-count badge bg-dark text-white position-absolute top-0 start-100 translate-middle mt-4 rounded-circle fs-13px p-0 square
+                {{ $wishlistCount < 1 ? 'd-none' : '' }}"
+                                        style="--square-size: 18px">
+
+                                        {{ $wishlistCount }}
+
+                                    </span>
 
                                 </a>
 
                             </div>
-
-
 
                             <!-- Cart -->
                             <div class="ps-4">

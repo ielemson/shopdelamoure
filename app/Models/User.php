@@ -4,13 +4,15 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -21,7 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'phone'
+        'phone',
     ];
 
     /**
@@ -52,8 +54,33 @@ class User extends Authenticatable
         return $this->hasOne(CustomerProfile::class);
     }
 
-  public function address()
-{
-    return $this->hasOne(Address::class);
-}
+    public function address()
+    {
+        return $this->hasOne(Address::class);
+    }
+
+    /*
+|--------------------------------------------------------------------------
+| Wishlist Entries
+|--------------------------------------------------------------------------
+*/
+    public function wishlists(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Wishlist Products
+    |--------------------------------------------------------------------------
+    */
+    public function wishlistProducts(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Product::class,
+            'wishlists',
+            'user_id',
+            'product_id'
+        )->withTimestamps();
+    }
 }
