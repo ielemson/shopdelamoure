@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\CustomerController;
 */
 
 // General
+use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ShippingRateController;
@@ -117,8 +118,7 @@ Route::get('/compare', [CompareController::class, 'index'])
 |--------------------------------------------------------------------------
 */
 
-Route::get('/checkout', [CheckoutController::class, 'index'])
-    ->name('checkout.index');
+Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 
 /*
 |--------------------------------------------------------------------------
@@ -126,8 +126,7 @@ Route::get('/checkout', [CheckoutController::class, 'index'])
 |--------------------------------------------------------------------------
 */
 
-Route::get('/checkout/states/{country}', [CheckoutController::class, 'states'])
-    ->name('checkout.states');
+Route::get('/checkout/states/{country}', [CheckoutController::class, 'states'])->name('checkout.states');
 
 /*
 |--------------------------------------------------------------------------
@@ -136,9 +135,7 @@ Route::get('/checkout/states/{country}', [CheckoutController::class, 'states'])
 */
 
 Route::get(
-    '/checkout/shipping-zones/{stateId}',
-    [CheckoutController::class, 'shippingZones']
-)->name('checkout.shipping-zones');
+    '/checkout/shipping-zones/{stateId}', [CheckoutController::class, 'shippingZones'])->name('checkout.shipping-zones');
 
 /*
 |--------------------------------------------------------------------------
@@ -147,9 +144,7 @@ Route::get(
 */
 
 Route::post(
-    '/checkout/shipping-rate',
-    [CheckoutController::class, 'shippingRate']
-)->name('checkout.shipping-rate');
+    '/checkout/shipping-rate', [CheckoutController::class, 'shippingRate'])->name('checkout.shipping-rate');
 
 /*
 |--------------------------------------------------------------------------
@@ -158,14 +153,10 @@ Route::post(
 */
 
 Route::post(
-    '/checkout/process',
-    [CheckoutController::class, 'process']
-)->name('checkout.process');
+    '/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
 
 Route::post(
-    '/checkout',
-    [CheckoutController::class, 'store']
-)->name('checkout.store');
+    '/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 
 /*
 |--------------------------------------------------------------------------
@@ -174,17 +165,14 @@ Route::post(
 */
 
 Route::get(
-    '/checkout/paystack/callback',
-    [CheckoutController::class, 'paystackCallback']
-)->name('checkout.paystack.callback');
+    '/checkout/paystack/callback', [CheckoutController::class, 'paystackCallback'])->name('checkout.paystack.callback');
 /*
 |--------------------------------------------------------------------------
 | Currency
 |--------------------------------------------------------------------------
 */
 
-Route::post('/currency/switch', [CurrencyController::class, 'switch'])
-    ->name('currency.switch');
+Route::post('/currency/switch', [CurrencyController::class, 'switch'])->name('currency.switch');
 
 /*
 |--------------------------------------------------------------------------
@@ -312,6 +300,32 @@ Route::prefix('admin')
 
         Route::delete('/shipping-rates/{shippingRate}', [ShippingRateController::class, 'destroy'])
             ->name('shipping-rates.destroy');
+
+        Route::prefix('inventory')
+            ->name('inventory.')
+            ->group(function () {
+
+                Route::get(
+                    '/',
+                    [InventoryController::class, 'index']
+                )->name('index');
+
+                Route::get(
+                    '/low-stock',
+                    [InventoryController::class, 'lowStock']
+                )->name('low-stock');
+
+                Route::get(
+                    '/movements',
+                    [InventoryController::class, 'movements']
+                )->name('movements');
+
+                Route::post(
+                    '/adjust',
+                    [InventoryController::class, 'adjust']
+                )->name('adjust');
+
+            });
     });
 
 /*

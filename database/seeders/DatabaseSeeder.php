@@ -41,6 +41,7 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             // Shipping Rate Seeder
             ShippingRateSeeder::class,
+            PickupLocationSeeder::class,
 
         ]);
     }

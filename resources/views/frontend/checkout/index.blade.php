@@ -2,8 +2,8 @@
 
 @section('meta_title', 'Checkout | Dela Moure Luxury Fragrances')
 
-@section('meta_description', 'Complete your Dela Moure order securely. Review your cart, enter your delivery details and
-    pay securely with Paystack.')
+@section('meta_description', 'Complete your Dela Moure order securely. Choose delivery or pickup and pay securely with
+    Paystack.')
 
 @section('PageContent')
 
@@ -14,20 +14,17 @@
 
     @php
         $currency = strtoupper(session('currency', 'NGN'));
-
         $currencySymbol = $currency === 'USD' ? '$' : '₦';
 
         $cart = \Darryldecode\Cart\Facades\CartFacade::getContent();
-
         $subtotal = (float) \Darryldecode\Cart\Facades\CartFacade::getSubTotal();
 
         $shipping = 0;
-
         $total = $subtotal;
 
         /*
         |--------------------------------------------------------------------------
-        | Previously Selected Values
+        | Existing Shipping Values
         |--------------------------------------------------------------------------
         */
 
@@ -39,6 +36,27 @@
         $selectedStateId = old('state_id', optional($defaultAddress)->state_id);
 
         $selectedShippingRateId = old('shipping_rate_id');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pickup
+        |--------------------------------------------------------------------------
+        */
+
+        $hasPickupLocations = isset($pickupLocations) && $pickupLocations->isNotEmpty();
+
+        $defaultPickupLocation = $hasPickupLocations
+            ? ($pickupLocations->firstWhere('is_default', true) ?:
+            $pickupLocations->first())
+            : null;
+
+        $selectedPickupLocationId = old('pickup_location_id', $defaultPickupLocation?->id);
+
+        $selectedDeliveryMethod = old('delivery_method', 'shipping');
+
+        if ($selectedDeliveryMethod === 'pickup' && !$hasPickupLocations) {
+            $selectedDeliveryMethod = 'shipping';
+        }
     @endphp
 
 
@@ -51,14 +69,14 @@
             </h2>
 
             <p class="text-body mb-0">
-                Complete your delivery information and proceed to secure payment.
+                Choose how you would like to receive your order and proceed to secure payment.
             </p>
 
         </div>
 
 
         {{-- ==========================================================
-        CUSTOMER / GUEST CHECKOUT STATUS
+            CUSTOMER STATUS
         ========================================================== --}}
 
         <div class="checkout-customer-status mb-9">
@@ -82,14 +100,11 @@
                             </div>
 
                             <p class="text-body mb-md-0 mb-4 fs-14px">
-
-                                No account is required to complete your purchase.
-                                Enter your delivery details below and proceed securely to payment.
-
+                                No account is required. Enter your details below
+                                and proceed securely to payment.
                             </p>
 
                         </div>
-
 
                         <div class="flex-shrink-0">
 
@@ -99,9 +114,7 @@
 
                             <a href="{{ route('login') }}"
                                 class="fw-semibold text-body-emphasis text-decoration-underline ms-1">
-
                                 Sign In
-
                             </a>
 
                         </div>
@@ -115,9 +128,7 @@
                     <div class="d-flex align-items-center">
 
                         <div class="me-4">
-
                             <i class="far fa-user-circle fs-2"></i>
-
                         </div>
 
                         <div>
@@ -127,10 +138,7 @@
                             </h5>
 
                             <p class="text-body fs-14px mb-0">
-
-                                You are checking out with your Dela Moure account.
                                 Your available customer details have been pre-filled below.
-
                             </p>
 
                         </div>
@@ -144,7 +152,10 @@
         </div>
 
 
-        {{-- VALIDATION ERRORS --}}
+        {{-- ==========================================================
+            ERRORS
+        ========================================================== --}}
+
         @if ($errors->any())
 
             <div class="alert alert-danger mb-8">
@@ -152,9 +163,7 @@
                 <ul class="mb-0">
 
                     @foreach ($errors->all() as $error)
-                        <li>
-                            {{ $error }}
-                        </li>
+                        <li>{{ $error }}</li>
                     @endforeach
 
                 </ul>
@@ -164,52 +173,37 @@
         @endif
 
 
-        {{-- SESSION ERROR --}}
         @if (session('error'))
             <div class="alert alert-danger mb-8">
-
                 {{ session('error') }}
-
             </div>
         @endif
 
 
-        {{-- SESSION SUCCESS --}}
         @if (session('success'))
             <div class="alert alert-success mb-8">
-
                 {{ session('success') }}
-
             </div>
         @endif
-
 
 
         <form action="{{ route('checkout.process') }}" method="POST" id="checkoutForm">
 
             @csrf
 
-
-            {{-- PAYSTACK ONLY --}}
             <input type="hidden" name="payment_method" value="paystack">
-
-
-            {{-- STANDARD DELIVERY --}}
-            <input type="hidden" name="delivery_method" value="standard">
-
 
 
             <div class="row">
 
 
                 {{-- ==========================================================
-                ORDER SUMMARY
+                    ORDER SUMMARY
                 ========================================================== --}}
 
                 <div class="col-lg-4 pb-lg-0 pb-14 order-lg-last">
 
                     <div class="card border-0 rounded-0 shadow">
-
 
                         <div class="card-header px-0 mx-8 bg-transparent py-8">
 
@@ -253,9 +247,7 @@
 
                                             @if ($item->attributes->get('variant_name'))
                                                 <p class="fs-14px text-body mb-0">
-
                                                     {{ $item->attributes->get('variant_name') }}
-
                                                 </p>
                                             @endif
 
@@ -276,7 +268,6 @@
 
                                 </div>
 
-
                             @empty
 
                                 <p class="text-body">
@@ -287,11 +278,9 @@
                         </div>
 
 
-
                         <div class="card-body px-8 py-7">
 
-
-                            {{-- SUBTOTAL --}}
+                            {{-- Subtotal --}}
                             <div class="d-flex align-items-center mb-3">
 
                                 <span>
@@ -307,10 +296,10 @@
                             </div>
 
 
-                            {{-- SHIPPING --}}
+                            {{-- Delivery / Pickup --}}
                             <div class="d-flex align-items-center">
 
-                                <span>
+                                <span id="checkoutShippingLabel">
                                     Shipping:
                                 </span>
 
@@ -323,12 +312,10 @@
                             </div>
 
 
-                            {{-- SHIPPING MESSAGE --}}
                             <div id="shippingMessage" class="small mt-3 d-none">
                             </div>
 
                         </div>
-
 
 
                         <div class="card-footer bg-transparent py-6 px-0 mx-8">
@@ -354,9 +341,8 @@
                 </div>
 
 
-
                 {{-- ==========================================================
-                SHIPPING INFORMATION
+                    DELIVERY
                 ========================================================== --}}
 
                 <div class="col-lg-8 order-lg-first pe-xl-20 pe-lg-6">
@@ -364,24 +350,118 @@
                     <div class="checkout">
 
                         <h4 class="fs-4 mb-2">
-                            Shipping Information
+                            Delivery Information
                         </h4>
 
-                        <p class="text-body fs-14px mb-8">
-
-                            Please provide the details required to deliver your order.
-
+                        <p class="text-body fs-14px mb-7">
+                            Choose delivery to your address or collect your order
+                            from a Dela Moure pickup location.
                         </p>
 
 
+                        {{-- ==================================================
+                            SHIP / PICKUP SELECTOR
+                        ================================================== --}}
 
-                        {{-- NAME --}}
+                        <div class="mb-8">
+
+                            <label class="mb-4 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+                                How would you like to receive your order?
+                            </label>
+
+
+                            <div class="row g-3">
+
+                                {{-- Ship --}}
+                                <div class="col-md-6">
+
+                                    <input type="radio" class="btn-check delivery-method-input" name="delivery_method"
+                                        id="deliveryShipping" value="shipping" autocomplete="off"
+                                        {{ $selectedDeliveryMethod === 'shipping' ? 'checked' : '' }}>
+
+                                    <label for="deliveryShipping" class="delivery-method-card border w-100 p-5">
+
+                                        <div class="d-flex align-items-center">
+
+                                            <div class="delivery-method-icon me-4">
+
+                                                <i class="fa-solid fa-truck-fast"></i>
+
+                                            </div>
+
+                                            <div>
+
+                                                <strong class="d-block fs-5">
+                                                    Ship
+                                                </strong>
+
+                                                <span class="text-body fs-14px">
+                                                    Deliver to your address
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+                                    </label>
+
+                                </div>
+
+
+                                {{-- Pickup --}}
+                                <div class="col-md-6">
+
+                                    <input type="radio" class="btn-check delivery-method-input" name="delivery_method"
+                                        id="deliveryPickup" value="pickup" autocomplete="off"
+                                        {{ $selectedDeliveryMethod === 'pickup' ? 'checked' : '' }}
+                                        {{ !$hasPickupLocations ? 'disabled' : '' }}>
+
+                                    <label for="deliveryPickup"
+                                        class="delivery-method-card border w-100 p-5
+                                        {{ !$hasPickupLocations ? 'opacity-50' : '' }}">
+
+                                        <div class="d-flex align-items-center">
+
+                                            <div class="delivery-method-icon me-4">
+
+                                                <i class="fa-solid fa-location-dot"></i>
+
+                                            </div>
+
+                                            <div>
+
+                                                <strong class="d-block fs-5">
+                                                    Pickup
+                                                </strong>
+
+                                                <span class="text-body fs-14px">
+
+                                                    {{ $hasPickupLocations ? 'Collect from Dela Moure' : 'Currently unavailable' }}
+
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+                                    </label>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        {{-- ==================================================
+                            CUSTOMER DETAILS
+                        ================================================== --}}
+
                         <div class="mb-7">
 
                             <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
                                 Name
-
                                 <span class="text-danger">*</span>
 
                             </label>
@@ -411,14 +491,12 @@
                         </div>
 
 
-
-                        {{-- CONTACT --}}
+                        {{-- Contact --}}
                         <div class="mb-7">
 
                             <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
                                 Contact Information
-
                                 <span class="text-danger">*</span>
 
                             </label>
@@ -431,16 +509,6 @@
                                     <input type="email" class="form-control" name="email"
                                         value="{{ old('email', optional($defaultAddress)->email ?? optional(auth()->user())->email) }}"
                                         placeholder="Email Address" autocomplete="email" required>
-
-                                    @guest
-
-                                        <small class="text-muted d-block mt-2">
-
-                                            Your order confirmation will be associated with this email address.
-
-                                        </small>
-
-                                    @endguest
 
                                 </div>
 
@@ -458,163 +526,278 @@
                         </div>
 
 
+                        {{-- ==================================================
+                            SHIPPING FIELDS
+                        ================================================== --}}
 
-                        {{-- STREET ADDRESS --}}
-                        <div class="mb-7">
+                        <div id="shippingFields">
 
-                            <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+                            {{-- Street --}}
+                            <div class="mb-7">
 
-                                Street Address
+                                <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
-                                <span class="text-danger">*</span>
+                                    Street Address
+                                    <span class="text-danger">*</span>
 
-                            </label>
-
-
-                            <input type="text" class="form-control" name="street_address"
-                                value="{{ old('street_address', optional($defaultAddress)->street_address) }}"
-                                placeholder="House number and street name" autocomplete="street-address" required>
-
-                        </div>
+                                </label>
 
 
+                                <input type="text" class="form-control shipping-required" name="street_address"
+                                    id="checkoutStreetAddress"
+                                    value="{{ old('street_address', optional($defaultAddress)->street_address) }}"
+                                    placeholder="House number and street name" autocomplete="street-address">
 
-                        <div class="row">
-
-                            <div class="col-md-6">
-
-                                {{-- COUNTRY --}}
-                                <div class="mb-7">
-
-                                    <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
-
-                                        Country
-
-                                        <span class="text-danger">*</span>
-
-                                    </label>
+                            </div>
 
 
-                                    <select name="country_id" id="checkoutCountry" class="form-select"
-                                        autocomplete="country" required>
+                            <div class="row">
 
-                                        <option value="">
-                                            Select Country
-                                        </option>
+                                {{-- Country --}}
+                                <div class="col-md-6">
+
+                                    <div class="mb-7">
+
+                                        <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+
+                                            Country
+                                            <span class="text-danger">*</span>
+
+                                        </label>
 
 
-                                        @foreach ($countries as $country)
-                                            <option value="{{ $country->id }}"
-                                                {{ (string) $selectedCountryId === (string) $country->id ? 'selected' : '' }}>
+                                        <select name="country_id" id="checkoutCountry"
+                                            class="form-select shipping-required" autocomplete="country">
 
-                                                {{ $country->name }}
-
+                                            <option value="">
+                                                Select Country
                                             </option>
-                                        @endforeach
 
-                                    </select>
+                                            @foreach ($countries as $country)
+                                                <option value="{{ $country->id }}"
+                                                    {{ (string) $selectedCountryId === (string) $country->id ? 'selected' : '' }}>
+
+                                                    {{ $country->name }}
+
+                                                </option>
+                                            @endforeach
+
+                                        </select>
+
+                                    </div>
+
+                                </div>
+
+
+                                {{-- State --}}
+                                <div class="col-md-6">
+
+                                    <div class="mb-7">
+
+                                        <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+
+                                            State
+                                            <span class="text-danger">*</span>
+
+                                        </label>
+
+
+                                        <select name="state_id" id="checkoutState" class="form-select shipping-required"
+                                            data-selected="{{ $selectedStateId }}" autocomplete="address-level1">
+
+                                            <option value="">
+                                                Select State
+                                            </option>
+
+                                        </select>
+
+                                    </div>
 
                                 </div>
 
                             </div>
 
 
-                            <div class="col-md-6">
+                            {{-- Delivery Zone --}}
+                            <div class="mb-7">
 
-                                {{-- STATE --}}
-                                <div class="mb-7">
+                                <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
-                                    <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+                                    Delivery Zone
+                                    <span class="text-danger">*</span>
 
-                                        State
-
-                                        <span class="text-danger">*</span>
-
-                                    </label>
+                                </label>
 
 
-                                    <select name="state_id" id="checkoutState" class="form-select"
-                                        data-selected="{{ $selectedStateId }}" autocomplete="address-level1" required>
+                                <select name="shipping_rate_id" id="checkoutShippingZone"
+                                    class="form-select shipping-required" data-selected="{{ $selectedShippingRateId }}"
+                                    disabled>
 
-                                        <option value="">
-                                            Select State
-                                        </option>
+                                    <option value="">
+                                        Select delivery zone
+                                    </option>
 
-                                    </select>
+                                </select>
+
+
+                                <small id="zoneHelpText" class="text-muted d-block mt-2">
+
+                                    Select your state first to see available delivery zones.
+
+                                </small>
+
+
+                                {{-- Covered Areas --}}
+                                <div id="zoneCoverageBox" class="border bg-light p-4 mt-4 d-none">
+
+                                    <div class="mb-2">
+
+                                        <strong id="zoneCoverageTitle">
+                                            Delivery Zone
+                                        </strong>
+
+                                    </div>
+
+                                    <div class="text-body fs-14px mb-3">
+                                        This delivery zone covers:
+                                    </div>
+
+                                    <div id="zoneCoverageAreas" class="d-flex flex-wrap gap-2">
+                                    </div>
 
                                 </div>
 
                             </div>
 
                         </div>
-
 
 
                         {{-- ==================================================
-                        DELIVERY ZONE
+                            PICKUP
                         ================================================== --}}
 
-                        <div class="mb-7">
+                        <div id="pickupFields" class="d-none mb-8">
 
                             <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
-                                Delivery Zone
-
+                                Pickup Location
                                 <span class="text-danger">*</span>
 
                             </label>
 
 
-                            <select name="shipping_rate_id" id="checkoutShippingZone" class="form-select"
-                                data-selected="{{ $selectedShippingRateId }}" disabled required>
+                            @forelse ($pickupLocations as $pickupLocation)
+                                <div class="mb-3">
 
-                                <option value="">
-                                    Select delivery zone
-                                </option>
-
-                            </select>
-
-
-                            <small id="zoneHelpText" class="text-muted d-block mt-2">
-
-                                Select your state first to see available delivery zones.
-
-                            </small>
+                                    <input type="radio" class="btn-check pickup-location-input"
+                                        name="pickup_location_id" id="pickupLocation{{ $pickupLocation->id }}"
+                                        value="{{ $pickupLocation->id }}" autocomplete="off"
+                                        {{ (string) $selectedPickupLocationId === (string) $pickupLocation->id ? 'checked' : '' }}>
 
 
+                                    <label for="pickupLocation{{ $pickupLocation->id }}"
+                                        class="pickup-location-card border w-100 p-5">
 
-                            {{-- COVERED AREAS --}}
-                            <div id="zoneCoverageBox" class="border bg-light p-4 mt-4 d-none">
+                                        <div class="d-flex justify-content-between gap-4">
 
-                                <div class="mb-2">
+                                            <div>
 
-                                    <strong id="zoneCoverageTitle">
-                                        Delivery Zone
-                                    </strong>
+                                                <div class="d-flex align-items-center mb-2">
+
+                                                    <i class="fa-solid fa-location-dot me-3"></i>
+
+                                                    <strong class="fs-5">
+                                                        {{ $pickupLocation->name }}
+                                                    </strong>
+
+                                                </div>
+
+
+                                                <div class="text-body fs-14px mb-2">
+
+                                                    {{ $pickupLocation->address }}
+
+                                                    @if ($pickupLocation->state?->name)
+                                                        <br>
+                                                        {{ $pickupLocation->state->name }}
+                                                    @endif
+
+                                                </div>
+
+
+                                                @if ($pickupLocation->opening_hours)
+                                                    <div class="small text-muted mb-1">
+
+                                                        <i class="far fa-clock me-1"></i>
+
+                                                        {{ $pickupLocation->opening_hours }}
+
+                                                    </div>
+                                                @endif
+
+
+                                                @if ($pickupLocation->pickup_time)
+                                                    <div class="small text-muted">
+
+                                                        <i class="far fa-circle-check me-1"></i>
+
+                                                        {{ $pickupLocation->pickup_time }}
+
+                                                    </div>
+                                                @endif
+
+                                            </div>
+
+
+                                            <div class="text-end">
+
+                                                <span class="badge bg-success">
+                                                    FREE
+                                                </span>
+
+                                                @if ($pickupLocation->is_default)
+                                                    <div class="small text-muted mt-2">
+                                                        Main Pickup
+                                                    </div>
+                                                @endif
+
+                                            </div>
+
+                                        </div>
+
+                                    </label>
 
                                 </div>
 
+                            @empty
 
-                                <div class="text-body fs-14px mb-3">
-
-                                    This delivery zone covers:
-
+                                <div class="alert alert-light border mb-0">
+                                    Pickup is currently unavailable.
                                 </div>
+                            @endforelse
 
 
-                                <div id="zoneCoverageAreas" class="d-flex flex-wrap gap-2">
-                                </div>
+                            <div class="alert alert-light border mt-4 mb-0 fs-14px">
+
+                                <i class="fa-solid fa-circle-info me-2"></i>
+
+                                You will be notified when your order is ready for collection.
+                                Please do not visit the pickup location until your order
+                                has been confirmed ready.
 
                             </div>
 
                         </div>
 
 
+                        {{-- ==================================================
+                            NOTE
+                        ================================================== --}}
 
-                        {{-- DELIVERY NOTE --}}
                         <div class="mb-10">
 
-                            <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+                            <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase"
+                                id="deliveryNoteLabel">
 
                                 Delivery Notes
 
@@ -625,14 +808,14 @@
                             </label>
 
 
-                            <textarea name="delivery_note" class="form-control" rows="4" placeholder="Special delivery instructions...">{{ old('delivery_note', optional($defaultAddress)->delivery_note) }}</textarea>
+                            <textarea name="delivery_note" class="form-control" rows="4" id="deliveryNote"
+                                placeholder="Special delivery instructions...">{{ old('delivery_note', optional($defaultAddress)->delivery_note) }}</textarea>
 
                         </div>
 
 
-
                         {{-- ==================================================
-                        PAYMENT
+                            PAYMENT
                         ================================================== --}}
 
                         <div class="checkout">
@@ -641,13 +824,9 @@
                                 Payment
                             </h4>
 
-
                             <p class="text-body mb-7">
-
                                 Complete your order securely with Paystack.
-
                             </p>
-
 
 
                             <div class="payment-method-card border p-6 mb-7">
@@ -665,13 +844,12 @@
 
                                 <p class="text-body fs-14px mb-0">
 
-                                    You will be redirected to Paystack's secure payment page
-                                    after your order has been created.
+                                    You will be redirected to Paystack's secure
+                                    payment page after your order has been created.
 
                                 </p>
 
                             </div>
-
 
 
                             @guest
@@ -690,9 +868,9 @@
 
                                             <span class="text-body fs-14px">
 
-                                                You can complete this order as a guest.
-                                                You will also be able to create an account later
-                                                using the same email address.
+                                                You can complete this order as a guest
+                                                and create an account later using the
+                                                same email address.
 
                                             </span>
 
@@ -705,12 +883,11 @@
                             @endguest
 
 
-
-                            {{-- TERMS --}}
+                            {{-- Terms --}}
                             <div class="form-check mb-7">
 
                                 <input class="form-check-input" type="checkbox" name="terms" value="1"
-                                    id="checkoutTerms" required>
+                                    id="checkoutTerms" {{ old('terms') ? 'checked' : '' }} required>
 
 
                                 <label class="form-check-label" for="checkoutTerms">
@@ -722,8 +899,7 @@
                             </div>
 
 
-
-                            {{-- SUBMIT --}}
+                            {{-- Submit --}}
                             <button type="submit" id="placeOrderBtn"
                                 class="btn btn-dark btn-hover-bg-primary btn-hover-border-primary px-11 py-5" disabled>
 
@@ -753,35 +929,16 @@
     </section>
 
 
-
     <style>
-        /*
-            |--------------------------------------------------------------------------
-            | Checkout Customer / Guest Status
-            |--------------------------------------------------------------------------
-            */
-
         .checkout-customer-status>div {
             border-color: rgba(0, 0, 0, .1) !important;
         }
 
 
-        /*
-            |--------------------------------------------------------------------------
-            | Payment Method
-            |--------------------------------------------------------------------------
-            */
-
         .payment-method-card {
             transition: all .2s ease;
         }
 
-
-        /*
-            |--------------------------------------------------------------------------
-            | Guest Checkout Note
-            |--------------------------------------------------------------------------
-            */
 
         .guest-checkout-note {
             background: #faf9f7;
@@ -791,13 +948,54 @@
 
         /*
             |--------------------------------------------------------------------------
-            | Shipping Zone Areas
+            | Ship / Pickup
+            |--------------------------------------------------------------------------
+            */
+
+        .delivery-method-card,
+        .pickup-location-card {
+            display: block;
+            cursor: pointer;
+            transition: all .2s ease;
+            background: #fff;
+        }
+
+
+        .delivery-method-card:hover,
+        .pickup-location-card:hover {
+            border-color: #4A2C20 !important;
+        }
+
+
+        .delivery-method-input:checked+.delivery-method-card,
+        .pickup-location-input:checked+.pickup-location-card {
+            border: 2px solid #4A2C20 !important;
+            background: #faf7f3;
+        }
+
+
+        .delivery-method-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #F8F4EC;
+            color: #4A2C20;
+            flex-shrink: 0;
+        }
+
+
+        /*
+            |--------------------------------------------------------------------------
+            | Shipping Areas
             |--------------------------------------------------------------------------
             */
 
         #zoneCoverageAreas .zone-area-badge {
             display: inline-block;
-            padding: 0.35rem 0.65rem;
+            padding: .35rem .65rem;
             border: 1px solid var(--bs-border-color);
             background: #fff;
             font-size: 13px;
@@ -817,6 +1015,24 @@
             |--------------------------------------------------------------------------
             */
 
+            const checkoutForm =
+                document.getElementById('checkoutForm');
+
+            const shippingRadio =
+                document.getElementById('deliveryShipping');
+
+            const pickupRadio =
+                document.getElementById('deliveryPickup');
+
+            const shippingFields =
+                document.getElementById('shippingFields');
+
+            const pickupFields =
+                document.getElementById('pickupFields');
+
+            const pickupRadios =
+                document.querySelectorAll('.pickup-location-input');
+
             const countrySelect =
                 document.getElementById('checkoutCountry');
 
@@ -826,6 +1042,8 @@
             const zoneSelect =
                 document.getElementById('checkoutShippingZone');
 
+            const streetAddress =
+                document.getElementById('checkoutStreetAddress');
 
             const zoneHelpText =
                 document.getElementById('zoneHelpText');
@@ -839,6 +1057,8 @@
             const zoneCoverageAreas =
                 document.getElementById('zoneCoverageAreas');
 
+            const shippingLabel =
+                document.getElementById('checkoutShippingLabel');
 
             const shippingDisplay =
                 document.getElementById('checkoutShipping');
@@ -855,8 +1075,11 @@
             const locationNotice =
                 document.getElementById('checkoutLocationNotice');
 
-            const checkoutForm =
-                document.getElementById('checkoutForm');
+            const deliveryNoteLabel =
+                document.getElementById('deliveryNoteLabel');
+
+            const deliveryNote =
+                document.getElementById('deliveryNote');
 
 
             const csrfToken =
@@ -878,14 +1101,12 @@
                 @json($currencySymbol);
 
             const subtotal =
-                Number(
-                    @json((float) $subtotal)
-                );
+                Number(@json((float) $subtotal));
 
 
             /*
             |--------------------------------------------------------------------------
-            | Previously Selected Values
+            | Existing Selection
             |--------------------------------------------------------------------------
             */
 
@@ -898,7 +1119,7 @@
 
             /*
             |--------------------------------------------------------------------------
-            | Runtime Data
+            | Runtime
             |--------------------------------------------------------------------------
             */
 
@@ -911,7 +1132,7 @@
 
             /*
             |--------------------------------------------------------------------------
-            | URLs
+            | Routes
             |--------------------------------------------------------------------------
             */
 
@@ -920,12 +1141,10 @@
                         'country' => '__COUNTRY__',
                     ]));
 
-
             const shippingZonesUrl =
                 @json(route('checkout.shipping-zones', [
                         'stateId' => '__STATE__',
                     ]));
-
 
             const shippingRateUrl =
                 @json(route('checkout.shipping-rate'));
@@ -933,7 +1152,22 @@
 
             /*
             |--------------------------------------------------------------------------
-            | Currency Formatter
+            | Current Delivery Method
+            |--------------------------------------------------------------------------
+            */
+
+            function deliveryMethod() {
+
+                return document.querySelector(
+                    'input[name="delivery_method"]:checked'
+                )?.value || 'shipping';
+
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Currency
             |--------------------------------------------------------------------------
             */
 
@@ -954,15 +1188,13 @@
 
             /*
             |--------------------------------------------------------------------------
-            | Reset Coverage
+            | Coverage
             |--------------------------------------------------------------------------
             */
 
             function resetCoverage() {
 
-                zoneCoverageBox.classList.add(
-                    'd-none'
-                );
+                zoneCoverageBox.classList.add('d-none');
 
                 zoneCoverageTitle.textContent =
                     'Delivery Zone';
@@ -975,7 +1207,26 @@
 
             /*
             |--------------------------------------------------------------------------
-            | Reset Shipping
+            | Messages
+            |--------------------------------------------------------------------------
+            */
+
+            function clearShippingMessage() {
+
+                shippingMessage.classList.add('d-none');
+
+                shippingMessage.classList.remove(
+                    'text-danger'
+                );
+
+                shippingMessage.textContent = '';
+
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Shipping Reset
             |--------------------------------------------------------------------------
             */
 
@@ -983,70 +1234,230 @@
                 message = 'Select delivery zone'
             ) {
 
+                if (deliveryMethod() !== 'shipping') {
+                    return;
+                }
+
                 shippingAmount = 0;
 
                 shippingReady = false;
 
+                shippingLabel.textContent =
+                    'Shipping:';
 
                 shippingDisplay.textContent =
                     message;
 
-
                 totalDisplay.textContent =
-                    formatMoney(
-                        subtotal
-                    );
-
+                    formatMoney(subtotal);
 
                 placeOrderBtn.disabled =
                     true;
 
-
                 locationNotice.textContent =
                     'Select your delivery state and zone to calculate shipping.';
 
+                clearShippingMessage();
 
-                shippingMessage.classList.add(
-                    'd-none'
-                );
+            }
 
-                shippingMessage.classList.remove(
-                    'text-danger'
-                );
 
-                shippingMessage.textContent =
-                    '';
+            function resetZones() {
+
+                shippingZones = [];
+
+                zoneSelect.innerHTML =
+                    '<option value="">Select delivery zone</option>';
+
+                zoneSelect.disabled =
+                    true;
+
+                zoneHelpText.textContent =
+                    'Select your state first to see available delivery zones.';
+
+                resetCoverage();
+
+                resetShipping();
 
             }
 
 
             /*
             |--------------------------------------------------------------------------
-            | Reset Shipping Zones
+            | Pickup State
             |--------------------------------------------------------------------------
             */
 
-            function resetZones() {
+            function setPickupSummary() {
 
-                shippingZones = [];
+                shippingAmount = 0;
+
+                shippingReady = true;
+
+                shippingLabel.textContent =
+                    'Pickup:';
+
+                shippingDisplay.innerHTML =
+                    '<span class="text-success">FREE</span>';
+
+                totalDisplay.textContent =
+                    formatMoney(subtotal);
+
+                clearShippingMessage();
+
+                const selectedPickup =
+                    document.querySelector(
+                        '.pickup-location-input:checked'
+                    );
+
+                placeOrderBtn.disabled = !selectedPickup;
+
+                locationNotice.textContent =
+                    selectedPickup ?
+                    'Free pickup selected. You will be notified when your order is ready.' :
+                    'Please select a pickup location.';
+
+            }
 
 
-                zoneSelect.innerHTML =
-                    '<option value="">Select delivery zone</option>';
+            /*
+            |--------------------------------------------------------------------------
+            | Delivery Method UI
+            |--------------------------------------------------------------------------
+            */
+
+            function applyDeliveryMethod() {
+
+                const method =
+                    deliveryMethod();
 
 
-                zoneSelect.disabled =
-                    true;
+                /*
+                |--------------------------------------------------------------------------
+                | Pickup
+                |--------------------------------------------------------------------------
+                */
+
+                if (method === 'pickup') {
+
+                    shippingFields.classList.add(
+                        'd-none'
+                    );
+
+                    pickupFields.classList.remove(
+                        'd-none'
+                    );
 
 
-                zoneHelpText.textContent =
-                    'Select your state first to see available delivery zones.';
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Disable Shipping Inputs
+                    |--------------------------------------------------------------------------
+                    */
+
+                    streetAddress.required = false;
+                    streetAddress.disabled = true;
+
+                    countrySelect.required = false;
+                    countrySelect.disabled = true;
+
+                    stateSelect.required = false;
+                    stateSelect.disabled = true;
+
+                    zoneSelect.required = false;
+                    zoneSelect.disabled = true;
 
 
-                resetCoverage();
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Enable Pickup
+                    |--------------------------------------------------------------------------
+                    */
 
-                resetShipping();
+                    pickupRadios.forEach(function(input) {
+                        input.disabled = false;
+                    });
 
+
+                    deliveryNoteLabel.innerHTML =
+                        'Pickup Notes <span class="text-body fw-normal">(Optional)</span>';
+
+                    deliveryNote.placeholder =
+                        'Special pickup instructions...';
+
+
+                    resetCoverage();
+
+                    setPickupSummary();
+
+                    return;
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Shipping
+                |--------------------------------------------------------------------------
+                */
+
+                shippingFields.classList.remove(
+                    'd-none'
+                );
+
+                pickupFields.classList.add(
+                    'd-none'
+                );
+
+
+                pickupRadios.forEach(function(input) {
+                    input.disabled = true;
+                });
+
+
+                streetAddress.disabled = false;
+                streetAddress.required = true;
+
+                countrySelect.disabled = false;
+                countrySelect.required = true;
+
+                stateSelect.disabled = false;
+                stateSelect.required = true;
+
+                zoneSelect.required = true;
+
+
+                deliveryNoteLabel.innerHTML =
+                    'Delivery Notes <span class="text-body fw-normal">(Optional)</span>';
+
+                deliveryNote.placeholder =
+                    'Special delivery instructions...';
+
+
+                shippingLabel.textContent =
+                    'Shipping:';
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Restore Shipping State
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    countrySelect.value &&
+                    stateSelect.value &&
+                    zoneSelect.value
+                ) {
+
+                    loadShippingRate(
+                        zoneSelect.value
+                    );
+
+                } else {
+
+                    resetShipping();
+
+                }
             }
 
 
@@ -1061,13 +1472,15 @@
                 selectedStateId = null
             ) {
 
-                stateSelect.disabled =
-                    true;
+                if (deliveryMethod() !== 'shipping') {
+                    return;
+                }
 
+
+                stateSelect.disabled = true;
 
                 stateSelect.innerHTML =
                     '<option value="">Loading states...</option>';
-
 
                 resetZones();
 
@@ -1077,10 +1490,8 @@
                     stateSelect.innerHTML =
                         '<option value="">Select State</option>';
 
-
                     stateSelect.disabled =
                         false;
-
 
                     return;
                 }
@@ -1114,52 +1525,47 @@
                         '<option value="">Select State</option>';
 
 
-                    states.forEach(
-                        state => {
+                    states.forEach(function(state) {
 
-                            const option =
-                                document.createElement(
-                                    'option'
-                                );
-
-
-                            option.value =
-                                state.id;
-
-
-                            option.textContent =
-                                state.name;
-
-
-                            if (
-                                selectedStateId &&
-                                String(selectedStateId) ===
-                                String(state.id)
-                            ) {
-
-                                option.selected =
-                                    true;
-
-                            }
-
-
-                            stateSelect.appendChild(
-                                option
+                        const option =
+                            document.createElement(
+                                'option'
                             );
 
+                        option.value =
+                            state.id;
+
+                        option.textContent =
+                            state.name;
+
+
+                        if (
+                            selectedStateId &&
+                            String(selectedStateId) ===
+                            String(state.id)
+                        ) {
+
+                            option.selected =
+                                true;
+
                         }
-                    );
+
+
+                        stateSelect.appendChild(
+                            option
+                        );
+
+                    });
+
+
+                    if (deliveryMethod() !== 'shipping') {
+                        return;
+                    }
 
 
                     stateSelect.disabled =
                         false;
 
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Restore Existing State
-                    |--------------------------------------------------------------------------
-                    */
 
                     if (
                         selectedStateId &&
@@ -1177,19 +1583,15 @@
 
                     console.error(error);
 
-
                     stateSelect.innerHTML =
                         '<option value="">Unable to load states</option>';
 
-
                     stateSelect.disabled =
-                        false;
-
+                        deliveryMethod() !== 'shipping';
 
                     resetZones();
 
                 }
-
             }
 
 
@@ -1204,19 +1606,21 @@
                 selectedRateId = null
             ) {
 
+                if (deliveryMethod() !== 'shipping') {
+                    return;
+                }
+
+
                 resetZones();
 
 
                 if (!stateId) {
-
                     return;
-
                 }
 
 
                 zoneSelect.innerHTML =
                     '<option value="">Loading delivery zones...</option>';
-
 
                 zoneHelpText.textContent =
                     'Loading available delivery zones...';
@@ -1250,100 +1654,74 @@
                         '<option value="">Select delivery zone</option>';
 
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | No Delivery Zones
-                    |--------------------------------------------------------------------------
-                    */
-
                     if (
-                        !Array.isArray(
-                            shippingZones
-                        ) ||
+                        !Array.isArray(shippingZones) ||
                         shippingZones.length === 0
                     ) {
 
                         zoneSelect.innerHTML =
                             '<option value="">No delivery zones available</option>';
 
-
                         zoneSelect.disabled =
                             true;
-
 
                         zoneHelpText.textContent =
                             'Delivery is not currently configured for this state.';
 
-
                         shippingDisplay.innerHTML =
                             '<span class="text-danger">Unavailable</span>';
-
 
                         locationNotice.textContent =
                             'Delivery is not currently available for this state.';
 
-
                         return;
-
                     }
 
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Populate Delivery Zones
-                    |--------------------------------------------------------------------------
-                    */
+                    shippingZones.forEach(function(zone) {
 
-                    shippingZones.forEach(
-                        zone => {
-
-                            const option =
-                                document.createElement(
-                                    'option'
-                                );
-
-
-                            option.value =
-                                zone.id;
-
-
-                            option.textContent =
-                                zone.zone_name;
-
-
-                            if (
-                                selectedRateId &&
-                                String(selectedRateId) ===
-                                String(zone.id)
-                            ) {
-
-                                option.selected =
-                                    true;
-
-                            }
-
-
-                            zoneSelect.appendChild(
-                                option
+                        const option =
+                            document.createElement(
+                                'option'
                             );
 
+                        option.value =
+                            zone.id;
+
+                        option.textContent =
+                            zone.zone_name;
+
+
+                        if (
+                            selectedRateId &&
+                            String(selectedRateId) ===
+                            String(zone.id)
+                        ) {
+
+                            option.selected =
+                                true;
+
                         }
-                    );
+
+
+                        zoneSelect.appendChild(
+                            option
+                        );
+
+                    });
+
+
+                    if (deliveryMethod() !== 'shipping') {
+                        return;
+                    }
 
 
                     zoneSelect.disabled =
                         false;
 
-
                     zoneHelpText.textContent =
                         'Choose the zone that covers your delivery location.';
 
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Restore Zone After Validation Error
-                    |--------------------------------------------------------------------------
-                    */
 
                     if (
                         selectedRateId &&
@@ -1353,7 +1731,6 @@
                         displayZoneCoverage(
                             selectedRateId
                         );
-
 
                         await loadShippingRate(
                             selectedRateId
@@ -1365,34 +1742,28 @@
 
                     console.error(error);
 
-
                     zoneSelect.innerHTML =
                         '<option value="">Unable to load delivery zones</option>';
-
 
                     zoneSelect.disabled =
                         true;
 
-
                     zoneHelpText.textContent =
                         'Unable to load delivery zones.';
 
-
                     shippingDisplay.innerHTML =
                         '<span class="text-danger">Unavailable</span>';
-
 
                     locationNotice.textContent =
                         'Unable to retrieve delivery zones at this time.';
 
                 }
-
             }
 
 
             /*
             |--------------------------------------------------------------------------
-            | Display Zone Coverage
+            | Coverage
             |--------------------------------------------------------------------------
             */
 
@@ -1412,9 +1783,7 @@
 
 
                 if (!zone) {
-
                     return;
-
                 }
 
 
@@ -1435,49 +1804,47 @@
 
                 } else {
 
-                    areas.forEach(
-                        area => {
+                    areas.forEach(function(area) {
 
-                            const badge =
-                                document.createElement(
-                                    'span'
-                                );
-
-
-                            badge.className =
-                                'zone-area-badge';
-
-
-                            badge.textContent =
-                                area;
-
-
-                            zoneCoverageAreas.appendChild(
-                                badge
+                        const badge =
+                            document.createElement(
+                                'span'
                             );
 
-                        }
-                    );
+                        badge.className =
+                            'zone-area-badge';
 
+                        badge.textContent =
+                            area;
+
+                        zoneCoverageAreas.appendChild(
+                            badge
+                        );
+
+                    });
                 }
 
 
                 zoneCoverageBox.classList.remove(
                     'd-none'
                 );
-
             }
 
 
             /*
             |--------------------------------------------------------------------------
-            | Load Selected Shipping Rate
+            | Shipping Rate
             |--------------------------------------------------------------------------
             */
 
             async function loadShippingRate(
                 shippingRateId
             ) {
+
+                if (deliveryMethod() !== 'shipping') {
+                    return;
+                }
+
 
                 const countryId =
                     countrySelect.value;
@@ -1489,18 +1856,13 @@
                 shippingReady =
                     false;
 
-
                 placeOrderBtn.disabled =
                     true;
-
 
                 shippingDisplay.textContent =
                     'Calculating...';
 
-
-                shippingMessage.classList.add(
-                    'd-none'
-                );
+                clearShippingMessage();
 
 
                 if (
@@ -1512,7 +1874,6 @@
                     resetShipping();
 
                     return;
-
                 }
 
 
@@ -1524,23 +1885,15 @@
                                 method: 'POST',
 
                                 headers: {
-
                                     'Content-Type': 'application/json',
-
                                     'Accept': 'application/json',
-
                                     'X-CSRF-TOKEN': csrfToken
-
                                 },
 
                                 body: JSON.stringify({
-
                                     country_id: countryId,
-
                                     state_id: stateId,
-
                                     shipping_rate_id: shippingRateId
-
                                 })
                             }
                         );
@@ -1560,15 +1913,18 @@
                     }
 
 
+                    if (deliveryMethod() !== 'shipping') {
+                        return;
+                    }
+
+
                     /*
                     |--------------------------------------------------------------------------
-                    | Refresh Coverage
+                    | Coverage
                     |--------------------------------------------------------------------------
                     */
 
-                    if (
-                        data.zone_name
-                    ) {
+                    if (data.zone_name) {
 
                         zoneCoverageTitle.textContent =
                             data.zone_name;
@@ -1576,74 +1932,52 @@
                     }
 
 
-                    if (
-                        Array.isArray(
-                            data.areas
-                        )
-                    ) {
+                    if (Array.isArray(data.areas)) {
 
                         zoneCoverageAreas.innerHTML =
                             '';
 
 
-                        data.areas.forEach(
-                            area => {
+                        data.areas.forEach(function(area) {
 
-                                const badge =
-                                    document.createElement(
-                                        'span'
-                                    );
-
-
-                                badge.className =
-                                    'zone-area-badge';
-
-
-                                badge.textContent =
-                                    area;
-
-
-                                zoneCoverageAreas.appendChild(
-                                    badge
+                            const badge =
+                                document.createElement(
+                                    'span'
                                 );
 
-                            }
-                        );
+                            badge.className =
+                                'zone-area-badge';
+
+                            badge.textContent =
+                                area;
+
+                            zoneCoverageAreas.appendChild(
+                                badge
+                            );
+
+                        });
 
 
                         zoneCoverageBox.classList.remove(
                             'd-none'
                         );
-
                     }
 
 
                     /*
                     |--------------------------------------------------------------------------
-                    | NGN Shipping
+                    | Shipping Amount
                     |--------------------------------------------------------------------------
                     */
 
-                    if (
-                        currency === 'NGN'
-                    ) {
+                    if (currency === 'NGN') {
 
                         shippingAmount =
                             Number(
                                 data.shipping_cost
                             );
 
-                    }
-
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | USD Shipping
-                    |--------------------------------------------------------------------------
-                    */
-                    else if (
-                        currency === 'USD'
-                    ) {
+                    } else if (currency === 'USD') {
 
                         if (
                             typeof data.converted_shipping_cost ===
@@ -1661,21 +1995,10 @@
                             Number(
                                 data.converted_shipping_cost
                             );
-
                     }
 
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Validate Amount
-                    |--------------------------------------------------------------------------
-                    */
-
-                    if (
-                        !Number.isFinite(
-                            shippingAmount
-                        )
-                    ) {
+                    if (!Number.isFinite(shippingAmount)) {
 
                         throw new Error(
                             'Invalid shipping amount.'
@@ -1684,17 +2007,13 @@
                     }
 
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Update Summary
-                    |--------------------------------------------------------------------------
-                    */
+                    shippingLabel.textContent =
+                        'Shipping:';
 
                     shippingDisplay.textContent =
                         formatMoney(
                             shippingAmount
                         );
-
 
                     totalDisplay.textContent =
                         formatMoney(
@@ -1706,64 +2025,115 @@
                     shippingReady =
                         true;
 
-
                     placeOrderBtn.disabled =
                         false;
-
 
                     locationNotice.textContent =
                         'Shipping has been calculated for your selected delivery zone.';
 
-
                 } catch (error) {
 
-                    shippingAmount =
-                        0;
+                    shippingAmount = 0;
 
-
-                    shippingReady =
-                        false;
-
+                    shippingReady = false;
 
                     shippingDisplay.innerHTML =
                         '<span class="text-danger">Unavailable</span>';
 
-
                     totalDisplay.textContent =
-                        formatMoney(
-                            subtotal
-                        );
-
+                        formatMoney(subtotal);
 
                     placeOrderBtn.disabled =
                         true;
 
-
                     shippingMessage.textContent =
                         error.message;
-
 
                     shippingMessage.classList.remove(
                         'd-none'
                     );
 
-
                     shippingMessage.classList.add(
                         'text-danger'
                     );
-
 
                     locationNotice.textContent =
                         'Please select an available delivery zone.';
 
                 }
-
             }
 
 
             /*
             |--------------------------------------------------------------------------
-            | Country Change
+            | Method Change
+            |--------------------------------------------------------------------------
+            */
+
+            shippingRadio.addEventListener(
+                'change',
+                function() {
+
+                    if (!this.checked) {
+                        return;
+                    }
+
+
+                    applyDeliveryMethod();
+
+
+                    if (countrySelect.value) {
+
+                        loadStates(
+                            countrySelect.value,
+                            selectedState
+                        );
+
+                    }
+                }
+            );
+
+
+            if (pickupRadio) {
+
+                pickupRadio.addEventListener(
+                    'change',
+                    function() {
+
+                        if (!this.checked) {
+                            return;
+                        }
+
+                        applyDeliveryMethod();
+
+                    }
+                );
+            }
+
+
+            pickupRadios.forEach(function(input) {
+
+                input.addEventListener(
+                    'change',
+                    function() {
+
+                        if (
+                            this.checked &&
+                            deliveryMethod() === 'pickup'
+                        ) {
+
+                            setPickupSummary();
+
+                        }
+                    }
+                );
+
+            });
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Country
             |--------------------------------------------------------------------------
             */
 
@@ -1771,8 +2141,11 @@
                 'change',
                 function() {
 
-                    resetZones();
+                    if (deliveryMethod() !== 'shipping') {
+                        return;
+                    }
 
+                    resetZones();
 
                     loadStates(
                         this.value
@@ -1784,7 +2157,7 @@
 
             /*
             |--------------------------------------------------------------------------
-            | State Change
+            | State
             |--------------------------------------------------------------------------
             */
 
@@ -1792,22 +2165,21 @@
                 'change',
                 async function() {
 
-                    const stateId =
-                        this.value;
+                    if (deliveryMethod() !== 'shipping') {
+                        return;
+                    }
 
 
                     resetZones();
 
 
-                    if (!stateId) {
-
+                    if (!this.value) {
                         return;
-
                     }
 
 
                     await loadShippingZones(
-                        stateId
+                        this.value
                     );
 
                 }
@@ -1816,13 +2188,18 @@
 
             /*
             |--------------------------------------------------------------------------
-            | Delivery Zone Change
+            | Zone
             |--------------------------------------------------------------------------
             */
 
             zoneSelect.addEventListener(
                 'change',
                 async function() {
+
+                    if (deliveryMethod() !== 'shipping') {
+                        return;
+                    }
+
 
                     const shippingRateId =
                         this.value;
@@ -1834,9 +2211,7 @@
 
 
                     if (!shippingRateId) {
-
                         return;
-
                     }
 
 
@@ -1855,46 +2230,107 @@
 
             /*
             |--------------------------------------------------------------------------
-            | Prevent Checkout Without Shipping
+            | Submit Guard
             |--------------------------------------------------------------------------
-            |
-            | This checks shipping only.
-            |
-            | There is intentionally NO authentication check here.
-            | Both guests and logged-in customers may proceed.
-            |
             */
 
             checkoutForm.addEventListener(
                 'submit',
                 function(event) {
 
-                    if (
-                        !zoneSelect.value ||
-                        !shippingReady
-                    ) {
-
-                        event.preventDefault();
+                    const method =
+                        deliveryMethod();
 
 
-                        shippingMessage.textContent =
-                            'Please select your delivery zone and allow shipping to be calculated.';
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Shipping
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (method === 'shipping') {
+
+                        if (
+                            !countrySelect.value ||
+                            !stateSelect.value ||
+                            !zoneSelect.value ||
+                            !streetAddress.value.trim() ||
+                            !shippingReady
+                        ) {
+
+                            event.preventDefault();
 
 
-                        shippingMessage.classList.remove(
-                            'd-none'
-                        );
+                            shippingMessage.textContent =
+                                'Please complete your shipping address and select a valid delivery zone.';
+
+                            shippingMessage.classList.remove(
+                                'd-none'
+                            );
+
+                            shippingMessage.classList.add(
+                                'text-danger'
+                            );
 
 
-                        shippingMessage.classList.add(
-                            'text-danger'
-                        );
+                            locationNotice.textContent =
+                                'Complete your delivery details before proceeding to payment.';
 
-
-                        locationNotice.textContent =
-                            'Select a valid delivery zone before proceeding to payment.';
-
+                            return;
+                        }
                     }
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Pickup
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (method === 'pickup') {
+
+                        const selectedPickup =
+                            document.querySelector(
+                                '.pickup-location-input:checked'
+                            );
+
+
+                        if (!selectedPickup) {
+
+                            event.preventDefault();
+
+
+                            shippingMessage.textContent =
+                                'Please select a pickup location.';
+
+                            shippingMessage.classList.remove(
+                                'd-none'
+                            );
+
+                            shippingMessage.classList.add(
+                                'text-danger'
+                            );
+
+
+                            locationNotice.textContent =
+                                'Select a pickup location before proceeding to payment.';
+
+                            return;
+                        }
+                    }
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Prevent Double Click
+                    |--------------------------------------------------------------------------
+                    */
+
+                    placeOrderBtn.disabled =
+                        true;
+
+                    placeOrderBtn.innerHTML =
+                        '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
 
                 }
             );
@@ -1902,11 +2338,15 @@
 
             /*
             |--------------------------------------------------------------------------
-            | Initial Country
+            | Initial State
             |--------------------------------------------------------------------------
             */
 
+            applyDeliveryMethod();
+
+
             if (
+                deliveryMethod() === 'shipping' &&
                 countrySelect.value
             ) {
 

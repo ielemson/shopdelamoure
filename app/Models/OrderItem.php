@@ -14,16 +14,29 @@ class OrderItem extends Model
     | Mass Assignable Fields
     |--------------------------------------------------------------------------
     */
+
     protected $fillable = [
         'order_id',
         'product_id',
         'product_variant_id',
+
+        /*
+        |--------------------------------------------------------------------------
+        | Product Snapshot
+        |--------------------------------------------------------------------------
+        */
 
         'name',
         'sku',
         'variant_name',
         'variant_options',
         'image',
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pricing Snapshot
+        |--------------------------------------------------------------------------
+        */
 
         'currency',
         'price',
@@ -36,6 +49,7 @@ class OrderItem extends Model
     | Casts
     |--------------------------------------------------------------------------
     */
+
     protected $casts = [
         'variant_options' => 'array',
 
@@ -77,7 +91,9 @@ class OrderItem extends Model
 
     public function hasVariant(): bool
     {
-        return ! is_null($this->product_variant_id);
+        return ! is_null(
+            $this->product_variant_id
+        );
     }
 
     public function getVariantDisplayAttribute(): ?string
@@ -90,11 +106,21 @@ class OrderItem extends Model
             return null;
         }
 
-        return collect($this->variant_options)
+        return collect(
+            $this->variant_options
+        )
             ->map(function ($value, $key) {
-                return ucfirst(str_replace('_', ' ', $key))
-                    . ': '
-                    . $value;
+
+                return ucfirst(
+                    str_replace(
+                        '_',
+                        ' ',
+                        $key
+                    )
+                )
+                .': '
+                .$value;
+
             })
             ->implode(', ');
     }
@@ -107,22 +133,36 @@ class OrderItem extends Model
 
     public function getCurrencySymbolAttribute(): string
     {
-        return match (strtoupper($this->currency ?? 'NGN')) {
+        return match (
+            strtoupper(
+                $this->currency ?? 'NGN'
+            )
+        ) {
             'USD' => '$',
             'NGN' => '₦',
-            default => strtoupper($this->currency ?? 'NGN') . ' ',
+
+            default => strtoupper(
+                $this->currency ?? 'NGN'
+            )
+                .' ',
         };
     }
 
     public function getFormattedPriceAttribute(): string
     {
         return $this->currency_symbol
-            . number_format((float) $this->price, 2);
+            .number_format(
+                (float) $this->price,
+                2
+            );
     }
 
     public function getFormattedTotalAttribute(): string
     {
         return $this->currency_symbol
-            . number_format((float) $this->total, 2);
+            .number_format(
+                (float) $this->total,
+                2
+            );
     }
 }

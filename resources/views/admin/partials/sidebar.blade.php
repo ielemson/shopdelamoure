@@ -1,415 +1,374 @@
 <div class="sidebar px-4 py-4 py-md-4 me-0">
+
     <div class="d-flex flex-column h-100">
 
-        <!-- Brand -->
-        <a href="{{ route('home') }}" class="mb-0 brand-icon">
+        {{-- =========================================================
+            BRAND
+        ========================================================== --}}
+
+        <a href="{{ route('home') }}" class="mb-0 brand-icon text-decoration-none">
+
             <span class="logo-icon">
                 <i class="bi bi-bag-check-fill fs-4"></i>
             </span>
 
             <span class="logo-text">
-                {{ config('app.name', 'Springcrest') }}
+                {{ $setting?->website_name ?? 'Dela Moure' }}
             </span>
+
         </a>
 
 
-        <!-- Admin Menu -->
+        {{-- =========================================================
+            ADMIN MENU
+        ========================================================== --}}
+
         <ul class="menu-list flex-grow-1 mt-3">
 
-            <!-- Dashboard -->
+
+            {{-- =====================================================
+                DASHBOARD
+            ====================================================== --}}
+
             <li>
-                <a class="m-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">
+
+                <a href="{{ route('home') }}"
+                    class="m-link
+                    {{ request()->routeIs('home') ? 'active' : '' }}">
 
                     <i class="icofont-home fs-5"></i>
-                    <span>Dashboard</span>
+
+                    <span>
+                        Dashboard
+                    </span>
+
                 </a>
+
             </li>
 
 
-            <!-- Products -->
+            {{-- =====================================================
+                CATALOG
+            ====================================================== --}}
+
             <li class="collapsed">
 
-                <a class="m-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" data-bs-toggle="collapse"
-                    data-bs-target="#menu-products" href="#">
+                <a href="#"
+                    class="m-link
+                    {{ request()->routeIs(['admin.products.*', 'admin.categories.*']) ? 'active' : '' }}"
+                    data-bs-toggle="collapse" data-bs-target="#menu-catalog"
+                    aria-expanded="{{ request()->routeIs(['admin.products.*', 'admin.categories.*']) ? 'true' : 'false' }}">
 
                     <i class="icofont-box fs-5"></i>
-                    <span>Products</span>
 
-                    <span class="arrow icofont-rounded-down ms-auto text-end fs-5"></span>
+                    <span>
+                        Catalog
+                    </span>
+
+                    <span class="arrow icofont-rounded-down ms-auto text-end fs-5">
+                    </span>
+
                 </a>
 
-                <ul class="sub-menu collapse {{ request()->routeIs('admin.products.*') ? 'show' : '' }}"
-                    id="menu-products">
 
+                <ul id="menu-catalog"
+                    class="sub-menu collapse
+                    {{ request()->routeIs(['admin.products.*', 'admin.categories.*']) ? 'show' : '' }}">
+
+
+                    {{-- Products --}}
                     <li>
-                        <a class="ms-link {{ request()->routeIs('admin.products.index') ? 'active' : '' }}"
-                            href="{{ route('admin.products.index') }}">
+
+                        <a href="{{ route('admin.products.index') }}"
+                            class="ms-link
+                            {{ request()->routeIs('admin.products.index') ? 'active' : '' }}">
+
                             All Products
+
                         </a>
+
                     </li>
 
+
                     <li>
-                        <a class="ms-link {{ request()->routeIs('admin.products.create') ? 'active' : '' }}"
-                            href="{{ route('admin.products.create') }}">
+
+                        <a href="{{ route('admin.products.create') }}"
+                            class="ms-link
+                            {{ request()->routeIs('admin.products.create') ? 'active' : '' }}">
+
                             Add Product
+
                         </a>
+
                     </li>
 
+
+                    {{-- Categories --}}
                     <li>
-                        <a class="ms-link" href="#">
-                            Product Reviews
+
+                        <a href="{{ route('admin.categories.index') }}"
+                            class="ms-link
+                            {{ request()->routeIs('admin.categories.index') ? 'active' : '' }}">
+
+                            Categories
+
                         </a>
+
                     </li>
 
-                </ul>
-            </li>
-
-
-            <!-- Categories -->
-            <li class="collapsed">
-
-                <a class="m-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}"
-                    data-bs-toggle="collapse" data-bs-target="#menu-categories" href="#">
-
-                    <i class="icofont-chart-flow fs-5"></i>
-                    <span>Categories</span>
-
-                    <span class="arrow icofont-rounded-down ms-auto text-end fs-5"></span>
-                </a>
-
-                <ul class="sub-menu collapse {{ request()->routeIs('admin.categories.*') ? 'show' : '' }}"
-                    id="menu-categories">
 
                     <li>
-                        <a class="ms-link {{ request()->routeIs('admin.categories.index') ? 'active' : '' }}"
-                            href="{{ route('admin.categories.index') }}">
-                            All Categories
-                        </a>
-                    </li>
 
-                    <li>
-                        <a class="ms-link {{ request()->routeIs('admin.categories.create') ? 'active' : '' }}"
-                            href="{{ route('admin.categories.create') }}">
+                        <a href="{{ route('admin.categories.create') }}"
+                            class="ms-link
+                            {{ request()->routeIs('admin.categories.create') ? 'active' : '' }}">
+
                             Add Category
-                        </a>
-                    </li>
 
-                    <li>
-                        <a class="ms-link" href="#">
-                            Sub Categories
                         </a>
+
                     </li>
 
                 </ul>
+
             </li>
 
-
-            <!-- Brands -->
-            <li>
-                <a class="m-link" href="#">
-                    <i class="icofont-brand-designfloat fs-5"></i>
-                    <span>Brands</span>
-                </a>
-            </li>
-
-
-            <!-- Orders -->
+            {{-- Inventory --}}
             <li class="collapsed">
 
-                <a class="m-link" data-bs-toggle="collapse" data-bs-target="#menu-orders" href="#">
+                <a class="m-link
+        {{ request()->routeIs('admin.inventory.*') ? 'active' : '' }}"
+                    data-bs-toggle="collapse" data-bs-target="#menu-inventory" href="#">
+
+                    <i class="icofont-chart-histogram fs-5"></i>
+
+                    <span>
+                        Inventory
+                    </span>
+
+                    <span class="arrow icofont-rounded-down ms-auto text-end fs-5">
+                    </span>
+
+                </a>
+
+
+                <ul id="menu-inventory"
+                    class="sub-menu collapse
+        {{ request()->routeIs('admin.inventory.*') ? 'show' : '' }}">
+
+                    <li>
+
+                        <a href="{{ route('admin.inventory.index') }}"
+                            class="ms-link
+                {{ request()->routeIs('admin.inventory.index') ? 'active' : '' }}">
+
+                            Stock List
+
+                        </a>
+
+                    </li>
+
+
+                    <li>
+
+                        <a href="{{ route('admin.inventory.low-stock') }}"
+                            class="ms-link
+                {{ request()->routeIs('admin.inventory.low-stock') ? 'active' : '' }}">
+
+                            Low Stock
+
+                        </a>
+
+                    </li>
+
+
+                    <li>
+
+                        <a href="{{ route('admin.inventory.movements') }}"
+                            class="ms-link
+                {{ request()->routeIs('admin.inventory.movements') ? 'active' : '' }}">
+
+                            Stock Movements
+
+                        </a>
+
+                    </li>
+
+                </ul>
+
+            </li>
+            {{-- =====================================================
+                ORDERS
+            ====================================================== --}}
+
+            <li>
+
+                <a href="{{ route('admin.orders.index') }}"
+                    class="m-link
+                    {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
 
                     <i class="icofont-notepad fs-5"></i>
-                    <span>Orders</span>
 
-                    <span class="arrow icofont-rounded-down ms-auto text-end fs-5"></span>
+                    <span>
+                        Orders
+                    </span>
+
                 </a>
 
-                <ul class="sub-menu collapse" id="menu-orders">
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            All Orders
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Pending Orders
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Completed Orders
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Cancelled Orders
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Invoices
-                        </a>
-                    </li>
-
-                </ul>
             </li>
 
 
-            <!-- Shipping -->
+            {{-- =====================================================
+                SHIPPING
+            ====================================================== --}}
+
             <li class="collapsed">
 
-                <a class="m-link {{ request()->routeIs('admin.shipping-rates.*') ? 'active' : '' }}"
-                    data-bs-toggle="collapse" data-bs-target="#menu-shipping" href="#">
+                <a href="#"
+                    class="m-link
+                    {{ request()->routeIs('admin.shipping-rates.*') ? 'active' : '' }}"
+                    data-bs-toggle="collapse" data-bs-target="#menu-shipping"
+                    aria-expanded="{{ request()->routeIs('admin.shipping-rates.*') ? 'true' : 'false' }}">
 
                     <i class="icofont-truck-alt fs-5"></i>
-                    <span>Shipping</span>
 
-                    <span class="arrow icofont-rounded-down ms-auto text-end fs-5"></span>
+                    <span>
+                        Shipping
+                    </span>
+
+                    <span class="arrow icofont-rounded-down ms-auto text-end fs-5">
+                    </span>
+
                 </a>
 
-                <ul class="sub-menu collapse {{ request()->routeIs('admin.shipping-rates.*') ? 'show' : '' }}"
-                    id="menu-shipping">
+
+                <ul id="menu-shipping"
+                    class="sub-menu collapse
+                    {{ request()->routeIs('admin.shipping-rates.*') ? 'show' : '' }}">
 
                     <li>
-                        <a class="ms-link {{ request()->routeIs('admin.shipping-rates.index') ? 'active' : '' }}"
-                            href="{{ route('admin.shipping-rates.index') }}">
+
+                        <a href="{{ route('admin.shipping-rates.index') }}"
+                            class="ms-link
+                            {{ request()->routeIs('admin.shipping-rates.index') ? 'active' : '' }}">
 
                             Shipping Rates
 
                         </a>
-                    </li>
 
-                    {{-- Can be enabled later --}}
-                    <li>
-                        <a class="ms-link" href="#">
-                            Shipping Zones
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Delivery Settings
-                        </a>
                     </li>
 
                 </ul>
+
             </li>
 
 
-            <!-- Customers -->
-            <li class="collapsed">
+            {{-- =====================================================
+                CUSTOMERS
+            ====================================================== --}}
 
-                <a class="m-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}"
-                    data-bs-toggle="collapse" data-bs-target="#menu-customers" href="#">
+            <li>
+
+                <a href="{{ route('admin.customers.index') }}"
+                    class="m-link
+                    {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
 
                     <i class="icofont-users-alt-5 fs-5"></i>
-                    <span>Customers</span>
 
-                    <span class="arrow icofont-rounded-down ms-auto text-end fs-5"></span>
+                    <span>
+                        Customers
+                    </span>
+
                 </a>
 
-                <ul class="sub-menu collapse {{ request()->routeIs('admin.customers.*') ? 'show' : '' }}"
-                    id="menu-customers">
-
-                    <li>
-                        <a class="ms-link {{ request()->routeIs('admin.customers.index') ? 'active' : '' }}"
-                            href="{{ route('admin.customers.index') }}">
-                            All Customers
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Customer Messages
-                        </a>
-                    </li>
-
-                </ul>
             </li>
 
 
-            <!-- Inventory -->
-            <li class="collapsed">
+            {{-- =====================================================
+                WEBSITE SETTINGS
+            ====================================================== --}}
 
-                <a class="m-link" data-bs-toggle="collapse" data-bs-target="#menu-inventory" href="#">
-
-                    <i class="icofont-chart-histogram fs-5"></i>
-                    <span>Inventory</span>
-
-                    <span class="arrow icofont-rounded-down ms-auto text-end fs-5"></span>
-                </a>
-
-                <ul class="sub-menu collapse" id="menu-inventory">
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Stock List
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Low Stock
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Suppliers
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Returns
-                        </a>
-                    </li>
-
-                </ul>
-            </li>
-
-
-            <!-- Promotions -->
-            <li class="collapsed">
-
-                <a class="m-link" data-bs-toggle="collapse" data-bs-target="#menu-promotions" href="#">
-
-                    <i class="icofont-sale-discount fs-5"></i>
-                    <span>Promotions</span>
-
-                    <span class="arrow icofont-rounded-down ms-auto text-end fs-5"></span>
-                </a>
-
-                <ul class="sub-menu collapse" id="menu-promotions">
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Coupons
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Add Coupon
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Discount Campaigns
-                        </a>
-                    </li>
-
-                </ul>
-            </li>
-
-
-            <!-- Payments -->
-            <li class="collapsed">
-
-                <a class="m-link" data-bs-toggle="collapse" data-bs-target="#menu-payments" href="#">
-
-                    <i class="icofont-credit-card fs-5"></i>
-                    <span>Payments</span>
-
-                    <span class="arrow icofont-rounded-down ms-auto text-end fs-5"></span>
-                </a>
-
-                <ul class="sub-menu collapse" id="menu-payments">
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Transactions
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Payment Methods
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Refunds
-                        </a>
-                    </li>
-
-                </ul>
-            </li>
-
-
-            <!-- Reports -->
-            <li class="collapsed">
-
-                <a class="m-link" data-bs-toggle="collapse" data-bs-target="#menu-reports" href="#">
-
-                    <i class="icofont-chart-bar-graph fs-5"></i>
-                    <span>Reports</span>
-
-                    <span class="arrow icofont-rounded-down ms-auto text-end fs-5"></span>
-                </a>
-
-                <ul class="sub-menu collapse" id="menu-reports">
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Sales Report
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Product Report
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="ms-link" href="#">
-                            Customer Report
-                        </a>
-                    </li>
-
-                </ul>
-            </li>
-
-
-            <!-- Support -->
             <li>
-                <a class="m-link" href="#">
-                    <i class="icofont-support fs-5"></i>
-                    <span>Support Tickets</span>
-                </a>
-            </li>
 
-
-            <!-- Settings -->
-            <li>
-                <a class="m-link {{ request()->routeIs('admin.website.settings') ? 'active' : '' }}"
-                    href="{{ route('admin.website.settings') }}">
+                <a href="{{ route('admin.website.settings') }}"
+                    class="m-link
+                    {{ request()->routeIs('admin.website.settings') ? 'active' : '' }}">
 
                     <i class="icofont-gear fs-5"></i>
-                    <span>Settings</span>
+
+                    <span>
+                        Website Settings
+                    </span>
 
                 </a>
+
             </li>
+
+
+            {{-- =====================================================
+                VIEW STOREFRONT
+            ====================================================== --}}
+
+            <li>
+
+                <a href="{{ url('/') }}" target="_blank" class="m-link">
+
+                    <i class="icofont-external-link fs-5"></i>
+
+                    <span>
+                        View Store
+                    </span>
+
+                </a>
+
+            </li>
+
+
+            {{-- =====================================================
+                LOGOUT
+            ====================================================== --}}
+
+            @auth
+
+                <li class="mt-3">
+
+                    <form method="POST" action="{{ route('logout') }}">
+
+                        @csrf
+
+                        <button type="submit" class="m-link border-0 bg-transparent w-100 text-start">
+
+                            <i class="icofont-logout fs-5"></i>
+
+                            <span>
+                                Logout
+                            </span>
+
+                        </button>
+
+                    </form>
+
+                </li>
+
+            @endauth
 
         </ul>
 
 
-        <!-- Sidebar Collapse Button -->
+        {{-- =========================================================
+            COLLAPSE BUTTON
+        ========================================================== --}}
+
         <button type="button" class="btn btn-link sidebar-mini-btn text-light">
 
             <span class="ms-2">
+
                 <i class="icofont-bubble-right"></i>
+
             </span>
 
         </button>
 
     </div>
+
 </div>

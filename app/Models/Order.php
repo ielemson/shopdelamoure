@@ -46,7 +46,7 @@ class Order extends Model
         'vat',
         'discount',
         'total',
-
+        'pickup_location_id',
         'status',
     ];
 
@@ -71,9 +71,17 @@ class Order extends Model
     |--------------------------------------------------------------------------
     */
 
+    // public function items()
+    // {
+    //     return $this->hasMany(OrderItem::class);
+    // }
+
     public function items()
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->hasMany(
+            \App\Models\OrderItem::class,
+            'order_id'
+        );
     }
 
     public function user()
@@ -89,6 +97,14 @@ class Order extends Model
     public function state()
     {
         return $this->belongsTo(State::class);
+    }
+
+    public function pickupLocation()
+    {
+        return $this->belongsTo(
+            PickupLocation::class,
+            'pickup_location_id'
+        );
     }
 
     /*
