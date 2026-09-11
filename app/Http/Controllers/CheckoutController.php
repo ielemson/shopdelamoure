@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\AdminNewOrderMail;
-use App\Mail\CustomerOrderConfirmationMail;
 use App\Models\Address;
 use App\Models\Country;
 use App\Models\Order;
@@ -13,13 +11,12 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\ShippingRate;
 use App\Models\State;
-use App\Services\InventoryService;
+use App\Services\OrderPaymentService;
 use Darryldecode\Cart\Facades\CartFacade as Cart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class CheckoutController extends Controller
 {
@@ -642,29 +639,62 @@ class CheckoutController extends Controller
     | Paystack Callback
     |--------------------------------------------------------------------------
     */
+    /*
+    |--------------------------------------------------------------------------
+    | Paystack Callback
+    |--------------------------------------------------------------------------
+    */
 
     public function paystackCallback(
         Request $request,
-        InventoryService $inventoryService
+        OrderPaymentService $orderPaymentService
     ) {
+        /*
+        |--------------------------------------------------------------------------
+        | Payment Reference
+        |--------------------------------------------------------------------------
+        */
+
         $reference = $request->query('reference');
 
         if (! $reference) {
             return redirect()
                 ->route('checkout.index')
-                ->with('error', 'Payment reference missing.');
+                ->with(
+                    'error',
+                    'Payment reference missing.'
+                );
         }
 
-        $secretKey = config('services.paystack.secret_key');
-        $paymentUrl = config('services.paystack.payment_url');
+        /*
+        |--------------------------------------------------------------------------
+        | Paystack Configuration
+        |--------------------------------------------------------------------------
+        */
+
+        $secretKey =
+            config('services.paystack.secret_key');
+
+        $paymentUrl =
+            config('services.paystack.payment_url');
 
         if (! $secretKey || ! $paymentUrl) {
             return redirect()
                 ->route('checkout.index')
-                ->with('error', 'Payment gateway is not configured.');
+                ->with(
+                    'error',
+                    'Payment gateway is not configured.'
+                );
         }
 
         try {
+
+            /*
+            |--------------------------------------------------------------------------
+            | Verify Transaction With Paystack
+            |--------------------------------------------------------------------------
+            */
+
             $response = Http::withToken($secretKey)
                 ->acceptJson()
                 ->timeout(30)
@@ -675,41 +705,88 @@ class CheckoutController extends Controller
                     .urlencode($reference)
                 );
 
+            /*
+            |--------------------------------------------------------------------------
+            | Verification Request Failed
+            |--------------------------------------------------------------------------
+            */
+
             if (
                 ! $response->successful()
                 || ! ($response->json('status') ?? false)
             ) {
                 return redirect()
                     ->route('checkout.index')
-                    ->with('error', 'Could not verify payment.');
+                    ->with(
+                        'error',
+                        'Could not verify payment.'
+                    );
             }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Paystack Data
+            |--------------------------------------------------------------------------
+            */
 
             $data = $response->json('data');
 
             if (! is_array($data)) {
                 return redirect()
                     ->route('checkout.index')
-                    ->with('error', 'Invalid payment verification response.');
+                    ->with(
+                        'error',
+                        'Invalid payment verification response.'
+                    );
             }
 
-            $order = Order::where('payment_reference', $reference)->first();
+            /*
+            |--------------------------------------------------------------------------
+            | Find Order
+            |--------------------------------------------------------------------------
+            */
+
+            $order = Order::where(
+                'payment_reference',
+                $reference
+            )->first();
 
             if (! $order) {
-                Log::error('Paystack callback order not found', [
-                    'reference' => $reference,
-                ]);
+
+                Log::error(
+                    'Paystack callback order not found',
+                    [
+                        'reference' => $reference,
+                    ]
+                );
 
                 return redirect()
                     ->route('checkout.index')
-                    ->with('error', 'Order could not be found for this payment.');
+                    ->with(
+                        'error',
+                        'Order could not be found for this payment.'
+                    );
             }
 
-            if (($data['reference'] ?? null) !== $order->payment_reference) {
-                Log::warning('Paystack reference mismatch', [
-                    'order_id' => $order->id,
-                    'expected' => $order->payment_reference,
-                    'received' => $data['reference'] ?? null,
-                ]);
+            /*
+            |--------------------------------------------------------------------------
+            | Verify Reference
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                ($data['reference'] ?? null)
+                !== $order->payment_reference
+            ) {
+
+                Log::warning(
+                    'Paystack reference mismatch',
+                    [
+                        'order_id' => $order->id,
+                        'expected' => $order->payment_reference,
+                        'received' => $data['reference'] ?? null,
+                    ]
+                );
 
                 return $this->redirectAfterOrder(
                     $order,
@@ -718,11 +795,25 @@ class CheckoutController extends Controller
                 );
             }
 
-            if (strtoupper($data['currency'] ?? '') !== 'NGN') {
-                Log::warning('Paystack currency mismatch', [
-                    'order_id' => $order->id,
-                    'currency' => $data['currency'] ?? null,
-                ]);
+            /*
+            |--------------------------------------------------------------------------
+            | Verify Currency
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                strtoupper(
+                    $data['currency'] ?? ''
+                ) !== 'NGN'
+            ) {
+
+                Log::warning(
+                    'Paystack currency mismatch',
+                    [
+                        'order_id' => $order->id,
+                        'currency' => $data['currency'] ?? null,
+                    ]
+                );
 
                 return $this->redirectAfterOrder(
                     $order,
@@ -731,15 +822,33 @@ class CheckoutController extends Controller
                 );
             }
 
-            $expectedAmount = (int) round($order->total * 100);
-            $paidAmount = (int) ($data['amount'] ?? 0);
+            /*
+            |--------------------------------------------------------------------------
+            | Verify Amount
+            |--------------------------------------------------------------------------
+            |
+            | Paystack returns amount in kobo.
+            |
+            */
+
+            $expectedAmount = (int) round(
+                (float) $order->total * 100
+            );
+
+            $paidAmount = (int) (
+                $data['amount'] ?? 0
+            );
 
             if ($paidAmount !== $expectedAmount) {
-                Log::warning('Paystack payment amount mismatch', [
-                    'order_id' => $order->id,
-                    'expected_amount' => $expectedAmount,
-                    'paid_amount' => $paidAmount,
-                ]);
+
+                Log::warning(
+                    'Paystack payment amount mismatch',
+                    [
+                        'order_id' => $order->id,
+                        'expected_amount' => $expectedAmount,
+                        'paid_amount' => $paidAmount,
+                    ]
+                );
 
                 return $this->redirectAfterOrder(
                     $order,
@@ -748,115 +857,79 @@ class CheckoutController extends Controller
                 );
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | Successful Payment
+            |--------------------------------------------------------------------------
+            */
+
             if (($data['status'] ?? '') === 'success') {
+
                 /*
                 |--------------------------------------------------------------------------
-                | Mark Paid Once
+                | Process Payment
                 |--------------------------------------------------------------------------
+                |
+                | OrderPaymentService handles:
+                |
+                | - Atomic paid status update
+                | - Duplicate callback/webhook protection
+                | - Inventory deduction
+                | - Customer confirmation email
+                | - Admin order notification
+                |
                 */
 
-                $justPaid = DB::transaction(function () use ($order, $data) {
-                    $lockedOrder = Order::query()
-                        ->lockForUpdate()
-                        ->findOrFail($order->id);
+                $orderPaymentService
+                    ->processSuccessfulPayment(
+                        $order,
+                        $data
+                    );
 
-                    if ($lockedOrder->payment_status === 'paid') {
-                        return false;
-                    }
-
-                    $lockedOrder->update([
-                        'payment_status' => 'paid',
-                        'status' => 'processing',
-                        'paid_at' => now(),
-                        'payment_gateway_response' => json_encode($data),
-                    ]);
-
-                    return true;
-                });
+                /*
+                |--------------------------------------------------------------------------
+                | Refresh Order
+                |--------------------------------------------------------------------------
+                |
+                | The webhook may have processed the payment before
+                | the browser callback reached this point.
+                |
+                */
 
                 $order->refresh();
 
                 /*
                 |--------------------------------------------------------------------------
-                | Inventory
-                |--------------------------------------------------------------------------
-                |
-                | InventoryService is idempotent through stock movement references,
-                | so it is safe to call again if Paystack revisits the callback.
-                |
-                */
-
-                try {
-                    $inventoryService->deductOrderStock($order);
-                } catch (\Throwable $e) {
-                    Log::critical('Paid order inventory deduction failed', [
-                        'order_id' => $order->id,
-                        'order_no' => $order->order_no,
-                        'message' => $e->getMessage(),
-                    ]);
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | Purchase Notifications
+                | Clear Cart
                 |--------------------------------------------------------------------------
                 */
-
-                if ($justPaid) {
-                    $order->loadMissing([
-                        'items',
-                        'state',
-                        'country',
-                        'pickupLocation',
-                    ]);
-
-                    try {
-                        if (
-                            $order->email
-                            && filter_var($order->email, FILTER_VALIDATE_EMAIL)
-                        ) {
-                            Mail::to($order->email)
-                                ->send(new CustomerOrderConfirmationMail($order));
-                        }
-                    } catch (\Throwable $e) {
-                        Log::error('Customer order confirmation email failed', [
-                            'order_id' => $order->id,
-                            'order_no' => $order->order_no,
-                            'email' => $order->email,
-                            'message' => $e->getMessage(),
-                        ]);
-                    }
-
-                    try {
-                        $adminEmail = config('mail.admin_address');
-
-                        if (
-                            $adminEmail
-                            && filter_var($adminEmail, FILTER_VALIDATE_EMAIL)
-                        ) {
-                            Mail::to($adminEmail)
-                                ->send(new AdminNewOrderMail($order));
-                        }
-                    } catch (\Throwable $e) {
-                        Log::error('Admin new order email failed', [
-                            'order_id' => $order->id,
-                            'order_no' => $order->order_no,
-                            'admin_email' => $adminEmail ?? null,
-                            'message' => $e->getMessage(),
-                        ]);
-                    }
-                }
 
                 Cart::clear();
 
+                /*
+                |--------------------------------------------------------------------------
+                | Registered Customer
+                |--------------------------------------------------------------------------
+                */
+
                 if ($order->user_id) {
+
                     return redirect()
-                        ->route('customer.orders.show', $order->id)
+                        ->route(
+                            'customer.orders.show',
+                            $order->id
+                        )
                         ->with(
                             'success',
                             'Payment successful. Your order is now being processed.'
                         );
                 }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Guest Customer
+                |--------------------------------------------------------------------------
+                */
 
                 return redirect()
                     ->route('shop')
@@ -872,11 +945,19 @@ class CheckoutController extends Controller
             |--------------------------------------------------------------------------
             | Failed / Unsuccessful Payment
             |--------------------------------------------------------------------------
+            |
+            | Never downgrade an order that was already marked paid by
+            | the webhook or an earlier successful callback.
+            |
             */
 
+            $order->refresh();
+
             if ($order->payment_status !== 'paid') {
+
                 $order->update([
                     'payment_status' => 'failed',
+
                     'payment_gateway_response' => json_encode($data),
                 ]);
             }
@@ -886,17 +967,38 @@ class CheckoutController extends Controller
                 'error',
                 'Payment was not successful.'
             );
-        } catch (\Throwable $e) {
-            Log::error('Paystack verification error', [
-                'reference' => $reference,
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-            ]);
 
-            $order = Order::where('payment_reference', $reference)->first();
+        } catch (\Throwable $e) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | Verification Error
+            |--------------------------------------------------------------------------
+            */
+
+            Log::error(
+                'Paystack verification error',
+                [
+                    'reference' => $reference,
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Recover Existing Order
+            |--------------------------------------------------------------------------
+            */
+
+            $order = Order::where(
+                'payment_reference',
+                $reference
+            )->first();
 
             if ($order) {
+
                 return $this->redirectAfterOrder(
                     $order,
                     'error',
@@ -906,7 +1008,10 @@ class CheckoutController extends Controller
 
             return redirect()
                 ->route('checkout.index')
-                ->with('error', 'Unable to verify payment at this time.');
+                ->with(
+                    'error',
+                    'Unable to verify payment at this time.'
+                );
         }
     }
 

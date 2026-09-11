@@ -5,16 +5,13 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
-return Application::configure(basePath: dirname(__DIR__))
-
+return Application::configure(
+    basePath: dirname(__DIR__)
+)
     ->withRouting(
-
         web: __DIR__.'/../routes/web.php',
-
         commands: __DIR__.'/../routes/console.php',
-
         health: '/up',
-
     )
 
     ->withMiddleware(function (Middleware $middleware) {
@@ -26,13 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
         */
 
         $middleware->alias([
-
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
 
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
 
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
-
         ]);
 
         /*
@@ -48,18 +43,34 @@ return Application::configure(basePath: dirname(__DIR__))
         |
         */
 
-        $middleware->web(append: [
+        $middleware->web(
+            append: [
+                DetectCurrency::class,
+            ]
+        );
 
-            DetectCurrency::class,
+        /*
+        |--------------------------------------------------------------------------
+        | Paystack Webhook CSRF Exception
+        |--------------------------------------------------------------------------
+        |
+        | Paystack cannot provide Laravel's browser CSRF token.
+        |
+        | This route remains protected by Paystack's HMAC SHA512
+        | signature verification inside PaystackWebhookController.
+        |
+        */
 
-        ]);
+        $middleware->validateCsrfTokens(
+            except: [
+                'paystack/webhook',
+            ]
+        );
 
     })
 
     ->withExceptions(function (Exceptions $exceptions) {
-
         //
-
     })
 
     ->create();

@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\ShippingRateController;
 use App\Http\Controllers\Admin\WebsiteSettingController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CompareController;
+use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\CustomerAddressController;
 // Frontend
 use App\Http\Controllers\CustomerOrderController;
@@ -26,12 +27,11 @@ use App\Http\Controllers\Frontend\CurrencyController;
 use App\Http\Controllers\Frontend\ProductController as FrontendProductController;
 use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\PaystackWebhookController;
 use App\Http\Controllers\WishlistController;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
-
 // // Customer
-// use App\Http\Controllers\Customer\CustomerDashboardController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -192,6 +192,8 @@ Route::post('/wishlist/{product}/toggle', [WishlistController::class, 'toggle'])
 Route::delete('/wishlist/{product}', [WishlistController::class, 'destroy'])
     ->name('wishlist.destroy');
 
+// Paystack Webhook
+Route::post('/paystack/webhook', [PaystackWebhookController::class, 'handle'])->name('paystack.webhook');
 /*
 |--------------------------------------------------------------------------
 | Authentication
@@ -265,17 +267,12 @@ Route::prefix('admin')
         |--------------------------------------------------------------------------
         */
 
-        Route::get('/orders', [OrderController::class, 'index'])
-            ->name('orders.index');
-
-        Route::get('/orders/{order}', [OrderController::class, 'show'])
-            ->name('orders.show');
-
-        Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])
-            ->name('orders.updateStatus');
-
-        Route::patch('/orders/{order}/payment-status', [OrderController::class, 'updatePaymentStatus'])
-            ->name('orders.updatePaymentStatus');
+        Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+        Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+        Route::patch('/orders/{order}/payment-status', [OrderController::class, 'updatePaymentStatus'])->name('orders.updatePaymentStatus');
+        Route::post('/orders/{order}/refund', [OrderController::class, 'refund'])->name('orders.refund');
+        Route::patch('/orders/{order}/return', [OrderController::class, 'updateReturn'])->name('orders.return.update');
 
         /*
         |--------------------------------------------------------------------------
@@ -305,27 +302,15 @@ Route::prefix('admin')
             ->name('inventory.')
             ->group(function () {
 
-                Route::get(
-                    '/',
-                    [InventoryController::class, 'index']
-                )->name('index');
+                Route::get('/', [InventoryController::class, 'index'])->name('index');
 
-                Route::get(
-                    '/low-stock',
-                    [InventoryController::class, 'lowStock']
-                )->name('low-stock');
+                Route::get('/low-stock', [InventoryController::class, 'lowStock'])->name('low-stock');
 
-                Route::get(
-                    '/movements',
-                    [InventoryController::class, 'movements']
-                )->name('movements');
+                Route::get('/movements', [InventoryController::class, 'movements'])->name('movements');
 
-                Route::post(
-                    '/adjust',
-                    [InventoryController::class, 'adjust']
-                )->name('adjust');
-
+                Route::post('/adjust', [InventoryController::class, 'adjust'])->name('adjust');
             });
+
     });
 
 /*
@@ -374,4 +359,13 @@ Route::prefix('customer')
 
         Route::delete('/addresses/{address}', [CustomerAddressController::class, 'destroy'])
             ->name('addresses.destroy');
+
+        Route::get('/profile', [ProfileController::class, 'index'])
+            ->name('profile.index');
+
+        Route::patch('/profile', [ProfileController::class, 'update'])
+            ->name('profile.update');
+
+        Route::patch('/profile/password', [ProfileController::class, 'updatePassword'])
+            ->name('profile.password');
     });

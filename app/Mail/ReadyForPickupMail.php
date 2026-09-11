@@ -8,17 +8,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class AdminNewOrderMail extends Mailable
+class ReadyForPickupMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public Order $order;
-
-    /*
-    |--------------------------------------------------------------------------
-    | Constructor
-    |--------------------------------------------------------------------------
-    */
 
     public function __construct(Order $order)
     {
@@ -29,17 +23,9 @@ class AdminNewOrderMail extends Mailable
             'items',
             'items.product',
             'items.variant',
-            'country',
-            'state',
             'pickupLocation.state',
         ]);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Build Email
-    |--------------------------------------------------------------------------
-    */
 
     public function build()
     {
@@ -47,11 +33,9 @@ class AdminNewOrderMail extends Mailable
 
         return $this
             ->subject(
-                'New Paid Order - '.$this->order->order_no
+                'Your Order Is Ready for Pickup - ' . $this->order->order_no
             )
-            ->view(
-                'emails.orders.admin-new-order'
-            )
+            ->view('emails.orders.ready-for-pickup')
             ->with([
                 'order' => $this->order,
                 'setting' => $setting,

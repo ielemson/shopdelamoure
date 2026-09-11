@@ -8,17 +8,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class AdminNewOrderMail extends Mailable
+class ShippingStatusMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public Order $order;
-
-    /*
-    |--------------------------------------------------------------------------
-    | Constructor
-    |--------------------------------------------------------------------------
-    */
 
     public function __construct(Order $order)
     {
@@ -31,27 +25,28 @@ class AdminNewOrderMail extends Mailable
             'items.variant',
             'country',
             'state',
-            'pickupLocation.state',
         ]);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Build Email
-    |--------------------------------------------------------------------------
-    */
 
     public function build()
     {
         $setting = WebsiteSetting::query()->first();
 
+        $subject = match ($this->order->status) {
+
+            'shipped' => 'Your Order Has Been Shipped - '
+                .$this->order->order_no,
+
+            'delivered' => 'Your Order Has Been Delivered - '
+                .$this->order->order_no,
+
+            default => 'Order Update - '
+                .$this->order->order_no,
+        };
+
         return $this
-            ->subject(
-                'New Paid Order - '.$this->order->order_no
-            )
-            ->view(
-                'emails.orders.admin-new-order'
-            )
+            ->subject($subject)
+            ->view('emails.orders.shipping-status')
             ->with([
                 'order' => $this->order,
                 'setting' => $setting,

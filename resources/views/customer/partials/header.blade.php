@@ -80,26 +80,13 @@
                  <a href="#" class="request-full-screen d-block px-4 mx-3 fs-5" title="Full screen">
                      <i class="far fa-rss-square"></i>
                  </a>
-                 <div class="dropdown px-4 mx-3 py-2 dropdown-language">
-                     <a href="#" class="dropdown-toggle fs-5" data-bs-toggle="dropdown"><i
-                             class="far fa-globe-americas"></i></a>
-                     <div class="dropdown-menu dropdown-menu-end">
-                         <a class="dropdown-item text-brand" href="#"><img
-                                 src="../assets/images/dashboard/flag-us.png" alt="English">English</a>
-                         <a class="dropdown-item" href="#"><img src="../assets/images/dashboard/flag-fr.png"
-                                 alt="Français">Français</a>
-                         <a class="dropdown-item" href="#"><img src="../assets/images/dashboard/flag-jp.png"
-                                 alt="Français">Français</a>
-                         <a class="dropdown-item" href="#"><img src="../assets/images/dashboard/flag-cn.png"
-                                 alt="Français">Français</a>
-                     </div>
-                 </div>
+
                  <div class="dropdown pl-2 py-2">
                      <a href="#"
                          class="dropdown-toggle text-heading pr-3 pr-sm-6 d-flex align-items-center justify-content-end"
                          data-bs-toggle="dropdown">
-                         <img src="../assets/images/dashboard/avatar-2.png" alt="Ronald Hunter" class="rounded-circle"
-                             width="40">
+                         <img src="{{ asset('assets/images/dashboard/avatar.png') }}"
+                             alt="{{ auth()->user()->name ?? 'Customer' }}" class="rounded-circle" width="40">
                      </a>
 
                      <div class="dropdown-menu dropdown-menu-end">
@@ -110,7 +97,8 @@
 
                          <a class="dropdown-item" href="{{ route('home') }}"><i class="far fa-home me-2"></i>
                              Dashboard</a>
-                         <a class="dropdown-item" href=""><i class="far fa-user me-2"></i> My Profile</a>
+                         <a class="dropdown-item" href="{{ route('customer.profile.index') }}"><i
+                                 class="far fa-user me-2"></i> My Profile</a>
                          <a class="dropdown-item" href="{{ route('customer.orders.index') }}"><i
                                  class="far fa-shopping-bag me-2"></i> My Orders</a>
 

@@ -8,17 +8,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class AdminNewOrderMail extends Mailable
+class RefundProcessedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public Order $order;
-
-    /*
-    |--------------------------------------------------------------------------
-    | Constructor
-    |--------------------------------------------------------------------------
-    */
 
     public function __construct(Order $order)
     {
@@ -35,23 +29,15 @@ class AdminNewOrderMail extends Mailable
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Build Email
-    |--------------------------------------------------------------------------
-    */
-
     public function build()
     {
         $setting = WebsiteSetting::query()->first();
 
         return $this
             ->subject(
-                'New Paid Order - '.$this->order->order_no
+                'Refund Processed - ' . $this->order->order_no
             )
-            ->view(
-                'emails.orders.admin-new-order'
-            )
+            ->view('emails.orders.refund-processed')
             ->with([
                 'order' => $this->order,
                 'setting' => $setting,

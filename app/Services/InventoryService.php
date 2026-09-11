@@ -359,4 +359,189 @@ class InventoryService
             }
         });
     }
+
+    public function restoreOrderStock(Order $order): void
+    {
+        DB::transaction(function () use ($order) {
+
+            $order = Order::query()
+                ->with([
+                    'items.product',
+                    'items.variant',
+                ])
+                ->lockForUpdate()
+                ->findOrFail($order->id);
+
+            foreach ($order->items as $item) {
+
+                /*
+                |--------------------------------------------------------------------------
+                | Idempotency
+                |--------------------------------------------------------------------------
+                |
+                | If this cancellation has already restored this item,
+                | do nothing.
+                |
+                */
+
+                $restoreReference =
+                    'CANCEL-ORDER-'
+                    .$order->id
+                    .'-ITEM-'
+                    .$item->id;
+
+                if (
+                    StockMovement::query()
+                        ->where('reference', $restoreReference)
+                        ->exists()
+                ) {
+                    continue;
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Confirm Stock Was Originally Deducted
+                |--------------------------------------------------------------------------
+                */
+
+                $saleReference =
+                    'SALE-ORDER-'
+                    .$order->id
+                    .'-ITEM-'
+                    .$item->id;
+
+                $saleMovement = StockMovement::query()
+                    ->where('reference', $saleReference)
+                    ->first();
+
+                if (! $saleMovement) {
+
+                    Log::warning(
+                        'Cancellation stock restoration skipped because no sale movement exists.',
+                        [
+                            'order_id' => $order->id,
+                            'order_item_id' => $item->id,
+                            'sale_reference' => $saleReference,
+                        ]
+                    );
+
+                    continue;
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Variant Stock
+                |--------------------------------------------------------------------------
+                */
+
+                if ($item->product_variant_id) {
+
+                    $variant = ProductVariant::query()
+                        ->lockForUpdate()
+                        ->find($item->product_variant_id);
+
+                    if (! $variant) {
+                        continue;
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Only Restore Tracked Stock
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if ($variant->track_stock) {
+
+                        $before = (int) $variant->stock_quantity;
+
+                        $after =
+                            $before
+                            + (int) $item->quantity;
+
+                        $variant->update([
+                            'stock_quantity' => $after,
+                            'stock_status' => $after > 0
+                                    ? 'in_stock'
+                                    : 'out_of_stock',
+                        ]);
+
+                        StockMovement::create([
+                            'product_id' => $variant->product_id,
+                            'variant_id' => $variant->id,
+
+                            'order_id' => $order->id,
+                            'order_item_id' => $item->id,
+
+                            'type' => 'restock',
+
+                            'quantity' => (int) $item->quantity,
+
+                            'quantity_before' => $before,
+
+                            'quantity_after' => $after,
+
+                            'reference' => $restoreReference,
+
+                            'note' => 'Stock restored following order cancellation.',
+
+                            'created_by' => auth()->id(),
+                        ]);
+                    }
+
+                    continue;
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Product Stock
+                |--------------------------------------------------------------------------
+                */
+
+                $product = Product::query()
+                    ->lockForUpdate()
+                    ->find($item->product_id);
+
+                if (! $product) {
+                    continue;
+                }
+
+                $before =
+                    (int) $product->quantity;
+
+                $after =
+                    $before
+                    + (int) $item->quantity;
+
+                $product->update([
+                    'quantity' => $after,
+
+                    'stock_status' => $after > 0
+                            ? 'in_stock'
+                            : 'out_of_stock',
+                ]);
+
+                StockMovement::create([
+                    'product_id' => $product->id,
+                    'variant_id' => null,
+
+                    'order_id' => $order->id,
+                    'order_item_id' => $item->id,
+
+                    'type' => 'restock',
+
+                    'quantity' => (int) $item->quantity,
+
+                    'quantity_before' => $before,
+
+                    'quantity_after' => $after,
+
+                    'reference' => $restoreReference,
+
+                    'note' => 'Stock restored following order cancellation.',
+
+                    'created_by' => auth()->id(),
+                ]);
+            }
+        });
+    }
 }

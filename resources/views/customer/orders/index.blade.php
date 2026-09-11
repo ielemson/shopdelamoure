@@ -3,24 +3,33 @@
 @section('CustomerContent')
     <div class="dashboard-page-content">
 
-        {{-- Page Header --}}
+        {{-- ==========================================================
+            PAGE HEADER
+        ========================================================== --}}
+
         <div class="row mb-9 align-items-center justify-content-between">
 
             <div class="col-sm-7 mb-6 mb-sm-0">
+
                 <h2 class="fs-4 mb-2">
                     My Orders
                 </h2>
 
                 <p class="mb-0 text-muted">
-                    View your order history, payment status and delivery progress.
+                    View your order history, payment status and fulfilment progress.
                 </p>
+
             </div>
+
 
             <div class="col-sm-5 d-flex justify-content-sm-end">
 
                 <a href="{{ route('shop') }}" class="btn btn-primary">
+
                     <i class="fas fa-shopping-bag me-2"></i>
+
                     Continue Shopping
+
                 </a>
 
             </div>
@@ -28,8 +37,12 @@
         </div>
 
 
-        {{-- Orders Card --}}
+        {{-- ==========================================================
+            ORDERS CARD
+        ========================================================== --}}
+
         <div class="card mb-7 rounded-4 p-7">
+
 
             {{-- Card Header --}}
             <div class="card-header bg-transparent px-0 pt-0 pb-7 border-0">
@@ -37,14 +50,17 @@
                 <div class="row align-items-center justify-content-between">
 
                     <div class="col-md-6 col-12 mb-5 mb-md-0">
+
                         <h4 class="card-title fs-18px mb-1">
                             Order History
                         </h4>
 
                         <p class="text-muted fs-14px mb-0">
-                            All orders placed from your Delamoure account.
+                            All orders placed from your Dela Moure account.
                         </p>
+
                     </div>
+
 
                     <div class="col-md-6 col-12">
 
@@ -53,6 +69,7 @@
                             <span class="badge bg-body-tertiary text-body-emphasis px-4 py-3 fs-13px">
 
                                 {{ $orders->total() }}
+
                                 {{ $orders->total() === 1 ? 'Order' : 'Orders' }}
 
                             </span>
@@ -66,7 +83,10 @@
             </div>
 
 
-            {{-- Orders Table --}}
+            {{-- ======================================================
+                ORDERS TABLE
+            ====================================================== --}}
+
             <div class="card-body px-0 pt-0 pb-0">
 
                 <div class="table-responsive">
@@ -90,7 +110,11 @@
                                 </th>
 
                                 <th class="align-middle">
-                                    Payment Method
+                                    Fulfilment
+                                </th>
+
+                                <th class="align-middle">
+                                    Payment
                                 </th>
 
                                 <th class="align-middle">
@@ -119,25 +143,74 @@
                             @forelse($orders as $order)
                                 @php
 
-                                    $paymentStatusClass = match (strtolower($order->payment_status ?? 'pending')) {
+                                    /*
+                                    |--------------------------------------------------------------------------
+                                    | Payment Status
+                                    |--------------------------------------------------------------------------
+                                    */
+
+                                    $paymentStatusClass = match (strtolower($order->payment_status ?? 'unpaid')) {
                                         'paid' => 'alert-success',
                                         'failed' => 'alert-danger',
-                                        'refunded' => 'alert-warning',
+                                        'refunded' => 'alert-info',
+                                        'pending' => 'alert-warning',
+                                        'unpaid' => 'alert-secondary',
+                                        default => 'alert-secondary',
+                                    };
+
+                                    /*
+                                    |--------------------------------------------------------------------------
+                                    | Order Status
+                                    |--------------------------------------------------------------------------
+                                    */
+
+                                    $orderStatusClass = match (strtolower($order->status ?? 'pending')) {
+                                        'delivered', 'picked_up', 'completed' => 'alert-success',
+
+                                        'processing' => 'alert-info',
+
+                                        'shipped' => 'alert-primary',
+
+                                        'ready_for_pickup' => 'alert-warning',
+
+                                        'cancelled', 'failed' => 'alert-danger',
+
                                         default => 'alert-warning',
                                     };
 
-                                    $orderStatusClass = match (strtolower($order->status ?? 'pending')) {
-                                        'completed', 'delivered' => 'alert-success',
-                                        'processing' => 'alert-info',
-                                        'shipped' => 'alert-primary',
-                                        'cancelled', 'failed' => 'alert-danger',
-                                        default => 'alert-warning',
-                                    };
+                                    /*
+                                    |--------------------------------------------------------------------------
+                                    | Human Readable Status
+                                    |--------------------------------------------------------------------------
+                                    */
+
+                                    $orderStatusLabel = ucwords(str_replace('_', ' ', $order->status ?? 'pending'));
+
+                                    /*
+                                    |--------------------------------------------------------------------------
+                                    | Fulfilment
+                                    |--------------------------------------------------------------------------
+                                    */
+
+                                    $isPickup = $order->delivery_method === 'pickup';
+
+                                    $fulfilmentLabel = $isPickup ? 'Pickup' : 'Shipping';
+
+                                    /*
+                                    |--------------------------------------------------------------------------
+                                    | Item Count
+                                    |--------------------------------------------------------------------------
+                                    */
+
+                                    $itemCount = isset($order->items_count)
+                                        ? (int) $order->items_count
+                                        : $order->items->count();
 
                                 @endphp
 
 
                                 <tr>
+
 
                                     {{-- Order Number --}}
                                     <td>
@@ -145,7 +218,7 @@
                                         <a href="{{ route('customer.orders.show', $order) }}"
                                             class="fw-semibold text-primary text-decoration-none">
 
-                                            {{ $order->order_no }}
+                                            {{ $order->order_no ?? 'ORD-' . $order->id }}
 
                                         </a>
 
@@ -154,16 +227,42 @@
 
                                     {{-- Date --}}
                                     <td>
-                                        {{ $order->created_at->format('d M Y') }}
+
+                                        {{ $order->created_at ? $order->created_at->format('d M Y') : 'N/A' }}
+
                                     </td>
 
 
                                     {{-- Items --}}
                                     <td>
 
-                                        {{ $order->items->count() }}
+                                        {{ $itemCount }}
 
-                                        {{ $order->items->count() === 1 ? 'Item' : 'Items' }}
+                                        {{ $itemCount === 1 ? 'Item' : 'Items' }}
+
+                                    </td>
+
+
+                                    {{-- Fulfilment --}}
+                                    <td>
+
+                                        <div class="d-flex align-items-center">
+
+                                            @if ($isPickup)
+                                                <i class="fa-solid fa-location-dot me-3 text-muted"></i>
+
+                                                <span>
+                                                    Pickup
+                                                </span>
+                                            @else
+                                                <i class="fa-solid fa-truck-fast me-3 text-muted"></i>
+
+                                                <span>
+                                                    Shipping
+                                                </span>
+                                            @endif
+
+                                        </div>
 
                                     </td>
 
@@ -191,9 +290,9 @@
 
                                         <span
                                             class="badge rounded-pill alert {{ $paymentStatusClass }}
-                                               py-3 px-4 mb-0 border-0 text-capitalize fs-12">
+                                                py-3 px-4 mb-0 border-0 text-capitalize fs-12">
 
-                                            {{ ucfirst($order->payment_status ?? 'Pending') }}
+                                            {{ ucfirst($order->payment_status ?? 'Unpaid') }}
 
                                         </span>
 
@@ -205,9 +304,9 @@
 
                                         <span
                                             class="badge rounded-pill alert {{ $orderStatusClass }}
-                                               py-3 px-4 mb-0 border-0 text-capitalize fs-12">
+                                                py-3 px-4 mb-0 border-0 fs-12">
 
-                                            {{ ucfirst($order->status ?? 'Pending') }}
+                                            {{ $orderStatusLabel }}
 
                                         </span>
 
@@ -217,7 +316,7 @@
                                     {{-- Total --}}
                                     <td class="text-end fw-semibold text-body-emphasis">
 
-                                        ₦{{ number_format($order->total ?? 0, 2) }}
+                                        ₦{{ number_format((float) ($order->total ?? 0), 2) }}
 
                                     </td>
 
@@ -229,6 +328,7 @@
                                             class="btn btn-primary btn-xs py-4 px-5 fs-13px">
 
                                             <i class="far fa-eye me-2"></i>
+
                                             View
 
                                         </a>
@@ -242,13 +342,13 @@
 
                                 <tr>
 
-                                    <td colspan="8" class="text-center py-10">
+                                    <td colspan="9" class="text-center py-10">
 
                                         <div class="mb-5">
 
                                             <span
                                                 class="square d-inline-flex align-items-center justify-content-center
-                                                   rounded-circle bg-body-tertiary text-muted"
+                                                    rounded-circle bg-body-tertiary text-muted"
                                                 style="--square-size: 64px">
 
                                                 <i class="fas fa-shopping-bag fs-4"></i>
@@ -257,13 +357,16 @@
 
                                         </div>
 
+
                                         <h5 class="fs-6 mb-2">
                                             No orders yet
                                         </h5>
 
+
                                         <p class="text-muted fs-14px mb-5">
                                             You have not placed any orders yet.
                                         </p>
+
 
                                         <a href="{{ route('shop') }}" class="btn btn-primary btn-sm">
 
@@ -287,7 +390,10 @@
         </div>
 
 
-        {{-- Pagination --}}
+        {{-- ==========================================================
+            PAGINATION
+        ========================================================== --}}
+
         @if ($orders->hasPages())
             <div class="mt-6 mb-4">
 
