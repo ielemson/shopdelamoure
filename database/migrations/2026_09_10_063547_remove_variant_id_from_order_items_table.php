@@ -11,57 +11,68 @@ return new class extends Migration
     {
         /*
         |--------------------------------------------------------------------------
-        | Preserve Existing Variant Data
+        | Safety Check
         |--------------------------------------------------------------------------
-        |
-        | Some recently created orders may have variant_id populated while
-        | product_variant_id is still null.
-        |
         */
 
-        DB::table('order_items')
-            ->whereNull('product_variant_id')
-            ->whereNotNull('variant_id')
-            ->update([
-                'product_variant_id' => DB::raw('variant_id'),
-            ]);
+        if (! Schema::hasColumn('order_items', 'variant_id')) {
+            return;
+        }
 
         /*
         |--------------------------------------------------------------------------
-        | Remove Duplicate Variant Foreign Key
+        | Find Actual Foreign Key
         |--------------------------------------------------------------------------
         */
 
-        Schema::table('order_items', function (Blueprint $table) {
+        $foreignKeys = DB::select("
+            SELECT CONSTRAINT_NAME
+            FROM information_schema.KEY_COLUMN_USAGE
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'order_items'
+              AND COLUMN_NAME = 'variant_id'
+              AND REFERENCED_TABLE_NAME IS NOT NULL
+        ");
 
-            $table->dropConstrainedForeignId('variant_id');
+        /*
+        |--------------------------------------------------------------------------
+        | Drop Foreign Key Only If It Actually Exists
+        |--------------------------------------------------------------------------
+        */
 
-        });
+        foreach ($foreignKeys as $foreignKey) {
+
+            $constraintName = $foreignKey->CONSTRAINT_NAME;
+
+            DB::statement(
+                "ALTER TABLE `order_items`
+                 DROP FOREIGN KEY `{$constraintName}`"
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Drop Old variant_id Column
+        |--------------------------------------------------------------------------
+        */
+
+        if (Schema::hasColumn('order_items', 'variant_id')) {
+
+            Schema::table('order_items', function (Blueprint $table) {
+                $table->dropColumn('variant_id');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('order_items', function (Blueprint $table) {
+        if (! Schema::hasColumn('order_items', 'variant_id')) {
 
-            $table->foreignId('variant_id')
-                ->nullable()
-                ->after('product_id')
-                ->constrained('product_variants')
-                ->nullOnDelete();
+            Schema::table('order_items', function (Blueprint $table) {
 
-        });
-
-        /*
-        |--------------------------------------------------------------------------
-        | Restore Values If Migration Is Rolled Back
-        |--------------------------------------------------------------------------
-        */
-
-        DB::table('order_items')
-            ->whereNull('variant_id')
-            ->whereNotNull('product_variant_id')
-            ->update([
-                'variant_id' => DB::raw('product_variant_id'),
-            ]);
+                $table->unsignedBigInteger('variant_id')
+                    ->nullable();
+            });
+        }
     }
 };
