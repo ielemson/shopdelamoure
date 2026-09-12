@@ -2,7 +2,8 @@
 
 @section('meta_title', 'Checkout | Dela Moure Luxury Fragrances')
 
-@section('meta_description', 'Complete your Dela Moure order securely. Choose delivery or pickup and pay securely with
+@section('meta_description',
+    'Complete your Dela Moure order securely. Choose delivery or pickup and pay securely with
     Paystack.')
 
 @section('PageContent')
@@ -13,13 +14,23 @@
     ])
 
     @php
+
+        /*
+        |--------------------------------------------------------------------------
+        | Currency / Cart
+        |--------------------------------------------------------------------------
+        */
+
         $currency = strtoupper(session('currency', 'NGN'));
+
         $currencySymbol = $currency === 'USD' ? '$' : '₦';
 
         $cart = \Darryldecode\Cart\Facades\CartFacade::getContent();
+
         $subtotal = (float) \Darryldecode\Cart\Facades\CartFacade::getSubTotal();
 
         $shipping = 0;
+
         $total = $subtotal;
 
         /*
@@ -39,25 +50,50 @@
 
         /*
         |--------------------------------------------------------------------------
-        | Pickup
+        | Store Pickup Master Setting
         |--------------------------------------------------------------------------
         */
 
-        $hasPickupLocations = isset($pickupLocations) && $pickupLocations->isNotEmpty();
+        $websiteSetting = \App\Models\WebsiteSetting::query()->first();
+
+        $storePickupEnabled = (bool) ($websiteSetting?->enable_store_pickup ?? true);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pickup Locations
+        |--------------------------------------------------------------------------
+        */
+
+        $pickupLocationsCollection = $pickupLocations ?? collect();
+
+        $hasPickupLocations = $storePickupEnabled && $pickupLocationsCollection->isNotEmpty();
 
         $defaultPickupLocation = $hasPickupLocations
-            ? ($pickupLocations->firstWhere('is_default', true) ?:
-            $pickupLocations->first())
+            ? ($pickupLocationsCollection->firstWhere('is_default', true) ?:
+            $pickupLocationsCollection->first())
             : null;
 
         $selectedPickupLocationId = old('pickup_location_id', $defaultPickupLocation?->id);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Delivery Method
+        |--------------------------------------------------------------------------
+        */
+
         $selectedDeliveryMethod = old('delivery_method', 'shipping');
 
-        if ($selectedDeliveryMethod === 'pickup' && !$hasPickupLocations) {
+        /*
+        |--------------------------------------------------------------------------
+        | Force Shipping When Pickup Is Unavailable
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$storePickupEnabled || ($selectedDeliveryMethod === 'pickup' && !$hasPickupLocations)) {
             $selectedDeliveryMethod = 'shipping';
         }
     @endphp
+
 
 
     <section class="container pb-14 pb-lg-19">
@@ -69,10 +105,19 @@
             </h2>
 
             <p class="text-body mb-0">
-                Choose how you would like to receive your order and proceed to secure payment.
+
+                @if ($storePickupEnabled)
+                    Choose how you would like to receive your order
+                    and proceed to secure payment.
+                @else
+                    Enter your delivery information and proceed
+                    to secure payment.
+                @endif
+
             </p>
 
         </div>
+
 
 
         {{-- ==========================================================
@@ -99,12 +144,16 @@
 
                             </div>
 
+
                             <p class="text-body mb-md-0 mb-4 fs-14px">
+
                                 No account is required. Enter your details below
                                 and proceed securely to payment.
+
                             </p>
 
                         </div>
+
 
                         <div class="flex-shrink-0">
 
@@ -128,17 +177,27 @@
                     <div class="d-flex align-items-center">
 
                         <div class="me-4">
+
                             <i class="far fa-user-circle fs-2"></i>
+
                         </div>
+
 
                         <div>
 
                             <h5 class="mb-1">
-                                Welcome back{{ auth()->user()->name ? ', ' . auth()->user()->name : '' }}
+
+                                Welcome
+                                back{{ auth()->user()->name ? ', ' . auth()->user()->name : '' }}
+
                             </h5>
 
+
                             <p class="text-body fs-14px mb-0">
-                                Your available customer details have been pre-filled below.
+
+                                Your available customer details have been
+                                pre-filled below.
+
                             </p>
 
                         </div>
@@ -152,6 +211,7 @@
         </div>
 
 
+
         {{-- ==========================================================
             ERRORS
         ========================================================== --}}
@@ -163,7 +223,9 @@
                 <ul class="mb-0">
 
                     @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
+                        <li>
+                            {{ $error }}
+                        </li>
                     @endforeach
 
                 </ul>
@@ -173,25 +235,34 @@
         @endif
 
 
+
         @if (session('error'))
             <div class="alert alert-danger mb-8">
+
                 {{ session('error') }}
+
             </div>
         @endif
+
 
 
         @if (session('success'))
             <div class="alert alert-success mb-8">
+
                 {{ session('success') }}
+
             </div>
         @endif
+
 
 
         <form action="{{ route('checkout.process') }}" method="POST" id="checkoutForm">
 
             @csrf
 
+
             <input type="hidden" name="payment_method" value="paystack">
+
 
 
             <div class="row">
@@ -214,9 +285,11 @@
 
                             @forelse ($cart as $item)
                                 @php
+
                                     $image =
                                         $item->attributes->get('image') ?:
                                         asset('assets/images/products/product-placeholder.jpg');
+
                                 @endphp
 
 
@@ -239,7 +312,9 @@
                                                 {{ $item->name }}
 
                                                 <span class="text-body fw-normal">
+
                                                     ×{{ $item->quantity }}
+
                                                 </span>
 
                                             </p>
@@ -247,7 +322,9 @@
 
                                             @if ($item->attributes->get('variant_name'))
                                                 <p class="fs-14px text-body mb-0">
+
                                                     {{ $item->attributes->get('variant_name') }}
+
                                                 </p>
                                             @endif
 
@@ -268,24 +345,31 @@
 
                                 </div>
 
+
                             @empty
 
                                 <p class="text-body">
+
                                     Your cart is empty.
+
                                 </p>
                             @endforelse
 
                         </div>
 
 
+
                         <div class="card-body px-8 py-7">
 
+
                             {{-- Subtotal --}}
+
                             <div class="d-flex align-items-center mb-3">
 
                                 <span>
                                     Subtotal:
                                 </span>
+
 
                                 <span class="ms-auto text-body-emphasis fw-semibold" id="checkoutSubtotal">
 
@@ -296,12 +380,17 @@
                             </div>
 
 
+
                             {{-- Delivery / Pickup --}}
+
                             <div class="d-flex align-items-center">
 
                                 <span id="checkoutShippingLabel">
+
                                     Shipping:
+
                                 </span>
+
 
                                 <span class="ms-auto text-body-emphasis fw-semibold" id="checkoutShipping">
 
@@ -312,10 +401,10 @@
                             </div>
 
 
-                            <div id="shippingMessage" class="small mt-3 d-none">
-                            </div>
+                            <div id="shippingMessage" class="small mt-3 d-none"></div>
 
                         </div>
+
 
 
                         <div class="card-footer bg-transparent py-6 px-0 mx-8">
@@ -323,8 +412,11 @@
                             <div class="d-flex align-items-center fw-bold">
 
                                 <span class="text-body-emphasis">
+
                                     Total
+
                                 </span>
+
 
                                 <span class="ms-auto text-body-emphasis fs-4" id="checkoutTotal">
 
@@ -341,6 +433,7 @@
                 </div>
 
 
+
                 {{-- ==========================================================
                     DELIVERY
                 ========================================================== --}}
@@ -350,34 +443,50 @@
                     <div class="checkout">
 
                         <h4 class="fs-4 mb-2">
+
                             Delivery Information
+
                         </h4>
 
+
                         <p class="text-body fs-14px mb-7">
-                            Choose delivery to your address or collect your order
-                            from a Dela Moure pickup location.
+
+                            @if ($storePickupEnabled)
+                                Choose delivery to your address or collect
+                                your order from a Dela Moure pickup location.
+                            @else
+                                Enter your delivery details to have your
+                                order delivered to your address.
+                            @endif
+
                         </p>
 
 
+
                         {{-- ==================================================
-                            SHIP / PICKUP SELECTOR
+                            DELIVERY METHOD SELECTOR
                         ================================================== --}}
 
                         <div class="mb-8">
 
                             <label class="mb-4 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+
                                 How would you like to receive your order?
+
                             </label>
 
 
                             <div class="row g-3">
 
-                                {{-- Ship --}}
-                                <div class="col-md-6">
+
+                                {{-- Shipping --}}
+
+                                <div class="{{ $storePickupEnabled ? 'col-md-6' : 'col-12' }}">
 
                                     <input type="radio" class="btn-check delivery-method-input" name="delivery_method"
                                         id="deliveryShipping" value="shipping" autocomplete="off"
                                         {{ $selectedDeliveryMethod === 'shipping' ? 'checked' : '' }}>
+
 
                                     <label for="deliveryShipping" class="delivery-method-card border w-100 p-5">
 
@@ -389,14 +498,20 @@
 
                                             </div>
 
+
                                             <div>
 
                                                 <strong class="d-block fs-5">
+
                                                     Ship
+
                                                 </strong>
 
+
                                                 <span class="text-body fs-14px">
+
                                                     Deliver to your address
+
                                                 </span>
 
                                             </div>
@@ -406,51 +521,61 @@
                                     </label>
 
                                 </div>
+
 
 
                                 {{-- Pickup --}}
-                                <div class="col-md-6">
 
-                                    <input type="radio" class="btn-check delivery-method-input" name="delivery_method"
-                                        id="deliveryPickup" value="pickup" autocomplete="off"
-                                        {{ $selectedDeliveryMethod === 'pickup' ? 'checked' : '' }}
-                                        {{ !$hasPickupLocations ? 'disabled' : '' }}>
+                                @if ($storePickupEnabled)
+                                    <div class="col-md-6">
 
-                                    <label for="deliveryPickup"
-                                        class="delivery-method-card border w-100 p-5
-                                        {{ !$hasPickupLocations ? 'opacity-50' : '' }}">
+                                        <input type="radio" class="btn-check delivery-method-input" name="delivery_method"
+                                            id="deliveryPickup" value="pickup" autocomplete="off"
+                                            {{ $selectedDeliveryMethod === 'pickup' ? 'checked' : '' }}
+                                            {{ !$hasPickupLocations ? 'disabled' : '' }}>
 
-                                        <div class="d-flex align-items-center">
 
-                                            <div class="delivery-method-icon me-4">
+                                        <label for="deliveryPickup"
+                                            class="delivery-method-card border w-100 p-5
+                                            {{ !$hasPickupLocations ? 'opacity-50' : '' }}">
 
-                                                <i class="fa-solid fa-location-dot"></i>
+                                            <div class="d-flex align-items-center">
+
+                                                <div class="delivery-method-icon me-4">
+
+                                                    <i class="fa-solid fa-location-dot"></i>
+
+                                                </div>
+
+
+                                                <div>
+
+                                                    <strong class="d-block fs-5">
+
+                                                        Pickup
+
+                                                    </strong>
+
+
+                                                    <span class="text-body fs-14px">
+
+                                                        {{ $hasPickupLocations ? 'Collect from Dela Moure' : 'Currently unavailable' }}
+
+                                                    </span>
+
+                                                </div>
 
                                             </div>
 
-                                            <div>
+                                        </label>
 
-                                                <strong class="d-block fs-5">
-                                                    Pickup
-                                                </strong>
-
-                                                <span class="text-body fs-14px">
-
-                                                    {{ $hasPickupLocations ? 'Collect from Dela Moure' : 'Currently unavailable' }}
-
-                                                </span>
-
-                                            </div>
-
-                                        </div>
-
-                                    </label>
-
-                                </div>
+                                    </div>
+                                @endif
 
                             </div>
 
                         </div>
+
 
 
                         {{-- ==================================================
@@ -462,7 +587,10 @@
                             <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
                                 Name
-                                <span class="text-danger">*</span>
+
+                                <span class="text-danger">
+                                    *
+                                </span>
 
                             </label>
 
@@ -491,13 +619,20 @@
                         </div>
 
 
-                        {{-- Contact --}}
+
+                        {{-- ==================================================
+                            CONTACT INFORMATION
+                        ================================================== --}}
+
                         <div class="mb-7">
 
                             <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
                                 Contact Information
-                                <span class="text-danger">*</span>
+
+                                <span class="text-danger">
+                                    *
+                                </span>
 
                             </label>
 
@@ -526,19 +661,25 @@
                         </div>
 
 
+
                         {{-- ==================================================
                             SHIPPING FIELDS
                         ================================================== --}}
 
                         <div id="shippingFields">
 
+
                             {{-- Street --}}
+
                             <div class="mb-7">
 
                                 <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
                                     Street Address
-                                    <span class="text-danger">*</span>
+
+                                    <span class="text-danger">
+                                        *
+                                    </span>
 
                                 </label>
 
@@ -551,9 +692,12 @@
                             </div>
 
 
+
                             <div class="row">
 
+
                                 {{-- Country --}}
+
                                 <div class="col-md-6">
 
                                     <div class="mb-7">
@@ -561,7 +705,10 @@
                                         <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
                                             Country
-                                            <span class="text-danger">*</span>
+
+                                            <span class="text-danger">
+                                                *
+                                            </span>
 
                                         </label>
 
@@ -570,8 +717,11 @@
                                             class="form-select shipping-required" autocomplete="country">
 
                                             <option value="">
+
                                                 Select Country
+
                                             </option>
+
 
                                             @foreach ($countries as $country)
                                                 <option value="{{ $country->id }}"
@@ -589,7 +739,9 @@
                                 </div>
 
 
+
                                 {{-- State --}}
+
                                 <div class="col-md-6">
 
                                     <div class="mb-7">
@@ -597,7 +749,10 @@
                                         <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
                                             State
-                                            <span class="text-danger">*</span>
+
+                                            <span class="text-danger">
+                                                *
+                                            </span>
 
                                         </label>
 
@@ -606,7 +761,9 @@
                                             data-selected="{{ $selectedStateId }}" autocomplete="address-level1">
 
                                             <option value="">
+
                                                 Select State
+
                                             </option>
 
                                         </select>
@@ -618,13 +775,18 @@
                             </div>
 
 
+
                             {{-- Delivery Zone --}}
+
                             <div class="mb-7">
 
                                 <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
                                     Delivery Zone
-                                    <span class="text-danger">*</span>
+
+                                    <span class="text-danger">
+                                        *
+                                    </span>
 
                                 </label>
 
@@ -634,7 +796,9 @@
                                     disabled>
 
                                     <option value="">
+
                                         Select delivery zone
+
                                     </option>
 
                                 </select>
@@ -642,152 +806,192 @@
 
                                 <small id="zoneHelpText" class="text-muted d-block mt-2">
 
-                                    Select your state first to see available delivery zones.
+                                    Select your state first to see available
+                                    delivery zones.
 
                                 </small>
 
 
+
                                 {{-- Covered Areas --}}
+
                                 <div id="zoneCoverageBox" class="border bg-light p-4 mt-4 d-none">
 
                                     <div class="mb-2">
 
                                         <strong id="zoneCoverageTitle">
+
                                             Delivery Zone
+
                                         </strong>
 
                                     </div>
 
+
                                     <div class="text-body fs-14px mb-3">
+
                                         This delivery zone covers:
+
                                     </div>
 
-                                    <div id="zoneCoverageAreas" class="d-flex flex-wrap gap-2">
-                                    </div>
+
+                                    <div id="zoneCoverageAreas" class="d-flex flex-wrap gap-2"></div>
 
                                 </div>
 
                             </div>
 
                         </div>
+
 
 
                         {{-- ==================================================
                             PICKUP
                         ================================================== --}}
 
-                        <div id="pickupFields" class="d-none mb-8">
+                        @if ($storePickupEnabled)
 
-                            <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+                            <div id="pickupFields" class="d-none mb-8">
 
-                                Pickup Location
-                                <span class="text-danger">*</span>
+                                <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
-                            </label>
+                                    Pickup Location
 
+                                    <span class="text-danger">
+                                        *
+                                    </span>
 
-                            @forelse ($pickupLocations as $pickupLocation)
-                                <div class="mb-3">
-
-                                    <input type="radio" class="btn-check pickup-location-input"
-                                        name="pickup_location_id" id="pickupLocation{{ $pickupLocation->id }}"
-                                        value="{{ $pickupLocation->id }}" autocomplete="off"
-                                        {{ (string) $selectedPickupLocationId === (string) $pickupLocation->id ? 'checked' : '' }}>
+                                </label>
 
 
-                                    <label for="pickupLocation{{ $pickupLocation->id }}"
-                                        class="pickup-location-card border w-100 p-5">
 
-                                        <div class="d-flex justify-content-between gap-4">
+                                @forelse ($pickupLocationsCollection as $pickupLocation)
+                                    <div class="mb-3">
 
-                                            <div>
-
-                                                <div class="d-flex align-items-center mb-2">
-
-                                                    <i class="fa-solid fa-location-dot me-3"></i>
-
-                                                    <strong class="fs-5">
-                                                        {{ $pickupLocation->name }}
-                                                    </strong>
-
-                                                </div>
+                                        <input type="radio" class="btn-check pickup-location-input"
+                                            name="pickup_location_id" id="pickupLocation{{ $pickupLocation->id }}"
+                                            value="{{ $pickupLocation->id }}" autocomplete="off"
+                                            {{ (string) $selectedPickupLocationId === (string) $pickupLocation->id ? 'checked' : '' }}>
 
 
-                                                <div class="text-body fs-14px mb-2">
+                                        <label for="pickupLocation{{ $pickupLocation->id }}"
+                                            class="pickup-location-card border w-100 p-5">
 
-                                                    {{ $pickupLocation->address }}
+                                            <div class="d-flex justify-content-between gap-4">
 
-                                                    @if ($pickupLocation->state?->name)
-                                                        <br>
-                                                        {{ $pickupLocation->state->name }}
+                                                <div>
+
+                                                    <div class="d-flex align-items-center mb-2">
+
+                                                        <i class="fa-solid fa-location-dot me-3"></i>
+
+
+                                                        <strong class="fs-5">
+
+                                                            {{ $pickupLocation->name }}
+
+                                                        </strong>
+
+                                                    </div>
+
+
+                                                    <div class="text-body fs-14px mb-2">
+
+                                                        {{ $pickupLocation->address }}
+
+
+                                                        @if ($pickupLocation->state?->name)
+                                                            <br>
+
+                                                            {{ $pickupLocation->state->name }}
+                                                        @endif
+
+                                                    </div>
+
+
+
+                                                    @if ($pickupLocation->opening_hours)
+                                                        <div class="small text-muted mb-1">
+
+                                                            <i class="far fa-clock me-1"></i>
+
+                                                            {{ $pickupLocation->opening_hours }}
+
+                                                        </div>
+                                                    @endif
+
+
+
+                                                    @if ($pickupLocation->pickup_time)
+                                                        <div class="small text-muted">
+
+                                                            <i class="far fa-circle-check me-1"></i>
+
+                                                            {{ $pickupLocation->pickup_time }}
+
+                                                        </div>
                                                     @endif
 
                                                 </div>
 
 
-                                                @if ($pickupLocation->opening_hours)
-                                                    <div class="small text-muted mb-1">
 
-                                                        <i class="far fa-clock me-1"></i>
+                                                <div class="text-end">
 
-                                                        {{ $pickupLocation->opening_hours }}
+                                                    <span class="badge bg-success">
 
-                                                    </div>
-                                                @endif
+                                                        FREE
 
-
-                                                @if ($pickupLocation->pickup_time)
-                                                    <div class="small text-muted">
-
-                                                        <i class="far fa-circle-check me-1"></i>
-
-                                                        {{ $pickupLocation->pickup_time }}
-
-                                                    </div>
-                                                @endif
-
-                                            </div>
+                                                    </span>
 
 
-                                            <div class="text-end">
+                                                    @if ($pickupLocation->is_default)
+                                                        <div class="small text-muted mt-2">
 
-                                                <span class="badge bg-success">
-                                                    FREE
-                                                </span>
+                                                            Main Pickup
 
-                                                @if ($pickupLocation->is_default)
-                                                    <div class="small text-muted mt-2">
-                                                        Main Pickup
-                                                    </div>
-                                                @endif
+                                                        </div>
+                                                    @endif
+
+                                                </div>
 
                                             </div>
 
-                                        </div>
+                                        </label>
 
-                                    </label>
-
-                                </div>
-
-                            @empty
-
-                                <div class="alert alert-light border mb-0">
-                                    Pickup is currently unavailable.
-                                </div>
-                            @endforelse
+                                    </div>
 
 
-                            <div class="alert alert-light border mt-4 mb-0 fs-14px">
+                                @empty
 
-                                <i class="fa-solid fa-circle-info me-2"></i>
 
-                                You will be notified when your order is ready for collection.
-                                Please do not visit the pickup location until your order
-                                has been confirmed ready.
+                                    <div class="alert alert-light border mb-0">
+
+                                        Pickup is currently unavailable.
+
+                                    </div>
+                                @endforelse
+
+
+
+                                @if ($hasPickupLocations)
+                                    <div class="alert alert-light border mt-4 mb-0 fs-14px">
+
+                                        <i class="fa-solid fa-circle-info me-2"></i>
+
+                                        You will be notified when your order
+                                        is ready for collection.
+
+                                        Please do not visit the pickup location
+                                        until your order has been confirmed ready.
+
+                                    </div>
+                                @endif
 
                             </div>
 
-                        </div>
+                        @endif
+
 
 
                         {{-- ==================================================
@@ -802,7 +1006,9 @@
                                 Delivery Notes
 
                                 <span class="text-body fw-normal">
+
                                     (Optional)
+
                                 </span>
 
                             </label>
@@ -814,6 +1020,7 @@
                         </div>
 
 
+
                         {{-- ==================================================
                             PAYMENT
                         ================================================== --}}
@@ -821,12 +1028,18 @@
                         <div class="checkout">
 
                             <h4 class="fs-4 mb-3">
+
                                 Payment
+
                             </h4>
 
+
                             <p class="text-body mb-7">
+
                                 Complete your order securely with Paystack.
+
                             </p>
+
 
 
                             <div class="payment-method-card border p-6 mb-7">
@@ -835,8 +1048,11 @@
 
                                     <i class="far fa-credit-card fs-2 me-4"></i>
 
+
                                     <strong class="fs-5">
+
                                         Pay with Paystack
+
                                     </strong>
 
                                 </div>
@@ -852,6 +1068,7 @@
                             </div>
 
 
+
                             @guest
 
                                 <div class="guest-checkout-note border p-5 mb-7">
@@ -860,17 +1077,21 @@
 
                                         <i class="far fa-check-circle me-3 mt-1"></i>
 
+
                                         <div>
 
                                             <strong class="d-block mb-1">
+
                                                 Continue without an account
+
                                             </strong>
+
 
                                             <span class="text-body fs-14px">
 
-                                                You can complete this order as a guest
-                                                and create an account later using the
-                                                same email address.
+                                                You can complete this order as
+                                                a guest and create an account
+                                                later using the same email address.
 
                                             </span>
 
@@ -883,7 +1104,9 @@
                             @endguest
 
 
+
                             {{-- Terms --}}
+
                             <div class="form-check mb-7">
 
                                 <input class="form-check-input" type="checkbox" name="terms" value="1"
@@ -899,7 +1122,9 @@
                             </div>
 
 
+
                             {{-- Submit --}}
+
                             <button type="submit" id="placeOrderBtn"
                                 class="btn btn-dark btn-hover-bg-primary btn-hover-border-primary px-11 py-5" disabled>
 
@@ -910,9 +1135,11 @@
                             </button>
 
 
+
                             <div id="checkoutLocationNotice" class="small text-muted mt-3">
 
-                                Select your delivery state and zone to calculate shipping.
+                                Select your delivery state and zone
+                                to calculate shipping.
 
                             </div>
 
@@ -927,6 +1154,7 @@
         </form>
 
     </section>
+
 
 
     <style>
@@ -946,6 +1174,7 @@
         }
 
 
+
         /*
             |--------------------------------------------------------------------------
             | Ship / Pickup
@@ -954,37 +1183,70 @@
 
         .delivery-method-card,
         .pickup-location-card {
+
             display: block;
+
             cursor: pointer;
+
             transition: all .2s ease;
+
             background: #fff;
         }
 
 
         .delivery-method-card:hover,
         .pickup-location-card:hover {
+
             border-color: #4A2C20 !important;
         }
 
 
         .delivery-method-input:checked+.delivery-method-card,
         .pickup-location-input:checked+.pickup-location-card {
+
             border: 2px solid #4A2C20 !important;
+
             background: #faf7f3;
         }
 
 
         .delivery-method-icon {
+
             width: 45px;
+
             height: 45px;
+
             border-radius: 50%;
+
             display: flex;
+
             align-items: center;
+
             justify-content: center;
+
             background: #F8F4EC;
+
             color: #4A2C20;
+
             flex-shrink: 0;
         }
+
+
+
+        /*
+            |--------------------------------------------------------------------------
+            | Disabled Pickup
+            |--------------------------------------------------------------------------
+            */
+
+        .delivery-method-input:disabled+.delivery-method-card {
+
+            cursor: not-allowed;
+
+            opacity: .55;
+
+        }
+
 
 
         /*
@@ -994,10 +1256,15 @@
             */
 
         #zoneCoverageAreas .zone-area-badge {
+
             display: inline-block;
+
             padding: .35rem .65rem;
+
             border: 1px solid var(--bs-border-color);
+
             background: #fff;
+
             font-size: 13px;
         }
     </style>
@@ -1793,8 +2060,7 @@
 
                 const areas =
                     Array.isArray(zone.areas) ?
-                    zone.areas :
-                    [];
+                    zone.areas : [];
 
 
                 if (areas.length === 0) {

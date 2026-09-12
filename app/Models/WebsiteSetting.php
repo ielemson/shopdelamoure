@@ -13,6 +13,7 @@ class WebsiteSetting extends Model
         'meta_title',
         'meta_description',
         'meta_keywords',
+        'enable_store_pickup',
         'phone',
         'email',
         'address',
@@ -28,5 +29,9 @@ class WebsiteSetting extends Model
         'support_image',
         'support_message_title',
         'support_message_body',
+    ];
+
+    protected $casts = [
+        'enable_store_pickup' => 'boolean',
     ];
 }

@@ -21,48 +21,118 @@ class WebsiteSettingController extends Controller
         $setting = WebsiteSetting::firstOrCreate([]);
 
         $data = $request->validate([
-        'website_name' => 'nullable|string|max:255',
-        'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp,avif|max:2048',
-        'favicon' => 'nullable|image|mimes:ico,png,jpg,jpeg,webp|max:1024',
-        'meta_title' => 'nullable|string|max:255',
-        'meta_description' => 'nullable|string',
-        'meta_keywords' => 'nullable|string',
-        'phone' => 'nullable|string|max:50',
-        'email' => 'nullable|email|max:255',
-        'address' => 'nullable|string',
-        'facebook' => 'nullable|url',
-        'instagram' => 'nullable|url',
-        'twitter' => 'nullable|url',
-        'linkedin' => 'nullable|url',
-        'youtube' => 'nullable|url',
-        'tiktok' => 'nullable|url',
 
-        'support_name' => 'nullable|string|max:255',
-        'support_role' => 'nullable|string|max:255',
-        'support_phone' => 'nullable|string|max:50',
-        'support_image' => 'nullable|image|mimes:jpg,jpeg,png,webp,avif|max:2048',
-        'support_message_title' => 'nullable|string|max:255',
-        'support_message_body' => 'nullable|string',
+            'website_name' => 'nullable|string|max:255',
+
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp,avif|max:2048',
+            'favicon' => 'nullable|image|mimes:ico,png,jpg,jpeg,webp|max:1024',
+
+            'meta_title' => 'nullable|string|max:255',
+            'meta_description' => 'nullable|string',
+            'meta_keywords' => 'nullable|string',
+
+            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:255',
+            'address' => 'nullable|string',
+
+            'facebook' => 'nullable|url',
+            'instagram' => 'nullable|url',
+            'twitter' => 'nullable|url',
+            'linkedin' => 'nullable|url',
+            'youtube' => 'nullable|url',
+            'tiktok' => 'nullable|url',
+
+            'support_name' => 'nullable|string|max:255',
+            'support_role' => 'nullable|string|max:255',
+            'support_phone' => 'nullable|string|max:50',
+
+            'support_image' => 'nullable|image|mimes:jpg,jpeg,png,webp,avif|max:2048',
+
+            'support_message_title' => 'nullable|string|max:255',
+            'support_message_body' => 'nullable|string',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Checkout Settings
+            |--------------------------------------------------------------------------
+            */
+
+            'enable_store_pickup' => 'required|boolean',
         ]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Store Pickup
+        |--------------------------------------------------------------------------
+        */
+
+        $data['enable_store_pickup'] =
+            $request->boolean('enable_store_pickup');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Logo
+        |--------------------------------------------------------------------------
+        */
+
         if ($request->hasFile('logo')) {
+
             if ($setting->logo) {
                 Storage::disk('public')->delete($setting->logo);
             }
 
-            $data['logo'] = $request->file('logo')->store('settings', 'public');
+            $data['logo'] = $request
+                ->file('logo')
+                ->store('settings', 'public');
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Favicon
+        |--------------------------------------------------------------------------
+        */
+
         if ($request->hasFile('favicon')) {
+
             if ($setting->favicon) {
                 Storage::disk('public')->delete($setting->favicon);
             }
 
-            $data['favicon'] = $request->file('favicon')->store('settings', 'public');
+            $data['favicon'] = $request
+                ->file('favicon')
+                ->store('settings', 'public');
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Support Profile Image
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->hasFile('support_image')) {
+
+            if ($setting->support_image) {
+                Storage::disk('public')->delete(
+                    $setting->support_image
+                );
+            }
+
+            $data['support_image'] = $request
+                ->file('support_image')
+                ->store('settings/support', 'public');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Update Website Settings
+        |--------------------------------------------------------------------------
+        */
 
         $setting->update($data);
 
-        return back()->with('success', 'Website information updated successfully.');
+        return back()->with(
+            'success',
+            'Website information updated successfully.'
+        );
     }
 }

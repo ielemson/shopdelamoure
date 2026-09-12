@@ -23,9 +23,37 @@
         $defaultKeywords =
             'Dela Moure, shop Dela Moure, luxury perfumes, fragrances, home fragrances, diffusers, essential oils, room sprays, reed diffusers, candles, gift sets, car diffusers, perfume Nigeria, luxury scents Nigeria';
 
+        /*
+        |--------------------------------------------------------------------------
+        | Social Sharing Image
+        |--------------------------------------------------------------------------
+        |
+        | Recommended image:
+        | public/assets/images/others/social-share.jpg
+        |
+        | Recommended dimensions: 1200 x 630px
+        |
+        */
+
         $defaultImage = asset('assets/images/others/social-share.jpg');
 
+        /*
+        |--------------------------------------------------------------------------
+        | Brand Assets
+        |--------------------------------------------------------------------------
+        */
+
+        $logo = asset('assets/images/others/logo.png');
+
+        $logoWhite = asset('assets/images/others/logo-white.png');
+
         $favicon = asset('assets/images/others/favicon.ico');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Page Metadata
+        |--------------------------------------------------------------------------
+        */
 
         $pageTitle = trim($__env->yieldContent('meta_title')) ?: $defaultTitle;
 
@@ -88,7 +116,7 @@
 
     {{-- =========================================================
         OPEN GRAPH
-        WhatsApp / Facebook / LinkedIn / Messenger etc.
+        WhatsApp / Facebook / LinkedIn / Messenger
     ========================================================== --}}
 
     <meta property="og:type" content="website">
