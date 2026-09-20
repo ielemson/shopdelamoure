@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
-use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\CouponController;
 /*
 |--------------------------------------------------------------------------
 | Controllers
@@ -9,12 +9,14 @@ use App\Http\Controllers\Admin\CustomerController;
 */
 
 // General
+use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ShippingRateController;
 use App\Http\Controllers\Admin\WebsiteSettingController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\CheckoutCouponController;
 use App\Http\Controllers\CompareController;
 use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\CustomerAddressController;
@@ -194,6 +196,11 @@ Route::delete('/wishlist/{product}', [WishlistController::class, 'destroy'])
 
 // Paystack Webhook
 Route::post('/paystack/webhook', [PaystackWebhookController::class, 'handle'])->name('paystack.webhook');
+
+// Coupon Controller
+Route::post('/coupon/apply', [CheckoutCouponController::class, 'apply'])->name('coupon.apply');
+Route::post('/coupon/remove', [CheckoutCouponController::class, 'remove'])->name('coupon.remove');
+
 /*
 |--------------------------------------------------------------------------
 | Authentication
@@ -310,6 +317,9 @@ Route::prefix('admin')
 
                 Route::post('/adjust', [InventoryController::class, 'adjust'])->name('adjust');
             });
+
+        Route::resource('coupons', CouponController::class)->except('show');
+        Route::patch('coupons/{coupon}/toggle-status', [CouponController::class, 'toggleStatus'])->name('coupons.toggle-status');
 
     });
 

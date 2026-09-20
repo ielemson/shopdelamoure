@@ -1019,3 +1019,367 @@
         class="gtf-back-to-top text-decoration-none bg-body text-primary bg-primary-hover text-light-hover shadow square p-0 rounded-circle d-flex align-items-center justify-content-center"
         title="Back To Top" style="--square-size: 48px"><i class="fa-solid fa-arrow-up"></i></a>
 </div>
+
+{{-- Terms and Condition modal --}}
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header text-center border-0 pb-0">
+                <button type="button" class="btn-close position-absolute end-5 top-5" data-bs-dismiss="modal"
+                    aria-label="Close">
+                </button>
+
+                <h3 class="modal-title w-100" id="termsModalLabel">
+                    Terms and Conditions
+                </h3>
+            </div>
+
+            <div class="modal-body px-sm-13 px-8 py-8">
+                <p class="text-muted text-center mb-8">
+                    Last updated: {{ now()->format('F Y') }}
+                </p>
+
+                <p>
+                    These Terms and Conditions govern your access to and use of
+                    the Delamoure website and your purchase of products from us.
+                    Delamoure is operated by <strong>DE LAMOURE BRAND LTD</strong>,
+                    a private company registered in Nigeria.
+                </p>
+
+                <p>
+                    By accessing this website, creating an account or placing an
+                    order, you confirm that you have read and accepted these
+                    Terms and Conditions. If you do not agree with them, please
+                    do not complete your purchase.
+                </p>
+
+                <h5 class="mt-8 mb-4">1. Eligibility and customer information</h5>
+
+                <p>
+                    You must have the legal capacity to enter into a binding
+                    agreement to place an order. You agree to provide accurate,
+                    current and complete contact, billing and delivery
+                    information.
+                </p>
+
+                <p>
+                    You are responsible for keeping your account credentials
+                    confidential and for activities performed through your
+                    account. Please notify us promptly if you suspect any
+                    unauthorised access.
+                </p>
+
+                <h5 class="mt-8 mb-4">2. Products and availability</h5>
+
+                <p>
+                    We make reasonable efforts to describe and display our
+                    products accurately. However, colours and appearance may vary
+                    slightly because of photography, lighting, packaging updates
+                    and differences between device displays.
+                </p>
+
+                <p>
+                    All products are subject to availability. Adding a product to
+                    your cart does not reserve it. Where an ordered product
+                    becomes unavailable after payment, we will contact you to
+                    offer an appropriate replacement, store credit or refund.
+                </p>
+
+                <h5 class="mt-8 mb-4">3. Prices and currency</h5>
+
+                <p>
+                    Product prices are displayed in the currency selected or
+                    detected on the website. Our base currency is Nigerian Naira.
+                    Foreign-currency prices may be calculated using the exchange
+                    rate configured on the website and may change without prior
+                    notice.
+                </p>
+
+                <p>
+                    The final amount payable, including delivery charges,
+                    discounts and any applicable taxes, will be shown before
+                    payment. Your bank or card issuer may apply separate
+                    conversion or international transaction charges, which are
+                    outside our control.
+                </p>
+
+                <p>
+                    We may correct an obvious pricing or description error before
+                    dispatch. If such an error affects a paid order, we will
+                    notify you and give you the option to confirm the corrected
+                    order or receive a refund.
+                </p>
+
+                <h5 class="mt-8 mb-4">4. Orders and order acceptance</h5>
+
+                <p>
+                    Submitting an order is an offer to purchase the selected
+                    products. An automated acknowledgement or payment receipt
+                    confirms that we received your order but does not necessarily
+                    constitute final acceptance.
+                </p>
+
+                <p>
+                    An order is accepted when we confirm it for processing or
+                    dispatch. We may decline or cancel an order where a product
+                    is unavailable, payment cannot be verified, information is
+                    incomplete, fraud is suspected or an obvious error has
+                    occurred. Where we cancel a paid order, the applicable amount
+                    will be refunded.
+                </p>
+
+                <h5 class="mt-8 mb-4">5. Payment</h5>
+
+                <p>
+                    Online payments are securely processed through Paystack and
+                    the payment methods made available at checkout. Delamoure
+                    does not directly store your complete card details.
+                </p>
+
+                <p>
+                    Your order will not be treated as paid until payment has been
+                    successfully verified. If your account is debited but the
+                    order remains unpaid, please contact us with the payment
+                    reference so that the transaction can be investigated.
+                </p>
+
+                <h5 class="mt-8 mb-4">6. Coupons and promotions</h5>
+
+                <p>
+                    Coupons and promotional offers are subject to their stated
+                    eligibility requirements, validity period, product scope,
+                    minimum purchase value and usage limit. A coupon may apply to
+                    all eligible products or only to specified products.
+                </p>
+
+                <p>
+                    Unless expressly stated otherwise, only one coupon may be
+                    applied to an order. Coupons have no cash value, cannot be
+                    exchanged for cash and cannot be applied after an order has
+                    been placed.
+                </p>
+
+                <p>
+                    We may reject or withdraw a coupon that has expired, exceeded
+                    its permitted usage, been used on an ineligible product or
+                    appears to have been obtained or used fraudulently.
+                </p>
+
+                <h5 class="mt-8 mb-4">7. Delivery and store pickup</h5>
+
+                <p>
+                    Delivery is currently available to supported locations within
+                    Nigeria. Available delivery zones, charges and options are
+                    displayed at checkout after you select your state and
+                    delivery zone.
+                </p>
+
+                <p>
+                    Delivery dates are estimates and may be affected by courier
+                    operations, traffic, weather, public holidays, security
+                    conditions or other circumstances outside our reasonable
+                    control. Delamoure may use independent third-party couriers
+                    to fulfil deliveries.
+                </p>
+
+                <p>
+                    You are responsible for providing an accurate and accessible
+                    delivery address and a working telephone number. Additional
+                    charges resulting from an incorrect address, failed delivery
+                    or requested redirection may be payable by the customer.
+                </p>
+
+                <p>
+                    Where store pickup is available, the order must be collected
+                    from the location stated in the confirmation message. We may
+                    request the order number and valid identification before
+                    releasing the order.
+                </p>
+
+                <h5 class="mt-8 mb-4">8. Inspection, returns and exchanges</h5>
+
+                <p>
+                    Please inspect your order promptly after delivery. If you
+                    receive an incorrect, damaged, defective or materially
+                    misdescribed product, notify us as soon as reasonably
+                    possible and provide your order number, photographs or video,
+                    and a description of the issue.
+                </p>
+
+                <p>
+                    Eligible items returned for a change of mind must be unused,
+                    unworn, unwashed and in their original condition, with all
+                    tags, seals, accessories and packaging intact. Return
+                    approval must be obtained before an item is sent back.
+                </p>
+
+                <p>
+                    For health, hygiene and product-integrity reasons, opened or
+                    used fragrances, cosmetics, personal-care products and other
+                    sealed items cannot ordinarily be returned merely because
+                    the customer changed their mind. This restriction does not
+                    apply where an item is defective, damaged, unsafe,
+                    counterfeit, incorrect or otherwise protected by applicable
+                    consumer law.
+                </p>
+
+                <p>
+                    Items showing signs of wear, alteration, washing, misuse,
+                    accidental damage or removal of seals may be refused unless
+                    the problem results from a defect that existed when the item
+                    was supplied.
+                </p>
+
+                <h5 class="mt-8 mb-4">9. Refunds</h5>
+
+                <p>
+                    Approved refunds will ordinarily be returned through the
+                    original payment method. Processing times may vary depending
+                    on Paystack, the receiving bank or card issuer.
+                </p>
+
+                <p>
+                    Original delivery charges and customer return-delivery costs
+                    may be non-refundable for a voluntary change-of-mind return.
+                    Where the return results from our error or a defective,
+                    damaged, incorrect or materially misdescribed product, we
+                    will provide the remedy required by applicable law.
+                </p>
+
+                <h5 class="mt-8 mb-4">10. Order cancellation</h5>
+
+                <p>
+                    You may request cancellation before an order is dispatched.
+                    Once processing, personalisation or dispatch has begun,
+                    cancellation may no longer be possible. A cancellation
+                    request is not effective until confirmed by Delamoure.
+                </p>
+
+                <p>
+                    Custom-made, personalised or specially sourced products may
+                    not be cancelled after production or procurement has begun,
+                    except where required by law.
+                </p>
+
+                <h5 class="mt-8 mb-4">11. Product care and proper use</h5>
+
+                <p>
+                    Customers should follow all care labels, storage directions,
+                    safety warnings and usage instructions supplied with a
+                    product. Fragrances, candles, oils and similar products
+                    should be used only for their intended purpose and kept away
+                    from children, heat or naked flames where applicable.
+                </p>
+
+                <h5 class="mt-8 mb-4">12. Intellectual property</h5>
+
+                <p>
+                    The Delamoure name, branding, logo, website design,
+                    photographs, graphics, product descriptions and other
+                    original website content belong to DE LAMOURE BRAND LTD or
+                    its licensors. They may not be copied, reproduced, modified
+                    or used commercially without prior written permission.
+                </p>
+
+                <h5 class="mt-8 mb-4">13. Acceptable website use</h5>
+
+                <p>
+                    You must not misuse the website, attempt unauthorised access,
+                    introduce malicious software, interfere with website
+                    operation, scrape protected content, submit fraudulent
+                    orders or use another person’s identity or payment
+                    information without permission.
+                </p>
+
+                <h5 class="mt-8 mb-4">14. Privacy</h5>
+
+                <p>
+                    We collect and process information necessary to manage
+                    accounts, verify payments, fulfil orders, arrange delivery,
+                    provide customer support, prevent fraud and comply with legal
+                    obligations.
+                </p>
+
+                <p>
+                    Payment and delivery information may be shared with Paystack,
+                    courier partners and other service providers only as
+                    reasonably necessary to complete the transaction. Personal
+                    information will be handled in accordance with our Privacy
+                    Policy and applicable Nigerian data-protection law.
+                </p>
+
+                <h5 class="mt-8 mb-4">15. Third-party services</h5>
+
+                <p>
+                    The website may rely on third-party payment, delivery,
+                    hosting, communication or analytics services. Those services
+                    may have their own terms and privacy practices. We are not
+                    responsible for interruptions or failures entirely outside
+                    our reasonable control, but we will provide reasonable
+                    assistance where such an issue affects your order.
+                </p>
+
+                <h5 class="mt-8 mb-4">16. Limitation of liability</h5>
+
+                <p>
+                    To the extent permitted by law, DE LAMOURE BRAND LTD will not
+                    be liable for indirect or consequential loss arising from
+                    website unavailability, misuse of a product, unauthorised
+                    account access caused by the customer, or events outside our
+                    reasonable control.
+                </p>
+
+                <p>
+                    Nothing in these Terms excludes or restricts liability that
+                    cannot lawfully be excluded, nor does it remove any right or
+                    remedy available to a consumer under applicable Nigerian
+                    law.
+                </p>
+
+                <h5 class="mt-8 mb-4">17. Changes to these terms</h5>
+
+                <p>
+                    We may update these Terms and Conditions to reflect changes
+                    in our services, operations or legal obligations. The version
+                    displayed when an order is placed will govern that order,
+                    unless a change is required by law.
+                </p>
+
+                <h5 class="mt-8 mb-4">18. Governing law and disputes</h5>
+
+                <p>
+                    These Terms and Conditions are governed by the laws of the
+                    Federal Republic of Nigeria. If a dispute arises, please
+                    contact us first so that we can attempt to resolve it
+                    promptly and fairly.
+                </p>
+
+                <p>
+                    If the matter cannot be resolved directly, either party may
+                    pursue any remedy available under Nigerian law through the
+                    appropriate regulatory body, mediation process or court of
+                    competent jurisdiction.
+                </p>
+
+                <h5 class="mt-8 mb-4">19. Contact us</h5>
+
+                <p class="mb-0">
+                    For questions about an order, delivery, return or these
+                    Terms and Conditions, please contact DE LAMOURE BRAND LTD
+                    through the telephone number, email address or contact form
+                    published on the Delamoure website.
+                </p>
+            </div>
+
+            <div class="modal-footer border-0 px-sm-13 px-8 pt-0 pb-10">
+                <button type="button" class="btn btn-dark btn-hover-bg-primary btn-hover-border-primary w-100"
+                    data-bs-dismiss="modal">
+                    I Understand
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>

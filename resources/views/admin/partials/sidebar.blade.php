@@ -322,7 +322,25 @@
                 </a>
 
             </li>
+            {{-- =====================================================
+    COUPONS
+====================================================== --}}
 
+            <li>
+
+                <a href="{{ route('admin.coupons.index') }}"
+                    class="m-link
+        {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
+
+                    <i class="icofont-tag fs-5"></i>
+
+                    <span>
+                        Coupons
+                    </span>
+
+                </a>
+
+            </li>
 
             {{-- =====================================================
                 LOGOUT

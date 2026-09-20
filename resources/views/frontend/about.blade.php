@@ -2,162 +2,146 @@
 
 @section('meta_title', 'About Dela Moure | Luxury Fragrances & Home Scents')
 
-@section('meta_description', 'Discover the story behind Dela Moure and our passion for luxury perfumes, diffusers,
+@section('meta_description',
+    'Discover the story behind Dela Moure and our passion for luxury perfumes, diffusers,
     essential oils, candles, home fragrances and beautifully curated gift sets.')
 
 @section('meta_image', asset('assets/images/others/social-share.jpg'))
 
 @section('PageContent')
-    <section class="pb-lg-20 pb-16">
+    <section class="pb-lg-18 pb-14">
 
         @include('frontend.partials.breadcrumb', [
             'title' => 'About Us',
             'item' => 'About Us',
         ])
 
-
-        {{-- ============================================================
-            ABOUT INTRODUCTION
-        ============================================================ --}}
-        <section class="py-lg-18 py-14">
+        {{-- ABOUT INTRODUCTION --}}
+        <section class="py-lg-16 py-12">
             <div class="container">
                 <div class="row align-items-center g-lg-12 g-8">
 
                     <div class="col-lg-6">
-                        <div class="about-image-wrapper position-relative">
-
-                            <img src="{{ asset('assets/images/others/about-delamoure.jpg') }}"
-                                class="img-fluid w-100 about-main-image" alt="Dela Moure Luxury Fragrances and Home Scents">
+                        <div class="about-image-wrapper">
+                            <img src="{{ asset('assets/images/banner/about-delamoure.jpg') }}"
+                                class="img-fluid w-100 about-main-image"
+                                alt="Delamoure fashion, fragrance and lifestyle collection">
 
                             <div class="about-image-accent d-none d-md-block"></div>
-
                         </div>
                     </div>
 
-
                     <div class="col-lg-6">
-
                         <div class="ps-lg-6">
 
-                            <span class="about-eyebrow">
-                                OUR STORY
-                            </span>
+                            <span class="about-eyebrow">OUR STORY</span>
 
                             <h2 class="about-title mt-3 mb-5">
-                                Fragrance Designed to Make Every Moment Memorable
+                                Thoughtfully Curated. Distinctively You.
                             </h2>
 
                             <p class="about-text mb-4">
-                                At <strong>Dela Moure</strong>, we believe fragrance is more than a scent.
-                                It is an expression of personality, atmosphere, emotion and unforgettable
-                                experiences.
+                                <strong>Delamoure</strong> is the retail and lifestyle
+                                expression of <strong>DE LAMOURE BRAND LTD</strong>,
+                                a Nigerian fashion and lifestyle company committed to
+                                quality, individuality and refined living.
                             </p>
 
                             <p class="about-text mb-4">
-                                Our collection brings together carefully selected perfumes, diffusers,
-                                essential oils, candles, room fragrances and beautifully curated gift sets
-                                created to elevate everyday living.
+                                Our growing collection brings together fashion,
+                                accessories, fragrances, home scents and thoughtful
+                                gifts selected to complement personal style and make
+                                everyday moments feel special.
                             </p>
 
                             <p class="about-text mb-0">
-                                From personal fragrance to home scenting, every Dela Moure experience is
-                                designed around elegance, quality and the simple pleasure of surrounding
-                                yourself with beautiful scents.
+                                We are building a trusted shopping destination where
+                                elegant products, attentive service and a seamless
+                                customer experience come together.
                             </p>
 
                         </div>
-
                     </div>
 
                 </div>
             </div>
         </section>
 
-
-
-        {{-- ============================================================
-            BRAND PHILOSOPHY
-        ============================================================ --}}
-        <section class="about-philosophy py-lg-18 py-14">
+        {{-- BRAND VALUES --}}
+        <section class="about-values py-lg-15 py-12">
             <div class="container">
 
-                <div class="text-center mx-auto mb-lg-12 mb-9" style="max-width: 720px;">
+                <div class="text-center mx-auto mb-lg-10 mb-8" style="max-width: 680px;">
 
                     <span class="about-eyebrow">
-                        THE DELA MOURE EXPERIENCE
+                        THE DELAMOURE EXPERIENCE
                     </span>
 
                     <h2 class="about-title mt-3 mb-4">
-                        Luxury Made Personal
+                        Style Made Personal
                     </h2>
 
                     <p class="about-text mb-0">
-                        We create scent experiences that add character to the spaces you live in,
-                        the moments you celebrate and the memories you carry with you.
+                        Everything we offer is chosen to inspire confidence,
+                        express individuality and enrich everyday living.
                     </p>
 
                 </div>
 
-
                 <div class="row g-5">
 
-                    {{-- Quality --}}
                     <div class="col-lg-4 col-md-6">
                         <div class="about-value-card h-100 text-center">
 
-                            <div class="about-icon mx-auto mb-5">
+                            <div class="about-icon mx-auto mb-4">
                                 <i class="fa-solid fa-gem"></i>
                             </div>
 
                             <h4 class="about-card-title">
-                                Premium Quality
+                                Thoughtful Quality
                             </h4>
 
                             <p class="about-card-text mb-0">
-                                We carefully curate fragrance products with attention to quality,
-                                presentation and lasting scent experiences.
+                                Products selected with attention to quality,
+                                function and presentation.
                             </p>
 
                         </div>
                     </div>
 
-
-                    {{-- Elegance --}}
                     <div class="col-lg-4 col-md-6">
                         <div class="about-value-card h-100 text-center">
 
-                            <div class="about-icon mx-auto mb-5">
+                            <div class="about-icon mx-auto mb-4">
                                 <i class="fa-solid fa-sparkles"></i>
                             </div>
 
                             <h4 class="about-card-title">
-                                Timeless Elegance
+                                Refined Style
                             </h4>
 
                             <p class="about-card-text mb-0">
-                                From the fragrance to the packaging, every detail reflects a refined,
-                                contemporary and luxurious aesthetic.
+                                Fashion and lifestyle pieces that feel contemporary,
+                                elegant and distinctive.
                             </p>
 
                         </div>
                     </div>
 
-
-                    {{-- Experience --}}
                     <div class="col-lg-4 col-md-6 mx-md-auto">
                         <div class="about-value-card h-100 text-center">
 
-                            <div class="about-icon mx-auto mb-5">
+                            <div class="about-icon mx-auto mb-4">
                                 <i class="fa-solid fa-heart"></i>
                             </div>
 
                             <h4 class="about-card-title">
-                                Memorable Experiences
+                                Genuine Care
                             </h4>
 
                             <p class="about-card-text mb-0">
-                                Our scents are selected to help create beautiful moods, meaningful
-                                moments and lasting impressions.
+                                Customer service built on integrity, responsiveness
+                                and lasting relationships.
                             </p>
 
                         </div>
@@ -168,103 +152,8 @@
             </div>
         </section>
 
-
-
-        {{-- ============================================================
-            PRODUCT CATEGORIES
-        ============================================================ --}}
-        <section class="py-lg-18 py-14">
-            <div class="container">
-
-                <div class="row align-items-center g-lg-12 g-9">
-
-                    <div class="col-lg-5">
-
-                        <span class="about-eyebrow">
-                            WHAT WE OFFER
-                        </span>
-
-                        <h2 class="about-title mt-3 mb-5">
-                            A Complete World of Fragrance
-                        </h2>
-
-                        <p class="about-text mb-5">
-                            Whether you are choosing your signature scent, creating a welcoming
-                            atmosphere at home or searching for the perfect gift, Dela Moure offers
-                            fragrance experiences for every occasion.
-                        </p>
-
-
-                        <a href="{{ url('/shop') }}" class="btn btn-dark btn-lg px-7">
-                            Explore Our Collection
-                        </a>
-
-                    </div>
-
-
-                    <div class="col-lg-7">
-
-                        <div class="row g-4">
-
-                            <div class="col-md-6">
-                                <div class="about-category-card">
-                                    <span class="category-number">01</span>
-                                    <h5>Perfumes</h5>
-                                    <p>
-                                        Distinctive fragrances created for confidence,
-                                        individuality and lasting impressions.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="about-category-card">
-                                    <span class="category-number">02</span>
-                                    <h5>Diffusers</h5>
-                                    <p>
-                                        Elegant scenting solutions designed to transform
-                                        your living and working spaces.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="about-category-card">
-                                    <span class="category-number">03</span>
-                                    <h5>Essential Oils</h5>
-                                    <p>
-                                        Carefully selected aromatic oils for refreshing
-                                        and enriching everyday environments.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="about-category-card">
-                                    <span class="category-number">04</span>
-                                    <h5>Candles & Gift Sets</h5>
-                                    <p>
-                                        Beautifully presented fragrance pieces made for
-                                        gifting, celebrations and personal indulgence.
-                                    </p>
-                                </div>
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-        </section>
-
-
-
-        {{-- ============================================================
-            MISSION / VISION
-        ============================================================ --}}
-        <section class="about-mission-section py-lg-18 py-14">
+        {{-- MISSION AND VISION --}}
+        <section class="about-mission-section py-lg-15 py-12">
             <div class="container">
 
                 <div class="row g-5">
@@ -272,38 +161,33 @@
                     <div class="col-lg-6">
                         <div class="mission-card h-100">
 
-                            <span class="mission-label">
-                                OUR MISSION
-                            </span>
+                            <span class="mission-label">OUR MISSION</span>
 
                             <h3 class="mt-3 mb-4">
-                                Bringing Beautiful Fragrance Into Everyday Life
+                                Making Refined Living More Accessible
                             </h3>
 
                             <p class="mb-0">
-                                Our mission is to make premium fragrance experiences accessible
-                                through thoughtfully selected products that enhance personal style,
-                                homes, celebrations and meaningful moments.
+                                To provide thoughtfully curated fashion, fragrance,
+                                accessories and lifestyle products that help customers
+                                express themselves with confidence.
                             </p>
 
                         </div>
                     </div>
 
-
                     <div class="col-lg-6">
                         <div class="mission-card h-100">
 
-                            <span class="mission-label">
-                                OUR VISION
-                            </span>
+                            <span class="mission-label">OUR VISION</span>
 
                             <h3 class="mt-3 mb-4">
-                                Becoming a Trusted Name in Modern Luxury Scenting
+                                A Trusted Nigerian Lifestyle Brand
                             </h3>
 
                             <p class="mb-0">
-                                We aspire to build Dela Moure into a distinctive fragrance
-                                destination known for quality, elegance, authenticity and exceptional
+                                To build Delamoure into a distinctive brand recognised
+                                for quality, creativity, authenticity and exceptional
                                 customer experiences.
                             </p>
 
@@ -315,31 +199,27 @@
             </div>
         </section>
 
-
-
-        {{-- ============================================================
-            FINAL CTA
-        ============================================================ --}}
-        <section class="pt-lg-18 pt-14">
+        {{-- FINAL CTA --}}
+        <section class="pt-lg-15 pt-12">
             <div class="container">
 
                 <div class="about-cta text-center">
 
                     <span class="about-eyebrow">
-                        DISCOVER YOUR SCENT
+                        DISCOVER DELAMOURE
                     </span>
 
                     <h2 class="about-title mt-3 mb-4">
-                        Find a Fragrance That Feels Like You
+                        Find Something That Feels Like You
                     </h2>
 
-                    <p class="about-text mx-auto mb-7" style="max-width: 650px;">
-                        Discover perfumes, diffusers, essential oils, candles,
-                        room scents and gift sets curated for unforgettable experiences.
+                    <p class="about-text mx-auto mb-6" style="max-width: 620px;">
+                        Explore our growing collection of accessories,
+                        fragrances, home scents and thoughtful gifts.
                     </p>
 
                     <a href="{{ url('/shop') }}" class="btn btn-dark btn-lg px-8">
-                        Shop Dela Moure
+                        Shop Delamoure
                     </a>
 
                 </div>
@@ -350,12 +230,11 @@
     </section>
 @endsection
 
-
 @push('styles')
     <style>
         /*
                 |--------------------------------------------------------------------------
-                | Dela Moure About Page
+                | Delamoure About Page
                 |--------------------------------------------------------------------------
                 */
 
@@ -368,42 +247,38 @@
             text-transform: uppercase;
         }
 
-
         .about-title {
             color: #392c26;
-            font-size: 46px;
+            font-size: 44px;
             font-weight: 500;
             line-height: 1.15;
             letter-spacing: -1px;
         }
 
-
         .about-text {
             color: #706761;
             font-size: 17px;
-            line-height: 1.9;
+            line-height: 1.85;
         }
-
 
         /*
                 |--------------------------------------------------------------------------
-                | Main Image
+                | Introduction Image
                 |--------------------------------------------------------------------------
                 */
 
         .about-image-wrapper {
             position: relative;
-            padding: 0 25px 25px 0;
+            padding: 0 24px 24px 0;
         }
-
 
         .about-main-image {
             position: relative;
             z-index: 2;
-            min-height: 520px;
+            width: 100%;
+            min-height: 480px;
             object-fit: cover;
         }
-
 
         .about-image-accent {
             position: absolute;
@@ -415,110 +290,55 @@
             z-index: 1;
         }
 
-
         /*
                 |--------------------------------------------------------------------------
-                | Philosophy Section
+                | Brand Values
                 |--------------------------------------------------------------------------
                 */
 
-        .about-philosophy {
+        .about-values {
             background: #fbf9f6;
         }
-
 
         .about-value-card {
             background: #ffffff;
             border: 1px solid #eee8e1;
-            padding: 48px 34px;
-            transition: all .3s ease;
+            padding: 40px 30px;
+            transition: transform .3s ease, box-shadow .3s ease;
         }
-
 
         .about-value-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 15px 45px rgba(57, 44, 38, .08);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(57, 44, 38, .08);
         }
 
-
         .about-icon {
-            width: 72px;
-            height: 72px;
+            width: 68px;
+            height: 68px;
             border-radius: 50%;
             background: #f5eee5;
             color: #a78552;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 25px;
+            font-size: 23px;
         }
-
 
         .about-card-title {
             color: #392c26;
             font-weight: 600;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
-
 
         .about-card-text {
             color: #756c66;
             font-size: 15px;
-            line-height: 1.8;
+            line-height: 1.75;
         }
-
 
         /*
                 |--------------------------------------------------------------------------
-                | Categories
-                |--------------------------------------------------------------------------
-                */
-
-        .about-category-card {
-            position: relative;
-            height: 100%;
-            padding: 36px 32px;
-            border: 1px solid #ece5dc;
-            background: #ffffff;
-            transition: all .3s ease;
-        }
-
-
-        .about-category-card:hover {
-            border-color: #c7aa7d;
-            transform: translateY(-4px);
-        }
-
-
-        .category-number {
-            display: block;
-            margin-bottom: 25px;
-            color: #b4915c;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 2px;
-        }
-
-
-        .about-category-card h5 {
-            color: #392c26;
-            font-size: 21px;
-            font-weight: 600;
-            margin-bottom: 12px;
-        }
-
-
-        .about-category-card p {
-            color: #766e68;
-            font-size: 15px;
-            line-height: 1.8;
-            margin-bottom: 0;
-        }
-
-
-        /*
-                |--------------------------------------------------------------------------
-                | Mission / Vision
+                | Mission and Vision
                 |--------------------------------------------------------------------------
                 */
 
@@ -526,13 +346,11 @@
             background: #3b2d27;
         }
 
-
         .mission-card {
             background: rgba(255, 255, 255, .04);
             border: 1px solid rgba(255, 255, 255, .12);
-            padding: 52px 45px;
+            padding: 44px 40px;
         }
-
 
         .mission-label {
             color: #d4b17a;
@@ -541,21 +359,18 @@
             letter-spacing: 3px;
         }
 
-
         .mission-card h3 {
             color: #ffffff;
-            font-size: 30px;
-            line-height: 1.35;
+            font-size: 28px;
             font-weight: 500;
+            line-height: 1.35;
         }
-
 
         .mission-card p {
             color: rgba(255, 255, 255, .72);
             font-size: 16px;
-            line-height: 1.9;
+            line-height: 1.8;
         }
-
 
         /*
                 |--------------------------------------------------------------------------
@@ -565,9 +380,8 @@
 
         .about-cta {
             background: #faf7f2;
-            padding: 80px 30px;
+            padding: 65px 30px;
         }
-
 
         /*
                 |--------------------------------------------------------------------------
@@ -576,38 +390,33 @@
                 */
 
         @media (max-width: 991.98px) {
-
             .about-title {
-                font-size: 38px;
+                font-size: 37px;
             }
 
             .about-main-image {
-                min-height: 420px;
+                min-height: 400px;
             }
 
             .about-image-wrapper {
-                padding-right: 18px;
-                padding-bottom: 18px;
+                padding: 0 18px 18px 0;
             }
-
         }
 
-
         @media (max-width: 767.98px) {
-
             .about-title {
-                font-size: 31px;
+                font-size: 30px;
                 line-height: 1.25;
                 letter-spacing: -.5px;
             }
 
             .about-text {
                 font-size: 16px;
-                line-height: 1.8;
+                line-height: 1.75;
             }
 
             .about-main-image {
-                min-height: 340px;
+                min-height: 320px;
             }
 
             .about-image-wrapper {
@@ -615,21 +424,20 @@
             }
 
             .about-value-card {
-                padding: 38px 25px;
+                padding: 34px 24px;
             }
 
             .mission-card {
-                padding: 38px 28px;
+                padding: 34px 26px;
             }
 
             .mission-card h3 {
-                font-size: 25px;
+                font-size: 24px;
             }
 
             .about-cta {
-                padding: 55px 22px;
+                padding: 50px 22px;
             }
-
         }
     </style>
 @endpush

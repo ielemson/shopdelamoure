@@ -49,7 +49,28 @@ class CheckoutController extends Controller
         $subtotal = (float) Cart::getSubTotal();
         $shipping = 0;
         $vat = 0;
-        $discount = 0;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Coupon Display Amount
+        |--------------------------------------------------------------------------
+        |
+        | This is only for rendering the checkout page.
+        | The coupon is independently revalidated and recalculated in store().
+        |
+        */
+
+        $discount = (float) data_get(
+            session('coupon'),
+            'discount_amount',
+            0
+        );
+
+        $discount = max(
+            0,
+            min($discount, $subtotal)
+        );
+
         $total = $subtotal + $shipping + $vat - $discount;
 
         $addresses = collect();
@@ -310,7 +331,37 @@ class CheckoutController extends Controller
 
         $subtotal = (float) Cart::getSubTotal();
         $vat = 0;
-        $discount = 0;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Authoritative Coupon Revalidation
+        |--------------------------------------------------------------------------
+        |
+        | Never trust the discount amount already stored in the browser/session
+        | when creating the order. The active coupon is loaded again from the
+        | database and its discount is recalculated from the current cart.
+        |
+        */
+
+        try {
+            $couponResult = $this->resolveCheckoutCoupon(
+                $cartItems,
+                $subtotal
+            );
+        } catch (\RuntimeException $e) {
+            session()->forget('coupon');
+
+            return back()
+                ->withInput()
+                ->with(
+                    'error',
+                    $e->getMessage()
+                );
+        }
+
+        $coupon = $couponResult['coupon'];
+        $discount = $couponResult['discount'];
+
         $total = $subtotal + $shipping + $vat - $discount;
 
         if ($subtotal <= 0 || $total <= 0) {
@@ -330,7 +381,8 @@ class CheckoutController extends Controller
                 $vat,
                 $discount,
                 $total,
-                $userId
+                $userId,
+                $coupon
             ) {
                 $address = null;
 
@@ -405,7 +457,27 @@ class CheckoutController extends Controller
                     'subtotal' => $subtotal,
                     'shipping' => $shipping,
                     'vat' => $vat,
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Coupon Snapshot
+                    |--------------------------------------------------------------------------
+                    |
+                    | The normal discount field remains the amount deducted from
+                    | the order. Coupon-specific fields preserve the promotion
+                    | that produced that discount.
+                    |
+                    */
+
                     'discount' => $discount,
+                    'coupon_id' => $coupon?->id,
+                    'coupon_code' => $coupon?->code,
+                    'coupon_discount_type' => $coupon?->discount_type,
+                    'coupon_discount_value' => $coupon
+                        ? (float) $coupon->discount_value
+                        : null,
+                    'coupon_discount_amount' => $discount,
+
                     'total' => $total,
 
                     'status' => 'pending',
@@ -557,6 +629,16 @@ class CheckoutController extends Controller
                                 'pickup_location' => $pickupLocation?->name,
 
                                 'shipping' => $shipping,
+
+                                /*
+                                |--------------------------------------------------------------------------
+                                | Coupon Metadata
+                                |--------------------------------------------------------------------------
+                                */
+
+                                'coupon_id' => $order->coupon_id,
+                                'coupon_code' => $order->coupon_code,
+                                'coupon_discount_amount' => (float) $order->coupon_discount_amount,
                             ],
                         ]
                     );
@@ -900,11 +982,27 @@ class CheckoutController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | Clear Cart
+                | Record Coupon Usage
+                |--------------------------------------------------------------------------
+                |
+                | Usage is counted only after the order has been confirmed paid.
+                | coupon_usage_counted_at prevents duplicate callback increments.
+                |
+                */
+
+                $this->recordCouponUsage(
+                    $order
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | Clear Cart / Coupon Session
                 |--------------------------------------------------------------------------
                 */
 
                 Cart::clear();
+
+                session()->forget('coupon');
 
                 /*
                 |--------------------------------------------------------------------------
@@ -1013,6 +1111,348 @@ class CheckoutController extends Controller
                     'Unable to verify payment at this time.'
                 );
         }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resolve / Revalidate Checkout Coupon
+    |--------------------------------------------------------------------------
+    */
+
+    private function resolveCheckoutCoupon(
+        $cartItems,
+        float $subtotal
+    ): array {
+        $sessionCoupon = session('coupon');
+
+        /*
+        |--------------------------------------------------------------------------
+        | No Coupon Applied
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            ! is_array($sessionCoupon)
+            || empty($sessionCoupon['id'])
+        ) {
+            return [
+                'coupon' => null,
+                'discount' => 0.0,
+            ];
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Load Coupon Fresh From Database
+        |--------------------------------------------------------------------------
+        */
+
+        $coupon = \App\Models\Coupon::query()
+            ->find($sessionCoupon['id']);
+
+        if (! $coupon) {
+            throw new \RuntimeException(
+                'The coupon applied to your checkout is no longer available.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Verify Session Coupon Identity
+        |--------------------------------------------------------------------------
+        */
+
+        $sessionCode = strtoupper(
+            trim(
+                (string) ($sessionCoupon['code'] ?? '')
+            )
+        );
+
+        if (
+            $sessionCode === ''
+            || $sessionCode !== strtoupper($coupon->code)
+        ) {
+            throw new \RuntimeException(
+                'The coupon applied to your checkout could not be verified.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Active / Validity
+        |--------------------------------------------------------------------------
+        */
+
+        if (! $coupon->is_active) {
+            throw new \RuntimeException(
+                'This coupon is currently inactive.'
+            );
+        }
+
+        if (
+            $coupon->starts_at
+            && now()->lt($coupon->starts_at)
+        ) {
+            throw new \RuntimeException(
+                'This coupon is not yet available.'
+            );
+        }
+
+        if (
+            $coupon->expires_at
+            && now()->gt($coupon->expires_at)
+        ) {
+            throw new \RuntimeException(
+                'This coupon has expired.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Global Usage Limit
+        |--------------------------------------------------------------------------
+        |
+        | No customer/email history lookup is performed.
+        |
+        */
+
+        if (
+            $coupon->usage_limit !== null
+            && $coupon->usage_count >= $coupon->usage_limit
+        ) {
+            throw new \RuntimeException(
+                'This coupon has reached its usage limit.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Minimum Order
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            (float) $coupon->minimum_order_amount > 0
+            && $subtotal < (float) $coupon->minimum_order_amount
+        ) {
+            throw new \RuntimeException(
+                'Your order does not meet the minimum amount required for this coupon.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Determine Eligible Merchandise
+        |--------------------------------------------------------------------------
+        */
+
+        if ($coupon->scope === 'general') {
+
+            $eligibleSubtotal = $subtotal;
+
+        } elseif ($coupon->scope === 'product') {
+
+            $eligibleSubtotal = 0.0;
+
+            foreach ($cartItems as $item) {
+
+                $productId =
+                    $this->resolveCartItemProductId(
+                        $item
+                    );
+
+                if (
+                    $productId
+                    && (int) $productId ===
+                        (int) $coupon->product_id
+                ) {
+                    $eligibleSubtotal +=
+                        (float) $item->price
+                        * (int) $item->quantity;
+                }
+            }
+
+            if ($eligibleSubtotal <= 0) {
+                throw new \RuntimeException(
+                    'This coupon does not apply to any product in your cart.'
+                );
+            }
+
+        } else {
+
+            throw new \RuntimeException(
+                'This coupon has an invalid scope configuration.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Calculate Discount
+        |--------------------------------------------------------------------------
+        */
+
+        if ($coupon->discount_type === 'percentage') {
+
+            $discount =
+                $eligibleSubtotal
+                * ((float) $coupon->discount_value / 100);
+
+            if (
+                $coupon->maximum_discount_amount !== null
+                && $discount >
+                    (float) $coupon->maximum_discount_amount
+            ) {
+                $discount =
+                    (float) $coupon->maximum_discount_amount;
+            }
+
+        } elseif ($coupon->discount_type === 'fixed') {
+
+            $discount =
+                (float) $coupon->discount_value;
+
+        } else {
+
+            throw new \RuntimeException(
+                'This coupon has an invalid discount configuration.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Safety Cap
+        |--------------------------------------------------------------------------
+        */
+
+        $discount = min(
+            $discount,
+            $eligibleSubtotal,
+            $subtotal
+        );
+
+        $discount = round(
+            max(0, $discount),
+            2
+        );
+
+        return [
+            'coupon' => $coupon,
+            'discount' => $discount,
+        ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resolve Product ID From Cart Row
+    |--------------------------------------------------------------------------
+    |
+    | The cart may use a variant row ID instead of the real product ID.
+    | product_id is preferred, then variant_id is resolved, and finally
+    | the cart row ID is used as a fallback.
+    |
+    */
+
+    private function resolveCartItemProductId(
+        $item
+    ): ?int {
+        $productId =
+            $item->attributes->get(
+                'product_id'
+            );
+
+        if ($productId) {
+            return (int) $productId;
+        }
+
+        $variantId =
+            $item->attributes->get(
+                'variant_id'
+            );
+
+        if ($variantId) {
+            $variantProductId =
+                ProductVariant::query()
+                    ->where(
+                        'id',
+                        $variantId
+                    )
+                    ->value(
+                        'product_id'
+                    );
+
+            if ($variantProductId) {
+                return (int) $variantProductId;
+            }
+        }
+
+        return is_numeric($item->id)
+            ? (int) $item->id
+            : null;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Record Paid Coupon Usage
+    |--------------------------------------------------------------------------
+    |
+    | There is deliberately no per-customer/email usage lookup.
+    | We maintain only the coupon's global usage_count.
+    |
+    | coupon_usage_counted_at on orders makes this safe against duplicate
+    | browser callbacks.
+    |
+    */
+
+    private function recordCouponUsage(
+        Order $order
+    ): void {
+        if (
+            ! $order->coupon_id
+            || $order->payment_status !== 'paid'
+        ) {
+            return;
+        }
+
+        DB::transaction(function () use ($order) {
+
+            $lockedOrder =
+                Order::query()
+                    ->lockForUpdate()
+                    ->findOrFail(
+                        $order->id
+                    );
+
+            if (
+                ! $lockedOrder->coupon_id
+                || $lockedOrder->payment_status !== 'paid'
+                || $lockedOrder->coupon_usage_counted_at
+            ) {
+                return;
+            }
+
+            $coupon =
+                \App\Models\Coupon::query()
+                    ->lockForUpdate()
+                    ->find(
+                        $lockedOrder->coupon_id
+                    );
+
+            if ($coupon) {
+                $coupon->increment(
+                    'usage_count'
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Mark Usage As Counted
+            |--------------------------------------------------------------------------
+            */
+
+            $lockedOrder->forceFill([
+                'coupon_usage_counted_at' => now(),
+            ])->save();
+        });
     }
 
     /*

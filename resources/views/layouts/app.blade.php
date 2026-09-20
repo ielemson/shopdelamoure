@@ -10,38 +10,38 @@
 
     @php
         /*
-        |--------------------------------------------------------------------------
-        | SEO / Social Sharing Defaults
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | SEO / Social Sharing Defaults
+    |--------------------------------------------------------------------------
+    */
 
-        $defaultTitle = 'Dela Moure | Luxury Fragrances, Perfumes & Home Scents';
+        $defaultTitle = 'Delamoure | Fashion, Fragrance & Lifestyle';
 
         $defaultDescription =
-            "Discover Dela Moure's collection of luxury perfumes, home fragrances, diffusers, essential oils, room sprays, candles, gift sets and premium scenting essentials.";
+            'Discover Delamoure by DE LAMOURE BRAND LTD—fashion, accessories, fragrances, home scents and thoughtful gifts curated for distinctive living.';
 
         $defaultKeywords =
-            'Dela Moure, shop Dela Moure, luxury perfumes, fragrances, home fragrances, diffusers, essential oils, room sprays, reed diffusers, candles, gift sets, car diffusers, perfume Nigeria, luxury scents Nigeria';
+            'Delamoure, Dela Moure, DE LAMOURE BRAND LTD, fashion Nigeria, fashion accessories, perfumes, fragrances, home scents, diffusers, essential oils, candles, gift sets, lifestyle products, online shopping Nigeria';
 
         /*
-        |--------------------------------------------------------------------------
-        | Social Sharing Image
-        |--------------------------------------------------------------------------
-        |
-        | Recommended image:
-        | public/assets/images/others/social-share.jpg
-        |
-        | Recommended dimensions: 1200 x 630px
-        |
-        */
+    |--------------------------------------------------------------------------
+    | Social Sharing Image
+    |--------------------------------------------------------------------------
+    |
+    | Recommended path:
+    | public/assets/images/others/social-share.jpg
+    |
+    | Recommended dimensions: 1200 x 630px
+    |
+    */
 
         $defaultImage = asset('assets/images/others/social-share.jpg');
 
         /*
-        |--------------------------------------------------------------------------
-        | Brand Assets
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Brand Assets
+    |--------------------------------------------------------------------------
+    */
 
         $logo = asset('assets/images/others/logo.png');
 
@@ -50,10 +50,10 @@
         $favicon = asset('assets/images/others/favicon.ico');
 
         /*
-        |--------------------------------------------------------------------------
-        | Page Metadata
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Page Metadata
+    |--------------------------------------------------------------------------
+    */
 
         $pageTitle = trim($__env->yieldContent('meta_title')) ?: $defaultTitle;
 

@@ -31,7 +31,23 @@
 
         $shipping = 0;
 
-        $total = $subtotal;
+        /*
+        |--------------------------------------------------------------------------
+        | Coupon
+        |--------------------------------------------------------------------------
+        |
+        | Coupon validation/calculation remains server-side.
+        | The checkout page only reads the already validated coupon session.
+        |
+        */
+
+        $coupon = session('coupon');
+
+        $couponDiscount = (float) data_get($coupon, 'discount_amount', 0);
+
+        $couponDiscount = max(0, min($couponDiscount, $subtotal));
+
+        $total = max(0, $subtotal - $couponDiscount);
 
         /*
         |--------------------------------------------------------------------------
@@ -381,6 +397,96 @@
 
 
 
+                            {{-- Coupon Discount --}}
+
+                            <div id="checkoutCouponDiscountRow"
+                                class="d-flex align-items-center mb-3 {{ $couponDiscount > 0 ? '' : 'd-none' }}">
+
+                                <span>
+                                    Coupon Discount
+                                    <span id="checkoutCouponCodeLabel" class="text-body fw-normal">
+                                        @if (!empty($coupon['code']))
+                                            ({{ $coupon['code'] }})
+                                        @endif
+                                    </span>
+                                </span>
+
+                                <span class="ms-auto text-success fw-semibold" id="checkoutCouponDiscount">
+
+                                    -{{ $currencySymbol }}{{ number_format($couponDiscount, 2) }}
+
+                                </span>
+
+                            </div>
+
+
+                            {{-- Coupon --}}
+
+                            <div class="checkout-coupon-box border-top pt-5 mb-5">
+
+                                <label for="checkoutCouponCode"
+                                    class="mb-3 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+
+                                    Coupon Code
+
+                                </label>
+
+
+                                <div id="couponEntryBox" class="{{ $couponDiscount > 0 ? 'd-none' : '' }}">
+
+                                    <div class="input-group">
+
+                                        <input type="text" class="form-control text-uppercase" id="checkoutCouponCode"
+                                            placeholder="Enter coupon code" autocomplete="off">
+
+                                        <button type="button" class="btn btn-outline-dark" id="applyCouponBtn">
+
+                                            Apply
+
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div id="couponAppliedBox" class="{{ $couponDiscount > 0 ? '' : 'd-none' }}">
+
+                                    <div
+                                        class="d-flex align-items-center justify-content-between gap-3 border bg-light p-4">
+
+                                        <div>
+
+                                            <div class="fw-semibold text-body-emphasis" id="appliedCouponCode">
+
+                                                {{ $coupon['code'] ?? '' }}
+
+                                            </div>
+
+                                            {{-- <div class="small text-success">
+                                                Coupon applied
+                                            </div> --}}
+
+                                        </div>
+
+
+                                        <button type="button" class="btn btn-sm btn-outline-danger" id="removeCouponBtn">
+
+                                            Remove
+
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div id="couponMessage" class="small mt-3 d-none">
+                                </div>
+
+                            </div>
+
+
                             {{-- Delivery / Pickup --}}
 
                             <div class="d-flex align-items-center">
@@ -529,8 +635,8 @@
                                 @if ($storePickupEnabled)
                                     <div class="col-md-6">
 
-                                        <input type="radio" class="btn-check delivery-method-input" name="delivery_method"
-                                            id="deliveryPickup" value="pickup" autocomplete="off"
+                                        <input type="radio" class="btn-check delivery-method-input"
+                                            name="delivery_method" id="deliveryPickup" value="pickup" autocomplete="off"
                                             {{ $selectedDeliveryMethod === 'pickup' ? 'checked' : '' }}
                                             {{ !$hasPickupLocations ? 'disabled' : '' }}>
 
@@ -1108,17 +1214,24 @@
                             {{-- Terms --}}
 
                             <div class="form-check mb-7">
-
-                                <input class="form-check-input" type="checkbox" name="terms" value="1"
-                                    id="checkoutTerms" {{ old('terms') ? 'checked' : '' }} required>
-
+                                <input class="form-check-input @error('terms') is-invalid @enderror" type="checkbox"
+                                    name="terms" value="1" id="checkoutTerms" {{ old('terms') ? 'checked' : '' }}
+                                    required>
 
                                 <label class="form-check-label" for="checkoutTerms">
-
-                                    I agree to the terms and conditions.
-
+                                    I have read and agree to the
+                                    <button type="button"
+                                        class="btn btn-link text-black text-decoration-underline p-0 border-0 align-baseline"
+                                        data-bs-toggle="modal" data-bs-target="#termsModal">
+                                        Terms and Conditions
+                                    </button>.
                                 </label>
 
+                                @error('terms')
+                                    <div class="invalid-feedback d-block">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
                             </div>
 
 
@@ -1176,10 +1289,10 @@
 
 
         /*
-            |--------------------------------------------------------------------------
-            | Ship / Pickup
-            |--------------------------------------------------------------------------
-            */
+                            |--------------------------------------------------------------------------
+                            | Ship / Pickup
+                            |--------------------------------------------------------------------------
+                            */
 
         .delivery-method-card,
         .pickup-location-card {
@@ -1234,10 +1347,10 @@
 
 
         /*
-            |--------------------------------------------------------------------------
-            | Disabled Pickup
-            |--------------------------------------------------------------------------
-            */
+                            |--------------------------------------------------------------------------
+                            | Disabled Pickup
+                            |--------------------------------------------------------------------------
+                            */
 
         .delivery-method-input:disabled+.delivery-method-card {
 
@@ -1250,10 +1363,10 @@
 
 
         /*
-            |--------------------------------------------------------------------------
-            | Shipping Areas
-            |--------------------------------------------------------------------------
-            */
+                            |--------------------------------------------------------------------------
+                            | Shipping Areas
+                            |--------------------------------------------------------------------------
+                            */
 
         #zoneCoverageAreas .zone-area-badge {
 
@@ -1266,6 +1379,26 @@
             background: #fff;
 
             font-size: 13px;
+        }
+
+
+
+
+        /*
+                            |--------------------------------------------------------------------------
+                            | Coupon
+                            |--------------------------------------------------------------------------
+                            */
+
+        .checkout-coupon-box .input-group .form-control {
+
+            min-width: 0;
+        }
+
+
+        .checkout-coupon-box .btn {
+
+            white-space: nowrap;
         }
     </style>
 
@@ -1349,6 +1482,43 @@
                 document.getElementById('deliveryNote');
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Coupon Elements
+            |--------------------------------------------------------------------------
+            */
+
+            const couponDiscountRow =
+                document.getElementById('checkoutCouponDiscountRow');
+
+            const couponDiscountDisplay =
+                document.getElementById('checkoutCouponDiscount');
+
+            const couponCodeLabel =
+                document.getElementById('checkoutCouponCodeLabel');
+
+            const couponEntryBox =
+                document.getElementById('couponEntryBox');
+
+            const couponAppliedBox =
+                document.getElementById('couponAppliedBox');
+
+            const couponInput =
+                document.getElementById('checkoutCouponCode');
+
+            const appliedCouponCode =
+                document.getElementById('appliedCouponCode');
+
+            const applyCouponBtn =
+                document.getElementById('applyCouponBtn');
+
+            const removeCouponBtn =
+                document.getElementById('removeCouponBtn');
+
+            const couponMessage =
+                document.getElementById('couponMessage');
+
+
             const csrfToken =
                 checkoutForm.querySelector(
                     'input[name="_token"]'
@@ -1396,6 +1566,15 @@
 
             let shippingZones = [];
 
+            /*
+            |--------------------------------------------------------------------------
+            | Coupon Runtime
+            |--------------------------------------------------------------------------
+            */
+
+            let couponDiscountAmount =
+                Number(@json((float) $couponDiscount));
+
 
             /*
             |--------------------------------------------------------------------------
@@ -1415,6 +1594,12 @@
 
             const shippingRateUrl =
                 @json(route('checkout.shipping-rate'));
+
+            const couponApplyUrl =
+                @json(route('coupon.apply'));
+
+            const couponRemoveUrl =
+                @json(route('coupon.remove'));
 
 
             /*
@@ -1448,6 +1633,33 @@
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
                         }
+                    );
+
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Checkout Total
+            |--------------------------------------------------------------------------
+            */
+
+            function discountedSubtotal() {
+
+                return Math.max(
+                    0,
+                    subtotal - couponDiscountAmount
+                );
+
+            }
+
+
+            function refreshCheckoutTotal() {
+
+                totalDisplay.textContent =
+                    formatMoney(
+                        discountedSubtotal() +
+                        shippingAmount
                     );
 
             }
@@ -1515,8 +1727,7 @@
                 shippingDisplay.textContent =
                     message;
 
-                totalDisplay.textContent =
-                    formatMoney(subtotal);
+                refreshCheckoutTotal();
 
                 placeOrderBtn.disabled =
                     true;
@@ -1567,8 +1778,7 @@
                 shippingDisplay.innerHTML =
                     '<span class="text-success">FREE</span>';
 
-                totalDisplay.textContent =
-                    formatMoney(subtotal);
+                refreshCheckoutTotal();
 
                 clearShippingMessage();
 
@@ -1671,9 +1881,13 @@
                     'd-none'
                 );
 
-                pickupFields.classList.add(
-                    'd-none'
-                );
+                if (pickupFields) {
+
+                    pickupFields.classList.add(
+                        'd-none'
+                    );
+
+                }
 
 
                 pickupRadios.forEach(function(input) {
@@ -2281,11 +2495,7 @@
                             shippingAmount
                         );
 
-                    totalDisplay.textContent =
-                        formatMoney(
-                            subtotal +
-                            shippingAmount
-                        );
+                    refreshCheckoutTotal();
 
 
                     shippingReady =
@@ -2306,8 +2516,7 @@
                     shippingDisplay.innerHTML =
                         '<span class="text-danger">Unavailable</span>';
 
-                    totalDisplay.textContent =
-                        formatMoney(subtotal);
+                    refreshCheckoutTotal();
 
                     placeOrderBtn.disabled =
                         true;
@@ -2492,6 +2701,497 @@
 
                 }
             );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Coupon Helpers
+            |--------------------------------------------------------------------------
+            */
+
+            function showCouponMessage(
+                message,
+                type = 'success'
+            ) {
+
+                if (!couponMessage) {
+                    return;
+                }
+
+                couponMessage.textContent =
+                    message || '';
+
+                couponMessage.classList.remove(
+                    'd-none',
+                    'text-success',
+                    'text-danger'
+                );
+
+                couponMessage.classList.add(
+                    type === 'error' ?
+                    'text-danger' :
+                    'text-success'
+                );
+
+            }
+
+
+            function clearCouponMessage() {
+
+                if (!couponMessage) {
+                    return;
+                }
+
+                couponMessage.textContent = '';
+
+                couponMessage.classList.add(
+                    'd-none'
+                );
+
+                couponMessage.classList.remove(
+                    'text-success',
+                    'text-danger'
+                );
+
+            }
+
+
+            function setCouponLoading(
+                button,
+                loading,
+                defaultText
+            ) {
+
+                if (!button) {
+                    return;
+                }
+
+                button.disabled =
+                    loading;
+
+                button.innerHTML =
+                    loading ?
+                    '<span class="spinner-border spinner-border-sm me-2"></span>Processing...' :
+                    defaultText;
+
+            }
+
+
+            function applyCouponToSummary(coupon) {
+
+                couponDiscountAmount =
+                    Number(
+                        coupon.discount_amount || 0
+                    );
+
+                if (
+                    !Number.isFinite(
+                        couponDiscountAmount
+                    )
+                ) {
+
+                    couponDiscountAmount = 0;
+
+                }
+
+
+                couponDiscountAmount =
+                    Math.max(
+                        0,
+                        Math.min(
+                            couponDiscountAmount,
+                            subtotal
+                        )
+                    );
+
+
+                if (couponDiscountDisplay) {
+
+                    couponDiscountDisplay.textContent =
+                        '-' +
+                        formatMoney(
+                            couponDiscountAmount
+                        );
+
+                }
+
+
+                if (couponCodeLabel) {
+
+                    couponCodeLabel.textContent =
+                        coupon.code ?
+                        '(' + coupon.code + ')' :
+                        '';
+
+                }
+
+
+                if (appliedCouponCode) {
+
+                    appliedCouponCode.textContent =
+                        coupon.code || '';
+
+                }
+
+
+                if (couponDiscountRow) {
+
+                    couponDiscountRow.classList.remove(
+                        'd-none'
+                    );
+
+                }
+
+
+                if (couponEntryBox) {
+
+                    couponEntryBox.classList.add(
+                        'd-none'
+                    );
+
+                }
+
+
+                if (couponAppliedBox) {
+
+                    couponAppliedBox.classList.remove(
+                        'd-none'
+                    );
+
+                }
+
+
+                refreshCheckoutTotal();
+
+            }
+
+
+            function removeCouponFromSummary() {
+
+                couponDiscountAmount = 0;
+
+
+                if (couponDiscountDisplay) {
+
+                    couponDiscountDisplay.textContent =
+                        '-' +
+                        formatMoney(0);
+
+                }
+
+
+                if (couponCodeLabel) {
+
+                    couponCodeLabel.textContent = '';
+
+                }
+
+
+                if (appliedCouponCode) {
+
+                    appliedCouponCode.textContent = '';
+
+                }
+
+
+                if (couponDiscountRow) {
+
+                    couponDiscountRow.classList.add(
+                        'd-none'
+                    );
+
+                }
+
+
+                if (couponAppliedBox) {
+
+                    couponAppliedBox.classList.add(
+                        'd-none'
+                    );
+
+                }
+
+
+                if (couponEntryBox) {
+
+                    couponEntryBox.classList.remove(
+                        'd-none'
+                    );
+
+                }
+
+
+                if (couponInput) {
+
+                    couponInput.value = '';
+
+                }
+
+
+                refreshCheckoutTotal();
+
+            }
+
+
+            async function parseCouponResponse(
+                response
+            ) {
+
+                let data = {};
+
+                try {
+
+                    data = await response.json();
+
+                } catch (error) {
+
+                    throw new Error(
+                        'Unable to process the coupon request.'
+                    );
+
+                }
+
+
+                if (!response.ok) {
+
+                    let message =
+                        data.message ||
+                        'Unable to process this coupon.';
+
+
+                    if (data.errors) {
+
+                        const firstError =
+                            Object.values(
+                                data.errors
+                            )
+                            .flat()
+                            .find(Boolean);
+
+                        if (firstError) {
+                            message = firstError;
+                        }
+
+                    }
+
+
+                    throw new Error(message);
+
+                }
+
+
+                return data;
+
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Apply Coupon
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                applyCouponBtn &&
+                couponInput
+            ) {
+
+                applyCouponBtn.addEventListener(
+                    'click',
+                    async function() {
+
+                        clearCouponMessage();
+
+
+                        const code =
+                            couponInput.value
+                            .trim()
+                            .toUpperCase();
+
+
+                        if (!code) {
+
+                            showCouponMessage(
+                                'Enter a coupon code.',
+                                'error'
+                            );
+
+                            couponInput.focus();
+
+                            return;
+                        }
+
+
+                        setCouponLoading(
+                            applyCouponBtn,
+                            true,
+                            'Apply'
+                        );
+
+
+                        try {
+
+                            const response =
+                                await fetch(
+                                    couponApplyUrl, {
+                                        method: 'POST',
+
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Accept': 'application/json',
+                                            'X-CSRF-TOKEN': csrfToken
+                                        },
+
+                                        body: JSON.stringify({
+                                            coupon_code: code
+                                        })
+                                    }
+                                );
+
+
+                            const data =
+                                await parseCouponResponse(
+                                    response
+                                );
+
+
+                            if (
+                                !data.coupon ||
+                                typeof data.coupon.discount_amount ===
+                                'undefined'
+                            ) {
+
+                                throw new Error(
+                                    'The coupon response is incomplete.'
+                                );
+
+                            }
+
+
+                            applyCouponToSummary(
+                                data.coupon
+                            );
+
+
+                            showCouponMessage(
+                                data.message ||
+                                'Coupon applied successfully.'
+                            );
+
+                        } catch (error) {
+
+                            showCouponMessage(
+                                error.message ||
+                                'Unable to apply coupon.',
+                                'error'
+                            );
+
+                        } finally {
+
+                            setCouponLoading(
+                                applyCouponBtn,
+                                false,
+                                'Apply'
+                            );
+
+                        }
+
+                    }
+                );
+
+
+                couponInput.addEventListener(
+                    'keydown',
+                    function(event) {
+
+                        if (event.key !== 'Enter') {
+                            return;
+                        }
+
+                        event.preventDefault();
+
+                        applyCouponBtn.click();
+
+                    }
+                );
+
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Remove Coupon
+            |--------------------------------------------------------------------------
+            */
+
+            if (removeCouponBtn) {
+
+                removeCouponBtn.addEventListener(
+                    'click',
+                    async function() {
+
+                        clearCouponMessage();
+
+
+                        setCouponLoading(
+                            removeCouponBtn,
+                            true,
+                            'Remove'
+                        );
+
+
+                        try {
+
+                            const response =
+                                await fetch(
+                                    couponRemoveUrl, {
+                                        method: 'POST',
+
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Accept': 'application/json',
+                                            'X-CSRF-TOKEN': csrfToken
+                                        }
+                                    }
+                                );
+
+
+                            const data =
+                                await parseCouponResponse(
+                                    response
+                                );
+
+
+                            removeCouponFromSummary();
+
+
+                            showCouponMessage(
+                                data.message ||
+                                'Coupon removed successfully.'
+                            );
+
+                        } catch (error) {
+
+                            showCouponMessage(
+                                error.message ||
+                                'Unable to remove coupon.',
+                                'error'
+                            );
+
+                        } finally {
+
+                            setCouponLoading(
+                                removeCouponBtn,
+                                false,
+                                'Remove'
+                            );
+
+                        }
+
+                    }
+                );
+
+            }
 
 
             /*
