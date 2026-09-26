@@ -236,7 +236,7 @@
 
 
                                                     @if (!$product->is_featured && !$product->is_new_arrival && !$product->is_best_seller && !$product->is_trending)
-                                                        <span class="text-muted">
+                                                        <span class="badge bg-light text-dark">
                                                             Normal
                                                         </span>
                                                     @endif
@@ -262,6 +262,10 @@
 
                                                 {{-- Actions --}}
                                                 <td class="text-end">
+                                                    <a href="{{ route('admin.products.variants.index', $product->id) }}"
+                                                        class="btn btn-outline-primary btn-sm" title="Manage Variants">
+                                                        <i class="icofont-options"></i> Variants
+                                                    </a>
 
                                                     <a href="{{ route('admin.products.edit', $product->id) }}"
                                                         class="btn btn-outline-secondary btn-sm" title="Edit Product">

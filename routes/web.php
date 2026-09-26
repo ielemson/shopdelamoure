@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\ShippingRateController;
 use App\Http\Controllers\Admin\WebsiteSettingController;
 use App\Http\Controllers\CheckoutController;
@@ -247,7 +248,17 @@ Route::prefix('admin')
         */
 
         Route::resource('products', AdminProductController::class);
-
+        /*
+        |--------------------------------------------------------------------------
+        | Products Variants
+        |--------------------------------------------------------------------------
+        */
+        Route::get('products/{product}/variants', [ProductVariantController::class, 'index'])->name('products.variants.index');
+        Route::get('products/{product}/variants/create', [ProductVariantController::class, 'create'])->name('products.variants.create');
+        Route::post('products/{product}/variants', [ProductVariantController::class, 'store'])->name('products.variants.store');
+        Route::get('products/{product}/variants/{variant}/edit', [ProductVariantController::class, 'edit'])->name('products.variants.edit');
+        Route::put('products/{product}/variants/{variant}', [ProductVariantController::class, 'update'])->name('products.variants.update');
+        Route::delete('products/{product}/variants/{variant}', [ProductVariantController::class, 'destroy'])->name('products.variants.destroy');
         /*
         |--------------------------------------------------------------------------
         | Customers
