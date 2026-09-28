@@ -24,7 +24,7 @@
     <div class="col-md-6">
         <label class="form-label" for="{{ $prefix }}-name">Variant Name *</label>
         <input id="{{ $prefix }}-name" type="text" name="name" class="form-control" required
-            value="{{ $value('name') }}" placeholder="e.g. A4 Print, A3 Print, Framed A3">
+            value="{{ $value('name') }}" placeholder="e.g. 200 ml, 400 ml">
     </div>
 
     <div class="col-md-6">
@@ -43,9 +43,10 @@
                 </div>
                 <div class="col-md-6">
                     <input name="option_values[]" class="form-control" value="{{ $optionValue }}"
-                        placeholder="Value, e.g. A4">
+                        placeholder="Value, e.g. 200 ml">
                 </div>
             @endforeach
+
             @for ($i = count($options); $i < 4; $i++)
                 <div class="col-md-6">
                     <input name="option_keys[]" class="form-control" placeholder="Option name">
@@ -56,7 +57,7 @@
             @endfor
         </div>
         <small class="text-muted">
-            Examples: Size → A4; Frame → Black; Scent → Vanilla.
+            Examples: Size → 200 ml; Scent → Vanilla; Colour → Black.
         </small>
     </div>
 
@@ -72,13 +73,9 @@
     @foreach ([
         'price_ngn' => 'Regular Price (NGN)',
         'sale_price_ngn' => 'Sale Price (NGN)',
-        'price_usd' => 'Regular Price (USD)',
-        'sale_price_usd' => 'Sale Price (USD)',
     ] as $field => $label)
         <div class="col-md-3">
-            <label class="form-label" for="{{ $prefix }}-{{ $field }}">
-                {{ $label }}
-            </label>
+            <label class="form-label" for="{{ $prefix }}-{{ $field }}">{{ $label }}</label>
             <input id="{{ $prefix }}-{{ $field }}" type="number" name="{{ $field }}"
                 step="0.01" min="0" class="form-control" value="{{ $value($field) }}">
         </div>
@@ -91,17 +88,13 @@
     </div>
 
     <div class="col-md-3">
-        <label class="form-label" for="{{ $prefix }}-low_stock_threshold">
-            Low Stock Alert
-        </label>
+        <label class="form-label" for="{{ $prefix }}-low_stock_threshold">Low Stock Alert</label>
         <input id="{{ $prefix }}-low_stock_threshold" type="number" name="low_stock_threshold" min="0"
             required class="form-control" value="{{ $value('low_stock_threshold', 5) }}">
     </div>
 
     <div class="col-md-3">
-        <label class="form-label" for="{{ $prefix }}-stock_status">
-            Stock Status
-        </label>
+        <label class="form-label" for="{{ $prefix }}-stock_status">Stock Status</label>
         <select id="{{ $prefix }}-stock_status" name="stock_status" class="form-select">
             <option value="in_stock" @selected($value('stock_status', 'out_of_stock') === 'in_stock')>
                 In Stock

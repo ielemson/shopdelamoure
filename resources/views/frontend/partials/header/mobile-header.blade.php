@@ -67,9 +67,7 @@
 
                 <img src="{{ asset('assets/images/others/logo-white.png') }}" width="145" height="41"
                     alt="De Lamoure">
-
             </a>
-
 
             <button type="button" class="btn-close shadow-none" data-bs-dismiss="offcanvas" aria-label="Close">
             </button>

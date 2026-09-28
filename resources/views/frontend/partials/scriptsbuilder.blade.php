@@ -63,18 +63,19 @@
         };
 
         const updateCartUI = data => {
-            const count = Number.isFinite(Number(data.cart_count)) ?
-                Math.max(0, Number(data.cart_count)) :
-                0;
-
+            const count = Number(data.cart_count);
             document.querySelectorAll('[data-cart-count]').forEach(element => {
-                element.textContent = count;
+                element.textContent = Number.isFinite(count) ? Math.max(0, count) : 0;
             });
 
-            const sideCartContent = document.getElementById('side-cart-content');
-            if (sideCartContent && typeof data.side_cart_html === 'string') {
-                sideCartContent.innerHTML = data.side_cart_html;
-            }
+            const target = document.getElementById('side-cart-content');
+            if (!target || typeof data.side_cart_html !== 'string') return;
+
+            const template = document.createElement('template');
+            template.innerHTML = data.side_cart_html.trim();
+
+            const source = template.content.querySelector('#side-cart-content');
+            target.replaceChildren(...(source || template.content).cloneNode(true).childNodes);
         };
 
         window.updateCartUI = updateCartUI;

@@ -1066,6 +1066,51 @@
             |--------------------------------------------------------------------------
             */
 
+            const galleryPaths = @json($galleryImages->pluck('image')->values());
+            const galleryUrls = @json($galleryImages->map(fn($item) => asset($item['image']))->values());
+            const mainImagePath = @json($product->main_image);
+
+            let imageChangeToken = 0;
+
+            function showVariantImage(imagePath) {
+                const index = galleryPaths.indexOf(imagePath || mainImagePath);
+                const slider = document.getElementById('slider');
+                if (index < 0 || !slider) return;
+
+                const token = ++imageChangeToken;
+                let attempts = 0;
+
+                const navigate = () => {
+                    if (token !== imageChangeToken) return;
+
+                    const slick = slider.slick;
+                    if (slick && !slick.unslicked && typeof slick.slickGoTo === 'function') {
+                        slick.slickGoTo(index);
+                        return;
+                    }
+
+                    if (++attempts <= 20) {
+                        window.setTimeout(navigate, 50);
+                        return;
+                    }
+
+                    // The theme has not created a usable Slick instance. Show the
+                    // selected image directly while leaving the gallery controls intact.
+                    const visible = slider.querySelector('.slick-slide.slick-active a[data-product-image]') ||
+                        slider.querySelector('a[data-product-image]');
+                    if (!visible) return;
+
+                    const image = visible.querySelector('img');
+                    visible.href = galleryUrls[index];
+                    if (image) {
+                        image.src = galleryUrls[index];
+                        image.dataset.src = galleryUrls[index];
+                    }
+                };
+
+                navigate();
+            }
+
             function applyVariantState() {
 
                 if (!variantSelect) return;
@@ -1084,6 +1129,8 @@
                 setActiveVariantButton(
                     variantId
                 );
+
+                showVariantImage(variantId ? option.dataset.image : mainImagePath);
 
 
                 /*

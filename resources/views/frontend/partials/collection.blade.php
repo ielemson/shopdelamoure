@@ -1,4 +1,3 @@
-</section>
 <section id="shop_categories" class="shop-categories-section">
 
     <div class="container container-xxl py-8 py-lg-10">
@@ -33,7 +32,7 @@
                 <div class="slick-slider dela-category-slider"
                     data-slick-options='{
                         "arrows": true,
-                        "centerMode": true,
+                        "centerMode": false,
                         "centerPadding": "calc((100% - 1440px) / 2)",
                         "dots": true,
                         "infinite": true,
@@ -49,7 +48,7 @@
                             {
                                 "breakpoint": 1200,
                                 "settings": {
-                                    "arrows": false,
+                                    "arrows": true,
                                     "dots": false,
                                     "centerMode": false,
                                     "slidesToShow": 3
@@ -211,3 +210,32 @@
     </div>
 
 </section>
+
+@push('styles')
+    <style>
+        #shop_categories .dela-category-image {
+            height: 360px;
+            overflow: hidden;
+        }
+
+        #shop_categories .dela-category-image img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        @media (max-width: 991px) {
+            #shop_categories .dela-category-image {
+                height: 300px;
+            }
+        }
+
+        @media (max-width: 575px) {
+            #shop_categories .dela-category-image {
+                height: 280px;
+            }
+        }
+    </style>
+@endpush
