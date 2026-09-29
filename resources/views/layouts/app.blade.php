@@ -18,10 +18,10 @@
         $defaultTitle = 'Delamoure | Fashion, Fragrance & Lifestyle';
 
         $defaultDescription =
-            'Discover Delamoure by DE LAMOURE BRAND LTD—fashion, accessories, fragrances, home scents and thoughtful gifts curated for distinctive living.';
+            'Discover Delamoure by DE LAMOURE BRAND fashion, accessories, fragrances, home scents and thoughtful gifts curated for distinctive living.';
 
         $defaultKeywords =
-            'Delamoure, Dela Moure, DE LAMOURE BRAND LTD, fashion Nigeria, fashion accessories, perfumes, fragrances, home scents, diffusers, essential oils, candles, gift sets, lifestyle products, online shopping Nigeria';
+            'Delamoure, Dela Moure, DE LAMOURE BRAND, fashion Nigeria, fashion accessories, perfumes, fragrances, home scents, diffusers, essential oils, candles, gift sets, lifestyle products, online shopping Nigeria';
 
         /*
     |--------------------------------------------------------------------------
@@ -139,7 +139,7 @@
 
     <meta property="og:image:height" content="630">
 
-    <meta property="og:image:alt" content="Dela Moure Luxury Fragrances, Perfumes and Home Scents">
+    <meta property="og:image:alt" content="Dela Moure | Fashion, Accessories, Fragrance and Lifestyle">
 
     <meta property="og:locale" content="en_NG">
 
