@@ -140,7 +140,7 @@ class ProductController extends Controller
 
             'sale_price_ngn' => $validated['sale_price_ngn'] ?? null,
 
-            'price_usd' => $validated['price_usd'],
+            'price_usd' => $validated['price_usd'] ?? null,
 
             'sale_price_usd' => $validated['sale_price_usd'] ?? null,
 
