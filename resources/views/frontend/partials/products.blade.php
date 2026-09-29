@@ -42,76 +42,62 @@
         ========================================================== --}}
         <div class="slick-slider dela-product-slider" data-animate="fadeInUp"
             data-slick-options='{
-                "arrows": true,
-                "dots": false,
-                "infinite": true,
-                "speed": 500,
-                "slidesToShow": 5,
-                "slidesToScroll": 1,
-                "responsive": [
-
-                    {
-                        "breakpoint": 1560,
-                        "settings": {
-                            "arrows": false,
-                            "dots": true,
-                            "slidesToShow": 5
-                        }
-                    },
-
-                    {
-                        "breakpoint": 1200,
-                        "settings": {
-                            "arrows": false,
-                            "dots": true,
-                            "slidesToShow": 3
-                        }
-                    },
-
-                    {
-                        "breakpoint": 992,
-                        "settings": {
-                            "arrows": false,
-                            "dots": true,
-                            "slidesToShow": 2
-                        }
-                    },
-
-                    {
-                        "breakpoint": 576,
-                        "settings": {
-                            "arrows": false,
-                            "dots": true,
-                            "slidesToShow": 1
-                        }
-                    }
-
-                ]
-            }'>
-
-
+        "arrows": true,
+        "dots": false,
+        "infinite": true,
+        "speed": 500,
+        "autoplay": true,
+        "autoplaySpeed": 3500,
+        "slidesToShow": 5,
+        "slidesToScroll": 1,
+        "responsive": [
+            {
+                "breakpoint": 1560,
+                "settings": {
+                    "arrows": false,
+                    "dots": true,
+                    "slidesToShow": 5
+                }
+            },
+            {
+                "breakpoint": 1200,
+                "settings": {
+                    "arrows": false,
+                    "dots": true,
+                    "slidesToShow": 3
+                }
+            },
+            {
+                "breakpoint": 992,
+                "settings": {
+                    "arrows": false,
+                    "dots": true,
+                    "slidesToShow": 2
+                }
+            },
+            {
+                "breakpoint": 576,
+                "settings": {
+                    "arrows": false,
+                    "dots": true,
+                    "slidesToShow": 1
+                }
+            }
+        ]
+    }'>
             @foreach ($products as $product)
                 <div>
-
                     @include('frontend.partials.product-card', [
                         'product' => $product,
-                    
                         'gridStyle' => 'grid-1',
-                    
                         'actionLayout' => 'horizontal',
-                    
                         'compact' => false,
-                    
                         'showCategory' => false,
-                    
                         'showVariantCount' => false,
-                    
                         'showCompare' => true,
                     ])
-
                 </div>
             @endforeach
-
         </div>
 
     </div>
