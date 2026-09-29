@@ -59,7 +59,7 @@ class ProductController extends Controller
             'price_ngn' => 'required|numeric|min:0',
             'sale_price_ngn' => 'nullable|numeric|min:0|lte:price_ngn',
 
-            'price_usd' => 'required|numeric|min:0',
+            'price_usd' => 'nullable|numeric|min:0',
             'sale_price_usd' => 'nullable|numeric|min:0|lte:price_usd',
 
             'cost_price' => 'nullable|numeric|min:0',
