@@ -85,8 +85,8 @@ Route::get('/shop/category/{slug}', [FrontendProductController::class, 'category
 |--------------------------------------------------------------------------
 */
 
-Route::post('/shopping/cart', [FrontendCartController::class, 'index'])
-    ->name('cart.index');
+// Route::post('/shopping/cart', [FrontendCartController::class, 'index'])
+//     ->name('cart.index');
 
 Route::get('/cart', [FrontendCartController::class, 'index'])
     ->name('cart.index');
