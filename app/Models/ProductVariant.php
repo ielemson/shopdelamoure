@@ -21,6 +21,10 @@ class ProductVariant extends Model
         'price_usd',
         'sale_price_usd',
 
+        // Wholesale
+        'wholesale_enabled',
+        'wholesale_price_ngn',
+
         'track_stock',
         'stock_quantity',
         'stock_status',
@@ -38,6 +42,10 @@ class ProductVariant extends Model
         'sale_price_ngn' => 'decimal:2',
         'price_usd' => 'decimal:2',
         'sale_price_usd' => 'decimal:2',
+
+        // Wholesale
+        'wholesale_enabled' => 'boolean',
+        'wholesale_price_ngn' => 'decimal:2',
 
         'track_stock' => 'boolean',
         'is_active' => 'boolean',
@@ -66,7 +74,7 @@ class ProductVariant extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | Pricing Helpers
+    | Retail Pricing Helpers
     |--------------------------------------------------------------------------
     */
 
@@ -88,6 +96,29 @@ class ProductVariant extends Model
     public function getEffectiveSalePriceUsdAttribute()
     {
         return $this->sale_price_usd ?? $this->product?->sale_price_usd;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Wholesale Eligibility
+    |--------------------------------------------------------------------------
+    | Checks configuration only. Minimum order quantities and available
+    | stock must also be validated when adding to cart and checking out.
+    */
+
+    public function isWholesaleEligible(): bool
+    {
+        $product = $this->product;
+
+        return $this->is_active
+            && $this->wholesale_enabled
+            && $this->wholesale_price_ngn !== null
+            && (float) $this->wholesale_price_ngn > 0
+            && $product !== null
+            && $product->status
+            && $product->has_variants
+            && $product->wholesale_enabled
+            && $product->wholesale_min_quantity >= 1;
     }
 
     /*
@@ -137,6 +168,19 @@ class ProductVariant extends Model
         return $query->where('is_active', true);
     }
 
+    public function scopeWholesale($query)
+    {
+        return $query->where('is_active', true)
+            ->where('wholesale_enabled', true)
+            ->where('wholesale_price_ngn', '>', 0)
+            ->whereHas('product', function ($query) {
+                $query->where('status', true)
+                    ->where('has_variants', true)
+                    ->where('wholesale_enabled', true)
+                    ->where('wholesale_min_quantity', '>=', 1);
+            });
+    }
+
     public function scopeDefaultVariant($query)
     {
         return $query->where('is_default', true);
@@ -151,5 +195,13 @@ class ProductVariant extends Model
     {
         return $query->orderBy('sort_order')
             ->orderBy('id');
+    }
+
+    public function wholesalePriceTiers()
+    {
+        return $this->hasMany(
+            VariantWholesalePriceTier::class,
+            'product_variant_id'
+        )->orderBy('min_quantity');
     }
 }

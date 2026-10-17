@@ -158,9 +158,9 @@
                                     <div class="col-md-4">
                                         <label class="form-label">Cost
                                             Price</label>
-                                        <input type="number" step="0.01" min="0" name="cost_price"
-                                            class="form-control @error('cost_price') is-invalid @enderror"
-                                            value="{{ old('cost_price', 0) }}">
+                                        <input type="number" step="0.01" min="0" name="cost_price_ngn"
+                                            class="form-control @error('cost_price_ngn') is-invalid @enderror"
+                                            value="{{ old('cost_price_ngn', old('cost_price', 0)) }}">
                                     </div>
                                     <!-- QUANTITY -->
                                     <div class="col-md-4">
@@ -196,6 +196,131 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- WHOLESALE -->
+                        @php
+                            $wholesaleTiers = old('wholesale_tiers', []);
+                            $wholesaleTiers = is_array($wholesaleTiers)
+                                ? array_values(array_filter($wholesaleTiers, 'is_array'))
+                                : [];
+                        @endphp
+                        <div class="card mb-3" id="product-wholesale-settings">
+                            <div class="card-header py-3 bg-transparent border-bottom-0">
+                                <h6 class="mb-0 fw-bold">Wholesale Purchasing</h6>
+                            </div>
+                            <div class="card-body">
+                                <input type="hidden" name="_wholesale_form" value="1">
+                                <input type="hidden" name="wholesale_allow_mixed_variants" value="0">
+                                <input type="hidden" name="wholesale_enabled" value="0">
+
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="wholesale-enabled"
+                                        name="wholesale_enabled" value="1"
+                                        {{ old('wholesale_enabled', 0) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="wholesale-enabled">
+                                        Enable wholesale purchasing
+                                    </label>
+                                </div>
+                                <p class="text-muted small">
+                                    Wholesale becomes available when enabled and the product is active.
+                                    Retail and wholesale purchases use the same stock.
+                                </p>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label for="wholesale-minimum" class="form-label">
+                                            Minimum Wholesale Quantity
+                                        </label>
+                                        <input type="number" name="wholesale_min_quantity" id="wholesale-minimum"
+                                            min="1" max="4294967295" step="1" required
+                                            class="form-control @error('wholesale_min_quantity') is-invalid @enderror"
+                                            value="{{ old('wholesale_min_quantity', 12) }}">
+                                        @error('wholesale_min_quantity')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="wholesale-base-price" class="form-label">
+                                            Base Wholesale Unit Price (NGN)
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">₦</span>
+                                            <input type="number" name="wholesale_price_ngn" id="wholesale-base-price"
+                                                min="0.01" max="9999999999999.99" step="0.01"
+                                                class="form-control @error('wholesale_price_ngn') is-invalid @enderror"
+                                                value="{{ old('wholesale_price_ngn') }}" placeholder="0.00"
+                                                {{ old('wholesale_enabled', 0) || count($wholesaleTiers) ? 'required' : '' }}>
+                                        </div>
+                                        @error('wholesale_price_ngn')
+                                            <div class="text-danger small mt-1">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <p class="small text-muted">
+                                    The base price applies from the minimum quantity until the first additional tier.
+                                    Each higher quantity tier must have a lower unit price.
+                                </p>
+
+                                <div class="d-flex justify-content-between align-items-center mb-2 gap-2">
+                                    <h6 class="mb-0">Additional Quantity Discounts</h6>
+                                    <button type="button" class="btn btn-outline-primary btn-sm"
+                                        id="add-wholesale-tier">Add Tier</button>
+                                </div>
+                                @error('wholesale_tiers')
+                                    <div class="text-danger small mb-2">{{ $message }}</div>
+                                @enderror
+                                <div class="table-responsive">
+                                    <table class="table align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Quantity From</th>
+                                                <th scope="col">Unit Price (₦)</th>
+                                                <th scope="col">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="wholesale-tier-rows">
+                                            @foreach ($wholesaleTiers as $index => $tier)
+                                                <tr data-wholesale-tier>
+                                                    <td>
+                                                        <input type="number" required step="1" min="2"
+                                                            max="4294967295" data-tier-quantity
+                                                            aria-label="Tier minimum quantity"
+                                                            name="wholesale_tiers[{{ $index }}][min_quantity]"
+                                                            class="form-control"
+                                                            value="{{ $tier['min_quantity'] ?? '' }}">
+                                                        @error("wholesale_tiers.$index.min_quantity")
+                                                            <div class="text-danger small mt-1">{{ $message }}</div>
+                                                        @enderror
+                                                    </td>
+                                                    <td>
+                                                        <input type="number" required min="0.01" step="0.01"
+                                                            max="9999999999999.99" data-tier-price
+                                                            aria-label="Tier unit price in naira"
+                                                            name="wholesale_tiers[{{ $index }}][price_ngn]"
+                                                            class="form-control" value="{{ $tier['price_ngn'] ?? '' }}">
+                                                        @error("wholesale_tiers.$index.price_ngn")
+                                                            <div class="text-danger small mt-1">{{ $message }}</div>
+                                                        @enderror
+                                                    </td>
+                                                    <td>
+                                                        <button type="button" class="btn btn-outline-danger btn-sm"
+                                                            data-remove-tier>Remove</button>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p class="small text-muted mt-2 mb-0" id="wholesale-no-tiers"
+                                    @if (count($wholesaleTiers)) hidden @endif>
+                                    No additional tiers. The base wholesale price applies to all qualifying quantities.
+                                </p>
+                                <p class="small text-muted mt-2 mb-0">
+                                    If you add variants later, configure wholesale prices and tiers on each variant.
+                                </p>
+                            </div>
+                        </div>
+
                     </div>
                     <!-- RIGHT -->
                     <div class="col-xl-4 col-lg-4">
@@ -305,4 +430,79 @@
             </form>
         </div>
     </div>
+
+    <template id="wholesale-tier-template">
+        <tr data-wholesale-tier>
+            <td>
+                <input type="number" class="form-control" data-tier-quantity aria-label="Tier minimum quantity"
+                    min="2" max="4294967295" step="1" required>
+            </td>
+            <td>
+                <input type="number" class="form-control" data-tier-price aria-label="Tier unit price in naira"
+                    min="0.01" max="9999999999999.99" step="0.01" required placeholder="0.00">
+            </td>
+            <td>
+                <button type="button" class="btn btn-outline-danger btn-sm" data-remove-tier>Remove</button>
+            </td>
+        </tr>
+    </template>
+    <script>
+        (() => {
+            function initialiseWholesale() {
+                const root = document.getElementById('product-wholesale-settings');
+                if (!root || root.dataset.initialised === '1') return;
+                root.dataset.initialised = '1';
+
+                const rows = document.getElementById('wholesale-tier-rows');
+                const template = document.getElementById('wholesale-tier-template');
+                const addButton = document.getElementById('add-wholesale-tier');
+                const minimum = document.getElementById('wholesale-minimum');
+                const basePrice = document.getElementById('wholesale-base-price');
+                const enabled = document.getElementById('wholesale-enabled');
+                const emptyNotice = document.getElementById('wholesale-no-tiers');
+
+                function refresh() {
+                    const tiers = Array.from(rows.querySelectorAll('[data-wholesale-tier]'));
+                    const quantityMinimum = Number(minimum.value);
+                    const tierMinimum = Number.isInteger(quantityMinimum) && quantityMinimum >= 1 ?
+                        quantityMinimum + 1 : 2;
+
+                    tiers.forEach((row, index) => {
+                        const quantity = row.querySelector('[data-tier-quantity]');
+                        quantity.name = `wholesale_tiers[${index}][min_quantity]`;
+                        quantity.min = String(tierMinimum);
+                        row.querySelector('[data-tier-price]').name = `wholesale_tiers[${index}][price_ngn]`;
+                    });
+                    basePrice.required = enabled.checked || tiers.length > 0;
+                    emptyNotice.hidden = tiers.length > 0;
+                    addButton.disabled = tiers.length >= 50 || quantityMinimum >= 4294967295;
+                }
+
+                addButton.addEventListener('click', () => {
+                    if (addButton.disabled) return;
+                    rows.appendChild(template.content.cloneNode(true));
+                    refresh();
+                    rows.lastElementChild.querySelector('[data-tier-quantity]').focus();
+                });
+                rows.addEventListener('click', (event) => {
+                    const removeButton = event.target.closest('[data-remove-tier]');
+                    if (!removeButton || !rows.contains(removeButton)) return;
+                    removeButton.closest('[data-wholesale-tier]').remove();
+                    refresh();
+                });
+                minimum.addEventListener('input', refresh);
+                enabled.addEventListener('change', refresh);
+                root.closest('form').addEventListener('submit', refresh);
+                refresh();
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initialiseWholesale, {
+                    once: true
+                });
+            } else {
+                initialiseWholesale();
+            }
+        })();
+    </script>
+
 @endsection

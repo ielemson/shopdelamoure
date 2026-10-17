@@ -1,352 +1,223 @@
-<aside class="navbar navbar-expand-xl navbar-light d-block px-0 header-sticky dashboard-nav py-0">
+@php
+    $customer = auth()->user();
+
+    $accountLinks = [
+        [
+            'route' => 'home',
+            'pattern' => 'home',
+            'label' => 'Dashboard',
+            'icon' => 'fa-home',
+        ],
+        [
+            'route' => 'customer.orders.index',
+            'pattern' => 'customer.orders.*',
+            'label' => 'My Orders',
+            'icon' => 'fa-box',
+        ],
+        [
+            'route' => 'customer.addresses.index',
+            'pattern' => 'customer.addresses.*',
+            'label' => 'Delivery Addresses',
+            'icon' => 'fa-map-marker-alt',
+        ],
+        [
+            'route' => 'customer.profile.index',
+            'pattern' => 'customer.profile.*',
+            'label' => 'My Profile',
+            'icon' => 'fa-user',
+        ],
+    ];
+@endphp
+
+<aside class="customer-sidebar navbar navbar-expand-xl navbar-light d-block px-0 header-sticky dashboard-nav py-0"
+    aria-label="Customer account navigation">
 
     <div class="sticky-area border-end bg-body">
 
-
-        {{-- ==========================================================
-            SIDEBAR HEADER
-        ========================================================== --}}
-
-        <div
-            class="d-flex px-6 px-xl-8 w-100 border-bottom py-7
-                   justify-content-between align-items-center">
-
-            <a href="{{ route('home') }}" class="navbar-brand py-2 mb-0">
-
-                <img src="{{ asset('assets/images/others/logo.png') }}" width="160" height="45" class="img-fluid"
-                    alt="Dela Moure">
-
+        {{-- Logo and mobile menu --}}
+        <div class="d-flex align-items-center justify-content-between gap-3 px-6 px-xl-8 py-5 border-bottom">
+            <a href="{{ route('shop') }}" class="navbar-brand m-0 py-2">
+                <img src="{{ asset('assets/images/others/logo-trans.png') }}" width="160" height="45" alt="Dela Moure"
+                    class="img-fluid">
             </a>
 
-
-            {{-- Mobile Toggle --}}
-            <button class="navbar-toggler border-0 px-0 shadow-none" type="button" data-bs-toggle="collapse"
+            <button class="navbar-toggler d-xl-none" type="button" data-bs-toggle="collapse"
                 data-bs-target="#customerSidebar" aria-controls="customerSidebar" aria-expanded="false"
-                aria-label="Toggle account navigation">
-
+                aria-label="Toggle account menu">
                 <span class="navbar-toggler-icon"></span>
-
             </button>
-
         </div>
 
+        <div class="collapse navbar-collapse position-relative z-index-5" id="customerSidebar">
 
-        {{-- ==========================================================
-            CUSTOMER PROFILE
-        ========================================================== --}}
+            <div class="w-100">
 
-        <div class="px-6 px-xl-8 py-7 border-bottom text-center">
+                {{-- Customer details --}}
+                <div class="customer-sidebar-profile d-flex align-items-center gap-3 mx-6 mt-5 mb-4 p-4">
+                    <img src="{{ $customer?->profile_photo ?: asset('assets/images/dashboard/avatar.png') }}"
+                        alt="" class="customer-sidebar-avatar rounded-circle flex-shrink-0" width="48"
+                        height="48">
 
-            <div class="mb-4">
+                    <div class="customer-sidebar-identity">
+                        <span class="d-block small text-muted">Welcome back</span>
 
-                <img src="{{ auth()->user()->profile_photo ?: asset('assets/images/dashboard/avatar.png') }}"
-                    alt="{{ auth()->user()->name ?: 'Customer' }}" class="rounded-circle object-fit-cover border"
-                    width="72" height="72">
+                        <strong class="d-block text-break">
+                            {{ $customer?->name ?: 'Customer' }}
+                        </strong>
+                    </div>
+                </div>
+
+                {{-- Account links --}}
+                <ul class="list-unstyled px-6 pb-4 mb-0">
+                    <li class="px-4 pt-2 pb-3">
+                        <span class="customer-sidebar-label text-muted fw-semibold">
+                            My Account
+                        </span>
+                    </li>
+
+                    @foreach ($accountLinks as $link)
+                        @if (Route::has($link['route']))
+                            @php
+                                $isActive = request()->routeIs($link['pattern']);
+                            @endphp
+
+                            <li class="mb-2">
+                                <a href="{{ route($link['route']) }}"
+                                    class="customer-account-link {{ $isActive ? 'active' : '' }}"
+                                    @if ($isActive) aria-current="page" @endif>
+
+                                    <i class="fas {{ $link['icon'] }} customer-account-icon" aria-hidden="true"></i>
+
+                                    <span>{{ $link['label'] }}</span>
+                                </a>
+                            </li>
+                        @endif
+                    @endforeach
+
+                    <li class="mt-4 pt-4 border-top">
+                        <a href="{{ route('shop') }}" class="customer-account-link">
+                            <i class="fas fa-shopping-bag customer-account-icon" aria-hidden="true"></i>
+                            <span>Continue Shopping</span>
+                        </a>
+                    </li>
+
+                    <li class="mt-2">
+                        <form method="POST" action="{{ route('logout') }}" class="m-0">
+                            @csrf
+
+                            <button type="submit"
+                                class="customer-account-link customer-account-logout w-100 text-start">
+                                <i class="fas fa-sign-out-alt customer-account-icon" aria-hidden="true"></i>
+                                <span>Logout</span>
+                            </button>
+                        </form>
+                    </li>
+                </ul>
 
             </div>
-
-
-            <h5 class="fs-16px fw-semibold mb-1">
-
-                {{ auth()->user()->name ?: 'Customer' }}
-
-            </h5>
-
-
-            @if (auth()->user()->email)
-                <p class="fs-13px text-muted mb-1 text-break">
-
-                    {{ auth()->user()->email }}
-
-                </p>
-            @endif
-
-
-            <span class="badge bg-body-tertiary text-body-emphasis px-3 py-2 fs-12px">
-
-                Customer Account
-
-            </span>
-
         </div>
-
-
-        {{-- ==========================================================
-            SIDEBAR NAVIGATION
-        ========================================================== --}}
-
-        <div class="collapse navbar-collapse bg-body position-relative z-index-5" id="customerSidebar">
-
-            <ul class="list-group list-group-flush list-group-no-border w-100 p-6">
-
-
-                {{-- Account Label --}}
-                <li class="list-group-item border-0 bg-transparent px-4 pt-2 pb-3">
-
-                    <span class="fs-12px text-uppercase text-muted fw-semibold letter-spacing-01">
-
-                        My Account
-
-                    </span>
-
-                </li>
-
-
-                {{-- ==================================================
-                    DASHBOARD
-                ================================================== --}}
-
-                <li class="list-group-item px-0 py-0 sidebar-item mb-2 border-0">
-
-                    <a href="{{ Route::has('home') ? route('home') : route('home') }}"
-                        class="text-heading text-decoration-none lh-1 sidebar-link
-                               py-4 px-5 d-flex align-items-center rounded
-                               {{ request()->routeIs('home') ? 'active' : '' }}"
-                        title="Dashboard">
-
-                        <span
-                            class="sidebar-item-icon w-40px d-inline-flex
-                                   align-items-center text-muted">
-
-                            <i class="fas fa-house"></i>
-
-                        </span>
-
-                        <span class="sidebar-item-text fs-14px fw-semibold">
-
-                            Dashboard
-
-                        </span>
-
-                    </a>
-
-                </li>
-
-
-                {{-- ==================================================
-                    MY ORDERS
-                ================================================== --}}
-
-                <li class="list-group-item px-0 py-0 sidebar-item mb-2 border-0">
-
-                    <a href="{{ route('customer.orders.index') }}"
-                        class="text-heading text-decoration-none lh-1 sidebar-link
-                               py-4 px-5 d-flex align-items-center rounded
-                               {{ request()->routeIs('customer.orders.*') ? 'active' : '' }}"
-                        title="My Orders">
-
-                        <span
-                            class="sidebar-item-icon w-40px d-inline-flex
-                                   align-items-center text-muted">
-
-                            <i class="fas fa-bag-shopping"></i>
-
-                        </span>
-
-                        <span class="sidebar-item-text fs-14px fw-semibold">
-
-                            My Orders
-
-                        </span>
-
-                    </a>
-
-                </li>
-
-
-                {{-- ==================================================
-                    DELIVERY ADDRESSES
-                ================================================== --}}
-
-                @if (Route::has('customer.addresses.index'))
-                    <li class="list-group-item px-0 py-0 sidebar-item mb-2 border-0">
-
-                        <a href="{{ route('customer.addresses.index') }}"
-                            class="text-heading text-decoration-none lh-1 sidebar-link
-                                   py-4 px-5 d-flex align-items-center rounded
-                                   {{ request()->routeIs('customer.addresses.*') ? 'active' : '' }}"
-                            title="Delivery Addresses">
-
-                            <span
-                                class="sidebar-item-icon w-40px d-inline-flex
-                                       align-items-center text-muted">
-
-                                <i class="fas fa-location-dot"></i>
-
-                            </span>
-
-                            <span class="sidebar-item-text fs-14px fw-semibold">
-
-                                Delivery Addresses
-
-                            </span>
-
-                        </a>
-
-                    </li>
-                @endif
-
-
-                {{-- ==================================================
-                    PROFILE
-                ================================================== --}}
-
-                @if (Route::has('customer.profile.index'))
-                    <li class="list-group-item px-0 py-0 sidebar-item mb-2 border-0">
-
-                        <a href="{{ route('customer.profile.index') }}"
-                            class="text-heading text-decoration-none lh-1 sidebar-link
-                                   py-4 px-5 d-flex align-items-center rounded
-                                   {{ request()->routeIs('customer.profile.*') ? 'active' : '' }}"
-                            title="My Profile">
-
-                            <span
-                                class="sidebar-item-icon w-40px d-inline-flex
-                                       align-items-center text-muted">
-
-                                <i class="fas fa-user"></i>
-
-                            </span>
-
-                            <span class="sidebar-item-text fs-14px fw-semibold">
-
-                                My Profile
-
-                            </span>
-
-                        </a>
-
-                    </li>
-                @endif
-
-
-                {{-- ==================================================
-                    SHOP
-                ================================================== --}}
-
-                <li class="list-group-item px-0 py-0 sidebar-item mb-2 border-0">
-
-                    <a href="{{ route('shop') }}"
-                        class="text-heading text-decoration-none lh-1 sidebar-link
-                               py-4 px-5 d-flex align-items-center rounded"
-                        title="Continue Shopping">
-
-                        <span
-                            class="sidebar-item-icon w-40px d-inline-flex
-                                   align-items-center text-muted">
-
-                            <i class="fas fa-store"></i>
-
-                        </span>
-
-                        <span class="sidebar-item-text fs-14px fw-semibold">
-
-                            Continue Shopping
-
-                        </span>
-
-                    </a>
-
-                </li>
-
-
-                {{-- ==================================================
-                    DIVIDER
-                ================================================== --}}
-
-                <li class="border-top my-4"></li>
-
-
-                {{-- ==================================================
-                    LOGOUT
-                ================================================== --}}
-
-                <li class="list-group-item px-0 py-0 sidebar-item border-0">
-
-                    <form method="POST" action="{{ route('logout') }}">
-
-                        @csrf
-
-
-                        <button type="submit"
-                            class="text-danger text-decoration-none lh-1 sidebar-link
-                                   py-4 px-5 d-flex align-items-center rounded
-                                   border-0 bg-transparent w-100 text-start">
-
-                            <span
-                                class="sidebar-item-icon w-40px d-inline-flex
-                                       align-items-center">
-
-                                <i class="fas fa-right-from-bracket"></i>
-
-                            </span>
-
-                            <span class="sidebar-item-text fs-14px fw-semibold">
-
-                                Logout
-
-                            </span>
-
-                        </button>
-
-                    </form>
-
-                </li>
-
-            </ul>
-
-        </div>
-
     </div>
-
 </aside>
 
-
 <style>
-    /*
-    |--------------------------------------------------------------------------
-    | Customer Sidebar
-    |--------------------------------------------------------------------------
-    */
-
-    .dashboard-nav .sidebar-link {
-        transition:
-            background-color .2s ease,
-            color .2s ease;
-    }
-
-
-    .dashboard-nav .sidebar-link:hover {
-        background: var(--bs-tertiary-bg);
-    }
-
-
-    .dashboard-nav .sidebar-link.active {
-        background: var(--bs-dark);
-        color: #fff !important;
-    }
-
-
-    .dashboard-nav .sidebar-link.active .sidebar-item-icon {
-        color: #fff !important;
-    }
-
-
-    .dashboard-nav .sidebar-item-icon {
-        transition: color .2s ease;
-    }
-
-
-    .dashboard-nav .navbar-brand img {
+    .customer-sidebar .navbar-brand img {
+        display: block;
         object-fit: contain;
     }
 
+    .customer-sidebar .navbar-toggler {
+        padding: .5rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: .5rem;
+    }
+
+    .customer-sidebar .customer-sidebar-profile {
+        background: var(--bs-secondary-bg);
+        border: 1px solid var(--bs-border-color);
+        border-radius: .75rem;
+    }
+
+    .customer-sidebar .customer-sidebar-avatar {
+        object-fit: cover;
+        border: 2px solid #EBC584;
+    }
+
+    .customer-sidebar .customer-sidebar-identity {
+        min-width: 0;
+    }
+
+    .customer-sidebar .customer-sidebar-identity strong {
+        color: var(--bs-heading-color);
+        line-height: 1.4;
+    }
+
+    .customer-sidebar .customer-sidebar-label {
+        font-size: .7rem;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+    }
+
+    .customer-sidebar .customer-account-link {
+        display: flex;
+        align-items: center;
+        gap: .875rem;
+        min-height: 48px;
+        padding: .875rem 1rem;
+        border: 1px solid transparent;
+        border-radius: .625rem;
+        background: transparent;
+        color: var(--bs-body-color);
+        font: inherit;
+        font-size: .9rem;
+        font-weight: 600;
+        line-height: 1.4;
+        text-decoration: none;
+        transition: background-color .2s ease, color .2s ease;
+    }
+
+    .customer-sidebar .customer-account-icon {
+        width: 1.25rem;
+        flex-shrink: 0;
+        text-align: center;
+    }
+
+    .customer-sidebar .customer-account-link:hover {
+        background: var(--bs-secondary-bg);
+        color: var(--bs-primary);
+    }
+
+    .customer-sidebar .customer-account-link.active {
+        background: #F6EAD6;
+        border-color: #DEC79F;
+        color: #654621;
+    }
+
+    .customer-sidebar .customer-account-logout {
+        color: var(--bs-danger);
+    }
+
+    .customer-sidebar .customer-account-logout:hover {
+        background: var(--bs-danger-bg-subtle);
+        color: var(--bs-danger-text);
+    }
+
+    .customer-sidebar .customer-account-link:focus-visible,
+    .customer-sidebar .navbar-brand:focus-visible,
+    .customer-sidebar .navbar-toggler:focus-visible {
+        outline: 2px solid var(--bs-primary);
+        outline-offset: 3px;
+        box-shadow: none;
+    }
 
     @media (min-width: 1200px) {
-
-        .dashboard-nav .sticky-area {
+        .customer-sidebar .sticky-area {
             min-height: 100vh;
         }
+    }
 
+    @media (prefers-reduced-motion: reduce) {
+        .customer-sidebar .customer-account-link {
+            transition: none;
+        }
     }
 </style>

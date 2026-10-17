@@ -8,8 +8,9 @@
                     <h3 class="fw-bold mb-1">Add Variant</h3>
                     <div class="text-muted">{{ $product->name }}</div>
                 </div>
-                <a href="{{ route('admin.products.variants.index', $product) }}" class="btn btn-secondary">Back to
-                    Variants</a>
+                <a href="{{ route('admin.products.variants.index', $product) }}" class="btn btn-secondary">
+                    Back to Variants
+                </a>
             </div>
 
             @if ($errors->any())
@@ -30,10 +31,9 @@
                         @include('admin.products.variants.partials.fields', [
                             'variant' => null,
                             'prefix' => 'new',
+                            'product' => $product,
                         ])
-                        <button type="submit" class="btn btn-primary mt-4">
-                            Save Variant
-                        </button>
+                        <button type="submit" class="btn btn-primary mt-4">Save Variant</button>
                     </form>
                 </div>
             </div>

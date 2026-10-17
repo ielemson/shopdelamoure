@@ -20,24 +20,14 @@ class OrderItem extends Model
         'product_id',
         'product_variant_id',
 
-        /*
-        |--------------------------------------------------------------------------
-        | Product Snapshot
-        |--------------------------------------------------------------------------
-        */
-
+        // Product snapshot
         'name',
         'sku',
         'variant_name',
         'variant_options',
         'image',
 
-        /*
-        |--------------------------------------------------------------------------
-        | Pricing Snapshot
-        |--------------------------------------------------------------------------
-        */
-
+        // Pricing snapshot
         'currency',
         'price',
         'quantity',
@@ -52,10 +42,8 @@ class OrderItem extends Model
 
     protected $casts = [
         'variant_options' => 'array',
-
         'price' => 'decimal:2',
         'total' => 'decimal:2',
-
         'quantity' => 'integer',
     ];
 
@@ -85,15 +73,59 @@ class OrderItem extends Model
 
     /*
     |--------------------------------------------------------------------------
+    | Purchase Type Helpers
+    |--------------------------------------------------------------------------
+    */
+
+    public function getPurchaseTypeAttribute(): string
+    {
+        $type = data_get(
+            $this->variant_options,
+            '_purchase_type'
+        );
+
+        return in_array($type, ['retail', 'wholesale'], true)
+            ? $type
+            : 'unknown';
+    }
+
+    public function getPurchaseTypeLabelAttribute(): string
+    {
+        return match ($this->purchase_type) {
+            'wholesale' => 'Wholesale',
+            'retail' => 'Retail',
+            default => 'Unclassified',
+        };
+    }
+
+    public function getPurchaseTypeBadgeClassAttribute(): string
+    {
+        return match ($this->purchase_type) {
+            'wholesale' => 'bg-primary',
+            'retail' => 'bg-success',
+            default => 'bg-secondary',
+        };
+    }
+
+    public function isWholesale(): bool
+    {
+        return $this->purchase_type === 'wholesale';
+    }
+
+    public function isRetail(): bool
+    {
+        return $this->purchase_type === 'retail';
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Variant Helpers
     |--------------------------------------------------------------------------
     */
 
     public function hasVariant(): bool
     {
-        return ! is_null(
-            $this->product_variant_id
-        );
+        return ! is_null($this->product_variant_id);
     }
 
     public function getVariantDisplayAttribute(): ?string
@@ -102,27 +134,24 @@ class OrderItem extends Model
             return $this->variant_name;
         }
 
-        if (empty($this->variant_options)) {
-            return null;
-        }
-
-        return collect(
-            $this->variant_options
-        )
+        $display = collect($this->variant_options ?? [])
+            ->reject(function ($value, $key) {
+                // Underscore-prefixed keys contain internal metadata.
+                return str_starts_with((string) $key, '_')
+                    || ! is_scalar($value)
+                    || is_bool($value)
+                    || trim((string) $value) === '';
+            })
             ->map(function ($value, $key) {
+                $label = ucfirst(
+                    str_replace('_', ' ', (string) $key)
+                );
 
-                return ucfirst(
-                    str_replace(
-                        '_',
-                        ' ',
-                        $key
-                    )
-                )
-                .': '
-                .$value;
-
+                return $label.': '.$value;
             })
             ->implode(', ');
+
+        return $display !== '' ? $display : null;
     }
 
     /*
@@ -133,36 +162,22 @@ class OrderItem extends Model
 
     public function getCurrencySymbolAttribute(): string
     {
-        return match (
-            strtoupper(
-                $this->currency ?? 'NGN'
-            )
-        ) {
+        return match (strtoupper($this->currency ?? 'NGN')) {
             'USD' => '$',
             'NGN' => '₦',
-
-            default => strtoupper(
-                $this->currency ?? 'NGN'
-            )
-                .' ',
+            default => strtoupper($this->currency ?? 'NGN').' ',
         };
     }
 
     public function getFormattedPriceAttribute(): string
     {
         return $this->currency_symbol
-            .number_format(
-                (float) $this->price,
-                2
-            );
+            .number_format((float) $this->price, 2);
     }
 
     public function getFormattedTotalAttribute(): string
     {
         return $this->currency_symbol
-            .number_format(
-                (float) $this->total,
-                2
-            );
+            .number_format((float) $this->total, 2);
     }
 }

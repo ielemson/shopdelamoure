@@ -17,7 +17,9 @@ class ProductVariantController extends Controller
 {
     public function index(Product $product)
     {
-        $variants = $product->variants()->get();
+        $variants = $product->variants()
+            ->with('wholesalePriceTiers')
+            ->get();
 
         return view('admin.products.variants.index', compact('product', 'variants'));
     }
@@ -30,13 +32,16 @@ class ProductVariantController extends Controller
     public function edit(Product $product, ProductVariant $variant)
     {
         $this->ensureOwnership($product, $variant);
+        $variant->load('wholesalePriceTiers');
 
         return view('admin.products.variants.edit', compact('product', 'variant'));
     }
 
     public function store(Request $request, Product $product)
     {
+        // Validate before uploading files.
         $data = $this->validatedData($request, $product);
+        $this->validatedWholesaleData($request, $product);
         $newImage = $this->uploadVariantImage($request);
 
         if ($newImage) {
@@ -44,16 +49,26 @@ class ProductVariantController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($product, $data) {
-                Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
+            DB::transaction(function () use ($request, $product, $data) {
+                $lockedProduct = Product::whereKey($product->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-                if ($data['is_default']) {
+                // Recheck against the current minimum under the product lock.
+                $wholesale = $this->validatedWholesaleData($request, $lockedProduct);
+                $variantData = array_merge($data, $wholesale['attributes'] ?? []);
+
+                if ($variantData['is_default']) {
                     $product->variants()->update(['is_default' => false]);
                 }
 
-                $variant = $product->variants()->create($data);
-                $product->update(['has_variants' => true]);
+                $variant = $product->variants()->create($variantData);
 
+                if ($wholesale !== null) {
+                    $this->syncWholesalePriceTiers($variant, $wholesale['tiers']);
+                }
+
+                $product->update(['has_variants' => true]);
                 $this->ensureActiveDefault($product, $variant);
             });
         } catch (Throwable $e) {
@@ -71,22 +86,37 @@ class ProductVariantController extends Controller
         $this->ensureOwnership($product, $variant);
 
         $data = $this->validatedData($request, $product, $variant);
+        $this->validatedWholesaleData($request, $product);
         $oldImage = $variant->image;
+        $removeImage = $request->boolean('remove_image');
         $newImage = $this->uploadVariantImage($request);
 
+        // A replacement upload takes precedence over the remove checkbox.
         if ($newImage) {
             $data['image'] = $newImage;
+        } elseif ($removeImage) {
+            $data['image'] = null;
         }
 
         try {
-            DB::transaction(function () use ($product, $variant, $data) {
-                Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
+            DB::transaction(function () use ($request, $product, $variant, $data) {
+                $lockedProduct = Product::whereKey($product->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-                if ($data['is_default']) {
+                $wholesale = $this->validatedWholesaleData($request, $lockedProduct);
+                $variantData = array_merge($data, $wholesale['attributes'] ?? []);
+
+                if ($variantData['is_default']) {
                     $product->variants()->update(['is_default' => false]);
                 }
 
-                $variant->update($data);
+                $variant->update($variantData);
+
+                if ($wholesale !== null) {
+                    $this->syncWholesalePriceTiers($variant, $wholesale['tiers']);
+                }
+
                 $this->ensureActiveDefault($product, $variant);
             });
         } catch (Throwable $e) {
@@ -94,7 +124,8 @@ class ProductVariantController extends Controller
             throw $e;
         }
 
-        if ($newImage) {
+        // Keep the old file if the database save fails.
+        if ($newImage || $removeImage) {
             $this->deleteVariantImage($oldImage);
         }
 
@@ -111,6 +142,7 @@ class ProductVariantController extends Controller
         DB::transaction(function () use ($product, $variant) {
             Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
 
+            // The tier foreign key cascades when the variant is deleted.
             $variant->delete();
 
             if (! $product->variants()->exists()) {
@@ -214,6 +246,8 @@ class ProductVariantController extends Controller
 
         $data['options'] = $options ?: null;
         unset($data['option_keys'], $data['option_values'], $data['remove_image']);
+        // File objects must not be mass-assigned to the image path column.
+        unset($data['image']);
 
         if ($data['is_default'] && ! $data['is_active']) {
             throw ValidationException::withMessages([
@@ -240,6 +274,128 @@ class ProductVariantController extends Controller
         }
 
         return $data;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Wholesale Validation
+    |--------------------------------------------------------------------------
+    | The form submits _wholesale_form=1 plus explicit boolean values.
+    | Without that marker, existing wholesale settings and tiers are preserved.
+    | A variant can be configured before the parent enables wholesale.
+    */
+    private function validatedWholesaleData(Request $request, Product $product): ?array
+    {
+        if (! $request->has('_wholesale_form')) {
+            return null;
+        }
+
+        $data = $request->validate([
+            '_wholesale_form' => ['required', 'in:1'],
+            'wholesale_enabled' => ['required', 'boolean'],
+            'wholesale_price_ngn' => [
+                'nullable', 'numeric', 'decimal:0,2',
+                'regex:/^[0-9]{1,13}(\.[0-9]{1,2})?$/',
+                'min:0.01', 'max:9999999999999.99',
+            ],
+            'wholesale_tiers' => ['nullable', 'array', 'max:50'],
+            'wholesale_tiers.*' => [
+                'required', 'array:min_quantity,price_ngn',
+            ],
+            'wholesale_tiers.*.min_quantity' => [
+                'required', 'integer', 'min:1',
+                'max:4294967295', 'distinct',
+            ],
+            'wholesale_tiers.*.price_ngn' => [
+                'required', 'numeric', 'decimal:0,2',
+                'regex:/^[0-9]{1,13}(\.[0-9]{1,2})?$/',
+                'min:0.01', 'max:9999999999999.99',
+            ],
+        ]);
+
+        $enabled = $request->boolean('wholesale_enabled');
+        $basePrice = $data['wholesale_price_ngn'] ?? null;
+        $tiers = $data['wholesale_tiers'] ?? [];
+        $minimum = (int) $product->wholesale_min_quantity;
+
+        if ($minimum < 1) {
+            throw ValidationException::withMessages([
+                'wholesale_enabled' => 'Set a valid minimum wholesale quantity on the product first.',
+            ]);
+        }
+
+        if (($enabled || count($tiers) > 0) && $basePrice === null) {
+            throw ValidationException::withMessages([
+                'wholesale_price_ngn' => 'Enter a base wholesale unit price before enabling '
+                    .'wholesale or adding tiers.',
+            ]);
+        }
+
+        $sortedTiers = collect($tiers)->sortBy(
+            fn ($tier) => (int) $tier['min_quantity']
+        );
+        $previousPrice = $basePrice !== null
+            ? $this->wholesalePriceInKobo($basePrice)
+            : null;
+
+        foreach ($sortedTiers as $index => $tier) {
+            if ((int) $tier['min_quantity'] <= $minimum) {
+                throw ValidationException::withMessages([
+                    "wholesale_tiers.$index.min_quantity" => "Tier quantities must exceed the product minimum of {$minimum} units.",
+                ]);
+            }
+
+            $price = $this->wholesalePriceInKobo($tier['price_ngn']);
+            if ($previousPrice !== null && $price >= $previousPrice) {
+                throw ValidationException::withMessages([
+                    "wholesale_tiers.$index.price_ngn" => 'Each higher quantity tier must have a lower unit price.',
+                ]);
+            }
+            $previousPrice = $price;
+        }
+
+        return [
+            'attributes' => [
+                'wholesale_enabled' => $enabled,
+                'wholesale_price_ngn' => $basePrice,
+            ],
+            'tiers' => $sortedTiers->values()->all(),
+        ];
+    }
+
+    /** Convert validated decimal prices to integer kobo for exact comparisons. */
+    private function wholesalePriceInKobo(string|int|float $price): int
+    {
+        $parts = explode('.', (string) $price, 2);
+        $fraction = str_pad($parts[1] ?? '', 2, '0');
+
+        return ((int) $parts[0] * 100) + (int) $fraction;
+    }
+
+    /** Call inside the variant database transaction. */
+    private function syncWholesalePriceTiers(ProductVariant $variant, array $tiers): void
+    {
+        $quantities = array_map(
+            fn ($tier) => (int) $tier['min_quantity'],
+            $tiers
+        );
+
+        if (empty($quantities)) {
+            $variant->wholesalePriceTiers()->delete();
+
+            return;
+        }
+
+        $variant->wholesalePriceTiers()
+            ->whereNotIn('min_quantity', $quantities)
+            ->delete();
+
+        foreach ($tiers as $tier) {
+            $variant->wholesalePriceTiers()->updateOrCreate(
+                ['min_quantity' => (int) $tier['min_quantity']],
+                ['price_ngn' => $tier['price_ngn']]
+            );
+        }
     }
 
     private function uploadVariantImage(Request $request): ?string

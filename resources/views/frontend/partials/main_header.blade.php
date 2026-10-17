@@ -449,7 +449,7 @@
 
 
                             {{-- Home --}}
-                            <li class="nav-item transition-all-xl-1 py-xl-11 py-0 px-xxl-7 px-xl-5">
+                            <li class="nav-item transition-all-xl-1 py-xl-11 py-0 px-xxl-4 px-xl-3">
 
                                 <a class="nav-link position-relative py-xl-0 px-xl-0 text-uppercase fw-semibold ls-1 fs-14px
                                     {{ request()->is('/') ? 'active' : '' }}"
@@ -464,7 +464,7 @@
 
 
                             {{-- Shop --}}
-                            <li class="nav-item transition-all-xl-1 py-xl-11 py-0 px-xxl-7 px-xl-5">
+                            <li class="nav-item transition-all-xl-1 py-xl-11 py-0 px-xxl-4 px-xl-3">
 
                                 <a class="nav-link position-relative py-xl-0 px-xl-0 text-uppercase fw-semibold ls-1 fs-14px
                                     {{ request()->routeIs('shop') ? 'active' : '' }}"
@@ -478,8 +478,18 @@
 
 
 
+                            {{-- Wholesale --}}
+                            <li class="nav-item transition-all-xl-1 py-xl-11 py-0 px-xxl-4 px-xl-3">
+                                <a class="nav-link position-relative py-xl-0 px-xl-0 text-uppercase fw-semibold ls-1 fs-14px
+                                    {{ request()->routeIs('wholesale.*') || request()->is('wholesale', 'wholesale/*') ? 'active' : '' }}"
+                                    href="{{ url('shop/wholesale') }}"
+                                    @if (request()->routeIs('wholesale.*') || request()->is('wholesale', 'wholesale/*')) aria-current="page" @endif>
+                                    Wholesale
+                                </a>
+                            </li>
+
                             {{-- Accessories --}}
-                            <li class="nav-item transition-all-xl-1 py-xl-11 py-0 px-xxl-7 px-xl-5">
+                            {{-- <li class="nav-item transition-all-xl-1 py-xl-11 py-0 px-xxl-4 px-xl-3">
 
                                 <a class="nav-link position-relative py-xl-0 px-xl-0 text-uppercase fw-semibold ls-1 fs-14px
                                     {{ $accessoriesActive ? 'active' : '' }}"
@@ -489,7 +499,7 @@
 
                                 </a>
 
-                            </li>
+                            </li> --}}
 
                         </ul>
 
@@ -527,7 +537,7 @@
 
 
                             {{-- Gift Sets --}}
-                            <li class="nav-item transition-all-xl-1 py-xl-11 py-0 px-xxl-7 px-xl-5">
+                            {{-- <li class="nav-item transition-all-xl-1 py-xl-11 py-0 px-xxl-7 px-xl-5">
 
                                 <a class="nav-link position-relative py-xl-0 px-xl-0 text-uppercase fw-semibold ls-1 fs-14px
                                     {{ $giftSetsActive ? 'active' : '' }}"
@@ -537,7 +547,7 @@
 
                                 </a>
 
-                            </li>
+                            </li> --}}
 
 
 

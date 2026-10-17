@@ -21,13 +21,14 @@
         |--------------------------------------------------------------------------
         */
 
-        $currency = strtoupper(session('currency', 'NGN'));
+        $currency = 'NGN';
 
         $currencySymbol = $currency === 'USD' ? '$' : '₦';
 
         $cart = \Darryldecode\Cart\Facades\CartFacade::getContent();
 
-        $subtotal = (float) \Darryldecode\Cart\Facades\CartFacade::getSubTotal();
+        $subtotal = (float) \Darryldecode\Cart\Facades\CartFacade::getSubTotal(false);
+        $hasWholesale = $cart->contains(fn($item) => $item->attributes->get('purchase_type') === 'wholesale');
 
         $shipping = 0;
 
@@ -41,7 +42,7 @@
         |
         */
 
-        $coupon = session('coupon');
+        $coupon = $hasWholesale ? null : session('coupon');
 
         $couponDiscount = (float) data_get($coupon, 'discount_amount', 0);
 
@@ -272,6 +273,13 @@
 
 
 
+        @if ($hasWholesale)
+            <div class="alert alert-info" role="status">
+                Your order contains wholesale items. Prices and payment are in NGN.
+                Volume prices are based on the quantities shown below. Promotional codes are unavailable for this order.
+                <a href="{{ route('cart.index') }}" class="alert-link">Review quantities in your cart</a>.
+            </div>
+        @endif
         <form action="{{ route('checkout.process') }}" method="POST" id="checkoutForm">
 
             @csrf
@@ -302,9 +310,21 @@
                             @forelse ($cart as $item)
                                 @php
 
-                                    $image =
-                                        $item->attributes->get('image') ?:
-                                        asset('assets/images/products/product-placeholder.jpg');
+                                    $imagePath = $item->attributes->get('image');
+                                    $image = $imagePath
+                                        ? asset($imagePath)
+                                        : asset('assets/images/products/product-placeholder.jpg');
+                                    $isWholesale = $item->attributes->get('purchase_type') === 'wholesale';
+                                    $minimum = max(1, (int) $item->attributes->get('wholesale_min_quantity', 1));
+                                    $mixed =
+                                        $isWholesale && (bool) $item->attributes->get('wholesale_allow_mixed_variants');
+                                    $groupQuantity = $cart
+                                        ->filter(
+                                            fn($line) => $line->attributes->get('purchase_type') === 'wholesale' &&
+                                                (int) $line->attributes->get('product_id') ===
+                                                    (int) $item->attributes->get('product_id'),
+                                        )
+                                        ->sum('quantity');
 
                                 @endphp
 
@@ -336,6 +356,20 @@
                                             </p>
 
 
+                                            <span
+                                                class="badge {{ $isWholesale ? 'bg-primary' : 'bg-secondary' }} mb-2">{{ $isWholesale ? 'Wholesale' : 'Retail' }}</span>
+                                            <p class="small text-muted mb-1">₦{{ number_format($item->price, 2) }} NGN /
+                                                unit</p>
+                                            @if ($isWholesale)
+                                                <p class="small text-muted mb-1">
+                                                    Minimum {{ $minimum }} units
+                                                    {{ $mixed ? 'across eligible options of this product' : ($item->attributes->get('variant_id') ? 'per option' : 'of this product') }}.
+                                                </p>
+                                                @if ($mixed)
+                                                    <p class="small text-muted mb-1">Combined wholesale quantity:
+                                                        {{ $groupQuantity }}.</p>
+                                                @endif
+                                            @endif
                                             @if ($item->attributes->get('variant_name'))
                                                 <p class="fs-14px text-body mb-0">
 
@@ -420,72 +454,73 @@
                             </div>
 
 
-                            {{-- Coupon --}}
+                            @unless ($hasWholesale)
+                                {{-- Coupon --}}
 
-                            <div class="checkout-coupon-box border-top pt-5 mb-5">
+                                <div class="checkout-coupon-box border-top pt-5 mb-5">
 
-                                <label for="checkoutCouponCode"
-                                    class="mb-3 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+                                    <label for="checkoutCouponCode"
+                                        class="mb-3 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
-                                    Coupon Code
+                                        Coupon Code
 
-                                </label>
-
-
-                                <div id="couponEntryBox" class="{{ $couponDiscount > 0 ? 'd-none' : '' }}">
-
-                                    <div class="input-group">
-
-                                        <input type="text" class="form-control text-uppercase" id="checkoutCouponCode"
-                                            placeholder="Enter coupon code" autocomplete="off">
-
-                                        <button type="button" class="btn btn-outline-dark" id="applyCouponBtn">
-
-                                            Apply
-
-                                        </button>
-
-                                    </div>
-
-                                </div>
+                                    </label>
 
 
-                                <div id="couponAppliedBox" class="{{ $couponDiscount > 0 ? '' : 'd-none' }}">
+                                    <div id="couponEntryBox" class="{{ $couponDiscount > 0 ? 'd-none' : '' }}">
 
-                                    <div
-                                        class="d-flex align-items-center justify-content-between gap-3 border bg-light p-4">
+                                        <div class="input-group">
 
-                                        <div>
+                                            <input type="text" class="form-control text-uppercase" id="checkoutCouponCode"
+                                                placeholder="Enter coupon code" autocomplete="off">
 
-                                            <div class="fw-semibold text-body-emphasis" id="appliedCouponCode">
+                                            <button type="button" class="btn btn-outline-dark" id="applyCouponBtn">
 
-                                                {{ $coupon['code'] ?? '' }}
+                                                Apply
 
-                                            </div>
-
-                                            {{-- <div class="small text-success">
-                                                Coupon applied
-                                            </div> --}}
+                                            </button>
 
                                         </div>
 
+                                    </div>
 
-                                        <button type="button" class="btn btn-sm btn-outline-danger" id="removeCouponBtn">
 
-                                            Remove
+                                    <div id="couponAppliedBox" class="{{ $couponDiscount > 0 ? '' : 'd-none' }}">
 
-                                        </button>
+                                        <div
+                                            class="d-flex align-items-center justify-content-between gap-3 border bg-light p-4">
+
+                                            <div>
+
+                                                <div class="fw-semibold text-body-emphasis" id="appliedCouponCode">
+
+                                                    {{ $coupon['code'] ?? '' }}
+
+                                                </div>
+
+                                                {{-- <div class="small text-success">
+                                                Coupon applied
+                                            </div> --}}
+
+                                            </div>
+
+
+                                            <button type="button" class="btn btn-sm btn-outline-danger" id="removeCouponBtn">
+
+                                                Remove
+
+                                            </button>
+
+                                        </div>
 
                                     </div>
 
+
+                                    <div id="couponMessage" class="small mt-3 d-none">
+                                    </div>
+
                                 </div>
-
-
-                                <div id="couponMessage" class="small mt-3 d-none">
-                                </div>
-
-                            </div>
-
+                            @endunless
 
                             {{-- Delivery / Pickup --}}
 
@@ -1289,10 +1324,10 @@
 
 
         /*
-                            |--------------------------------------------------------------------------
-                            | Ship / Pickup
-                            |--------------------------------------------------------------------------
-                            */
+                                |--------------------------------------------------------------------------
+                                | Ship / Pickup
+                                |--------------------------------------------------------------------------
+                                */
 
         .delivery-method-card,
         .pickup-location-card {
@@ -1347,10 +1382,10 @@
 
 
         /*
-                            |--------------------------------------------------------------------------
-                            | Disabled Pickup
-                            |--------------------------------------------------------------------------
-                            */
+                                |--------------------------------------------------------------------------
+                                | Disabled Pickup
+                                |--------------------------------------------------------------------------
+                                */
 
         .delivery-method-input:disabled+.delivery-method-card {
 
@@ -1363,10 +1398,10 @@
 
 
         /*
-                            |--------------------------------------------------------------------------
-                            | Shipping Areas
-                            |--------------------------------------------------------------------------
-                            */
+                                |--------------------------------------------------------------------------
+                                | Shipping Areas
+                                |--------------------------------------------------------------------------
+                                */
 
         #zoneCoverageAreas .zone-area-badge {
 
@@ -1385,10 +1420,10 @@
 
 
         /*
-                            |--------------------------------------------------------------------------
-                            | Coupon
-                            |--------------------------------------------------------------------------
-                            */
+                                |--------------------------------------------------------------------------
+                                | Coupon
+                                |--------------------------------------------------------------------------
+                                */
 
         .checkout-coupon-box .input-group .form-control {
 
@@ -3200,9 +3235,37 @@
             |--------------------------------------------------------------------------
             */
 
+            let checkoutCartChanged = false;
+            document.addEventListener('cart:updated', function() {
+                checkoutCartChanged = true;
+                placeOrderBtn.disabled = true;
+                if (document.getElementById('checkoutCartChangedNotice')) return;
+                const notice = document.createElement('div');
+                notice.id = 'checkoutCartChangedNotice';
+                notice.className = 'alert alert-warning';
+                notice.setAttribute('role', 'alert');
+                notice.appendChild(document.createTextNode(
+                    'Your cart changed. Refresh checkout to review the updated quantities and total before paying. '
+                    ));
+                const refresh = document.createElement('button');
+                refresh.type = 'button';
+                refresh.className = 'btn btn-sm btn-outline-dark';
+                refresh.textContent = 'Refresh checkout';
+                refresh.addEventListener('click', () => window.location.reload());
+                notice.appendChild(refresh);
+                checkoutForm.prepend(notice);
+            });
+
             checkoutForm.addEventListener(
                 'submit',
                 function(event) {
+                    if (checkoutCartChanged) {
+                        event.preventDefault();
+                        document.getElementById('checkoutCartChangedNotice')?.scrollIntoView({
+                            block: 'center'
+                        });
+                        return;
+                    }
 
                     const method =
                         deliveryMethod();

@@ -6,7 +6,7 @@
         {{-- Page Heading --}}
         <div class="row mb-9 align-items-center">
 
-            <div class="col-lg-7 mb-6 mb-lg-0">
+            <div class="col-lg-6 mb-6 mb-lg-0">
                 <h2 class="fs-4 mb-2">
                     Welcome Back,
                     {{ optional($user->customerProfile)->first_name ?? $user->name }}
@@ -17,18 +17,18 @@
                 </p>
             </div>
 
-            <div class="col-lg-5 d-flex flex-wrap justify-content-lg-end gap-3">
+            <div class="col-lg-6 d-flex justify-content-lg-end">
+                <div class="btn-group" role="group" aria-label="Shopping and orders">
+                    <a href="{{ route('shop') }}" class="btn btn-primary">
+                        <i class="fas fa-shopping-bag me-2" aria-hidden="true"></i>
+                        Continue Shopping
+                    </a>
 
-                <a href="{{ route('shop') }}" class="btn btn-primary">
-                    <i class="fas fa-shopping-bag me-2"></i>
-                    Continue Shopping
-                </a>
-
-                <a href="{{ route('customer.orders.index') }}" class="btn btn-outline-primary">
-                    <i class="fas fa-box me-2"></i>
-                    My Orders
-                </a>
-
+                    <a href="{{ route('customer.orders.index') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-box me-2" aria-hidden="true"></i>
+                        My Orders
+                    </a>
+                </div>
             </div>
 
         </div>

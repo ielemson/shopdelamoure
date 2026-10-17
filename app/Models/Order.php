@@ -174,6 +174,83 @@ class Order extends Model
     }
 
     /*
+|--------------------------------------------------------------------------
+| Purchase Type Helpers
+|--------------------------------------------------------------------------
+|
+| Read the purchase type saved at checkout, rather than current product
+| settings. Missing or invalid markers remain unclassified.
+|
+*/
+
+    public function getPurchaseTypeAttribute(): string
+    {
+        $types = $this->items
+            ->map(function ($item) {
+                $options = $item->variant_options;
+
+                // Support JSON strings until OrderItem casting is confirmed.
+                if (is_string($options)) {
+                    $options = json_decode($options, true);
+                }
+
+                $type = data_get($options, '_purchase_type');
+
+                return in_array($type, ['retail', 'wholesale'], true)
+                    ? $type
+                    : 'unknown';
+            })
+            ->unique()
+            ->values();
+
+        if ($types->isEmpty()) {
+            return 'unknown';
+        }
+
+        if ($types->count() === 1) {
+            return $types->first();
+        }
+
+        // Some items have no reliable purchase-type snapshot.
+        if ($types->contains('unknown')) {
+            return 'unknown';
+        }
+
+        // Handle historical orders containing both purchase types.
+        return 'mixed';
+    }
+
+    public function getPurchaseTypeLabelAttribute(): string
+    {
+        return match ($this->purchase_type) {
+            'wholesale' => 'Wholesale',
+            'retail' => 'Retail',
+            'mixed' => 'Mixed',
+            default => 'Unclassified',
+        };
+    }
+
+    public function getPurchaseTypeBadgeClassAttribute(): string
+    {
+        return match ($this->purchase_type) {
+            'wholesale' => 'bg-primary',
+            'retail' => 'bg-success',
+            'mixed' => 'bg-warning text-dark',
+            default => 'bg-secondary',
+        };
+    }
+
+    public function isWholesale(): bool
+    {
+        return $this->purchase_type === 'wholesale';
+    }
+
+    public function isRetail(): bool
+    {
+        return $this->purchase_type === 'retail';
+    }
+
+    /*
     |--------------------------------------------------------------------------
     | Currency Helpers
     |--------------------------------------------------------------------------

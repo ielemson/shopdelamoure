@@ -8,7 +8,7 @@ class CustomerOrderController extends Controller
 {
     /*
     |--------------------------------------------------------------------------
-    | Customer Orders
+    | Customer Order List
     |--------------------------------------------------------------------------
     */
 
@@ -17,40 +17,27 @@ class CustomerOrderController extends Controller
         $user = auth()->user();
 
         $orders = Order::query()
+            ->where('user_id', $user->id)
 
-            /*
-            |--------------------------------------------------------------------------
-            | Item Count
-            |--------------------------------------------------------------------------
-            |
-            | The order index only needs the number of purchased items.
-            | This avoids loading every OrderItem record unnecessarily.
-            |
-            */
+            // Load only the fields needed by the order purchase-type helpers.
+            ->with([
+                'items' => function ($query) {
+                    $query->select([
+                        'id',
+                        'order_id',
+                        'variant_options',
+                    ]);
+                },
+            ])
 
+            // Preserve the existing item count used by the order list.
             ->withCount('items')
-
-            /*
-            |--------------------------------------------------------------------------
-            | Customer Orders Only
-            |--------------------------------------------------------------------------
-            */
-
-            ->where(
-                'user_id',
-                $user->id
-            )
-
             ->latest()
-
             ->paginate(15);
 
         return view(
             'customer.orders.index',
-            compact(
-                'user',
-                'orders'
-            )
+            compact('user', 'orders')
         );
     }
 
@@ -62,76 +49,27 @@ class CustomerOrderController extends Controller
 
     public function show(Order $order)
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Security
-        |--------------------------------------------------------------------------
-        |
-        | A customer must never be able to view another customer's order
-        | simply by changing the order ID in the URL.
-        |
-        */
-
+        // Prevent customers from accessing another customer's order.
         abort_unless(
-            (int) $order->user_id === (int) auth()->id(),
+            auth()->check()
+                && (int) $order->user_id === (int) auth()->id(),
             403
         );
 
         $user = auth()->user();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Order Relationships
-        |--------------------------------------------------------------------------
-        */
-
         $order->load([
-
-            /*
-            |--------------------------------------------------------------------------
-            | Customer
-            |--------------------------------------------------------------------------
-            */
-
             'user',
-
-            /*
-            |--------------------------------------------------------------------------
-            | Order Items
-            |--------------------------------------------------------------------------
-            */
-
             'items.product',
             'items.variant',
-
-            /*
-            |--------------------------------------------------------------------------
-            | Shipping Information
-            |--------------------------------------------------------------------------
-            */
-
             'country',
             'state',
-
-            /*
-            |--------------------------------------------------------------------------
-            | Pickup Information
-            |--------------------------------------------------------------------------
-            |
-            | Used when delivery_method = pickup.
-            |
-            */
-
             'pickupLocation.state',
-
         ]);
 
         return view(
             'customer.orders.show',
-            compact(
-                'user',
-                'order'
-            )
+            compact('user', 'order')
         );
     }
 }

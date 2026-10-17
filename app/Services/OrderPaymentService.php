@@ -8,186 +8,160 @@ use App\Models\Order;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use RuntimeException;
+use Throwable;
 
 class OrderPaymentService
 {
-    public function __construct(
-        protected InventoryService $inventoryService
-    ) {
+    public function __construct(protected InventoryService $inventoryService)
+    {
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Process Successful Payment
-    |--------------------------------------------------------------------------
-    */
-
-    public function processSuccessfulPayment(
-        Order $order,
-        array $gatewayData
-    ): bool {
-        /*
-        |--------------------------------------------------------------------------
-        | Mark Paid Atomically
-        |--------------------------------------------------------------------------
-        |
-        | Callback and webhook may arrive almost at the same time.
-        | Locking prevents the same order from being processed twice.
-        |
-        */
-
-        $justPaid = DB::transaction(function () use (
-            $order,
-            $gatewayData
-        ) {
-            $lockedOrder = Order::query()
-                ->lockForUpdate()
-                ->find($order->id);
-
-            if (! $lockedOrder) {
-                return false;
+    /** Caller must first obtain gatewayData from Paystack verification or a verified webhook. */
+    public function processSuccessfulPayment(Order $order, array $gatewayData): bool
+    {
+        $result = DB::transaction(function () use ($order, $gatewayData) {
+            $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
+            if (($gatewayData['status'] ?? null) !== 'success'
+                || ($gatewayData['reference'] ?? null) !== $lockedOrder->payment_reference
+                || strtoupper((string) ($gatewayData['currency'] ?? '')) !== strtoupper((string) $lockedOrder->currency)
+                || ! is_numeric($gatewayData['amount'] ?? null)
+                || (float) $gatewayData['amount'] !== (float) (int) round((float) $lockedOrder->total * 100)) {
+                throw new RuntimeException('The payment does not match this order.');
             }
 
-            if ($lockedOrder->payment_status === 'paid') {
-                return false;
+            // A delayed charge notification must not reverse a completed refund.
+            if ($lockedOrder->payment_status === 'refunded') {
+                return ['just_paid' => false, 'inventory_error' => null, 'recovered' => false];
+            }
+            $justPaid = $lockedOrder->payment_status !== 'paid';
+            if ($justPaid) {
+                // Preserve the fact that money was received even if fulfilment needs attention.
+                $lockedOrder->update([
+                    'payment_status' => 'paid', 'paid_at' => now(),
+                    'payment_gateway_response' => json_encode($gatewayData, JSON_THROW_ON_ERROR),
+                ]);
+            }
+            $this->recordCouponUsage($lockedOrder);
+            $inventoryError = null;
+            $wasPending = $lockedOrder->status === 'pending';
+            try {
+                if (in_array($lockedOrder->status, ['cancelled', 'canceled'], true)) {
+                    throw new RuntimeException('A cancelled order received payment; manual review is required.');
+                }
+                // Nested transaction rolls back the entire deduction batch on failure.
+                // Existing SALE references make retries safe for already-paid orders.
+                $this->inventoryService->deductOrderStock($lockedOrder);
+            } catch (Throwable $e) {
+                // Let the outer transaction retry database concurrency failures.
+                if ($e instanceof \Illuminate\Database\QueryException
+                    && (in_array((string) $e->getCode(), ['40001', '40P01'], true)
+                        || in_array((int) ($e->errorInfo[1] ?? 0), [1205, 1213], true))) {
+                    throw $e;
+                }
+                $inventoryError = $e->getMessage();
+                // Leave a new order pending when stock cannot be fulfilled.
+                // Do not overwrite an existing cancellation or other workflow status.
             }
 
-            $lockedOrder->update([
-                'payment_status' => 'paid',
-                'status' => 'processing',
-                'paid_at' => now(),
+            if ($inventoryError === null && ($justPaid || $wasPending)) {
+                $lockedOrder->update(['status' => 'processing']);
+            }
 
-                'payment_gateway_response' => json_encode($gatewayData),
-            ]);
+            return [
+                'just_paid' => $justPaid, 'inventory_error' => $inventoryError,
+                'recovered' => ! $justPaid && $wasPending && $inventoryError === null,
+            ];
+        }, 5);
 
-            return true;
+        DB::afterCommit(function () use ($order, $result) {
+            $order->refresh();
+            $order->loadMissing(['items', 'items.product', 'items.variant', 'country', 'state', 'pickupLocation.state']);
+            if ($result['inventory_error'] !== null) {
+                Log::critical('Paid order requires inventory review', [
+                    'order_id' => $order->id, 'order_no' => $order->order_no,
+                    'message' => $result['inventory_error'],
+                ]);
+            }
+            if (! $result['just_paid'] && ! $result['recovered']) {
+                return;
+            }
+
+            // Do not send a normal customer confirmation when fulfilment failed.
+            if ($result['inventory_error'] === null) {
+                try {
+                    if ($order->email && filter_var($order->email, FILTER_VALIDATE_EMAIL)) {
+                        Mail::to($order->email)->send(new CustomerOrderConfirmationMail($order));
+                    }
+                } catch (Throwable $e) {
+                    Log::error('Customer order confirmation email failed', [
+                        'order_id' => $order->id, 'order_no' => $order->order_no,
+                        'email' => $order->email, 'message' => $e->getMessage(),
+                    ]);
+                }
+            }
+            if (! $result['just_paid']) {
+                return;
+            }
+            try {
+                $adminEmail = config('mail.admin_address');
+                if ($adminEmail && filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
+                    Mail::to($adminEmail)->send(new AdminNewOrderMail($order));
+                }
+            } catch (Throwable $e) {
+                Log::error('Admin new order email failed', [
+                    'order_id' => $order->id, 'order_no' => $order->order_no,
+                    'admin_email' => $adminEmail ?? null, 'message' => $e->getMessage(),
+                ]);
+            }
         });
 
-        /*
-        |--------------------------------------------------------------------------
-        | Already Processed
-        |--------------------------------------------------------------------------
-        */
+        // Existing callers interpret this as whether payment was newly recorded.
+        return $result['just_paid'];
+    }
 
-        if (! $justPaid) {
-            return false;
+    private function recordCouponUsage(
+        Order $order
+    ): void {
+        if (
+            ! $order->coupon_id
+            || $order->payment_status !== 'paid'
+        ) {
+            return;
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Refresh Order
-        |--------------------------------------------------------------------------
-        */
-
-        $order->refresh();
-
-        $order->loadMissing([
-            'items',
-            'items.product',
-            'items.variant',
-            'country',
-            'state',
-            'pickupLocation.state',
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Inventory
-        |--------------------------------------------------------------------------
-        */
-
-        try {
-
-            $this->inventoryService
-                ->deductOrderStock($order);
-
-        } catch (\Throwable $e) {
-
-            Log::critical(
-                'Paid order inventory deduction failed',
-                [
-                    'order_id' => $order->id,
-                    'order_no' => $order->order_no,
-                    'message' => $e->getMessage(),
-                ]
-            );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Customer Email
-        |--------------------------------------------------------------------------
-        */
-
-        try {
-
-            if (
-                $order->email
-                && filter_var(
-                    $order->email,
-                    FILTER_VALIDATE_EMAIL
-                )
-            ) {
-                Mail::to($order->email)
-                    ->send(
-                        new CustomerOrderConfirmationMail(
-                            $order
-                        )
+        DB::transaction(function () use ($order) {
+            $lockedOrder =
+                Order::query()
+                    ->lockForUpdate()
+                    ->findOrFail(
+                        $order->id
                     );
-            }
-
-        } catch (\Throwable $e) {
-
-            Log::error(
-                'Customer order confirmation email failed',
-                [
-                    'order_id' => $order->id,
-                    'order_no' => $order->order_no,
-                    'email' => $order->email,
-                    'message' => $e->getMessage(),
-                ]
-            );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Admin Email
-        |--------------------------------------------------------------------------
-        */
-
-        try {
-
-            $adminEmail =
-                config('mail.admin_address');
-
             if (
-                $adminEmail
-                && filter_var(
-                    $adminEmail,
-                    FILTER_VALIDATE_EMAIL
-                )
+                ! $lockedOrder->coupon_id
+                || $lockedOrder->payment_status !== 'paid'
+                || $lockedOrder->coupon_usage_counted_at
             ) {
-                Mail::to($adminEmail)
-                    ->send(
-                        new AdminNewOrderMail(
-                            $order
-                        )
-                    );
+                return;
             }
-
-        } catch (\Throwable $e) {
-
-            Log::error(
-                'Admin new order email failed',
-                [
-                    'order_id' => $order->id,
-                    'order_no' => $order->order_no,
-                    'admin_email' => $adminEmail ?? null,
-                    'message' => $e->getMessage(),
-                ]
-            );
-        }
-
-        return true;
+            $coupon =
+                \App\Models\Coupon::query()
+                    ->lockForUpdate()
+                    ->find(
+                        $lockedOrder->coupon_id
+                    );
+            if ($coupon) {
+                $coupon->increment(
+                    'usage_count'
+                );
+            }
+            /*
+            |--------------------------------------------------------------------------
+            | Mark Usage As Counted
+            |--------------------------------------------------------------------------
+            */
+            $lockedOrder->forceFill([
+                'coupon_usage_counted_at' => now(),
+            ])->save();
+        });
     }
 }

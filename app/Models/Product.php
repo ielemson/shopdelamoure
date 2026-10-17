@@ -10,11 +10,6 @@ class Product extends Model
 {
     use HasFactory;
 
-    /*
-    |--------------------------------------------------------------------------
-    | Mass Assignable Fields
-    |--------------------------------------------------------------------------
-    */
     protected $fillable = [
         'category_id',
         'subcategory_id',
@@ -36,6 +31,12 @@ class Product extends Model
         'price_usd',
         'sale_price_usd',
         'cost_price_ngn',
+
+        // Wholesale
+        'wholesale_enabled',
+        'wholesale_min_quantity',
+        'wholesale_allow_mixed_variants',
+        'wholesale_price_ngn',
 
         'sale_starts_at',
         'sale_ends_at',
@@ -62,11 +63,6 @@ class Product extends Model
         'sort_order',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Casts
-    |--------------------------------------------------------------------------
-    */
     protected $casts = [
         'has_variants' => 'boolean',
         'track_stock' => 'boolean',
@@ -82,6 +78,12 @@ class Product extends Model
         'price_usd' => 'decimal:2',
         'sale_price_usd' => 'decimal:2',
         'cost_price_ngn' => 'decimal:2',
+
+        // Wholesale
+        'wholesale_enabled' => 'boolean',
+        'wholesale_min_quantity' => 'integer',
+        'wholesale_allow_mixed_variants' => 'boolean',
+        'wholesale_price_ngn' => 'decimal:2',
 
         'quantity' => 'integer',
         'low_stock_alert' => 'integer',
@@ -167,7 +169,7 @@ class Product extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | Pricing Helpers
+    | Retail Pricing Helpers
     |--------------------------------------------------------------------------
     */
 
@@ -252,11 +254,6 @@ class Product extends Model
 
     public function isInStock(): bool
     {
-        /*
-        |----------------------------------------------------------------------
-        | Variant Product
-        |----------------------------------------------------------------------
-        */
         if ($this->has_variants) {
             return $this->activeVariants()
                 ->where(function ($query) {
@@ -271,11 +268,6 @@ class Product extends Model
                 ->exists();
         }
 
-        /*
-        |----------------------------------------------------------------------
-        | Simple Product
-        |----------------------------------------------------------------------
-        */
         if (! $this->track_stock) {
             return $this->stock_status !== 'out_of_stock';
         }
@@ -291,9 +283,6 @@ class Product extends Model
 
     public function isLowStock(): bool
     {
-        /*
-        | Variant stock should be checked at individual variant level.
-        */
         if ($this->has_variants) {
             return $this->activeVariants()
                 ->where('track_stock', true)
@@ -322,16 +311,10 @@ class Product extends Model
 
     public function getDisplayImageAttribute(): ?string
     {
-        /*
-        | Prefer the product's explicitly stored main image.
-        */
         if ($this->main_image) {
             return $this->main_image;
         }
 
-        /*
-        | Fall back to the primary gallery image.
-        */
         return $this->primaryImage?->image;
     }
 
@@ -344,6 +327,29 @@ class Product extends Model
     public function scopeActive($query)
     {
         return $query->where('status', true);
+    }
+
+    /**
+     * Published products with configured wholesale prices.
+     * Order quantity and stock checks belong in the ordering flow.
+     */
+    public function scopeWholesale($query)
+    {
+        return $query->where('status', true)
+            ->where('wholesale_enabled', true)
+            ->where('wholesale_min_quantity', '>=', 1)
+            ->where(function ($query) {
+                $query->where(function ($query) {
+                    $query->where('has_variants', false)
+                        ->where('wholesale_price_ngn', '>', 0);
+                })->orWhere(function ($query) {
+                    $query->where('has_variants', true)
+                        ->whereHas('activeVariants', function ($query) {
+                            $query->where('wholesale_enabled', true)
+                                ->where('wholesale_price_ngn', '>', 0);
+                        });
+                });
+            });
     }
 
     public function scopeFeatured($query)
@@ -383,10 +389,11 @@ class Product extends Model
     }
 
     /*
-|--------------------------------------------------------------------------
-| Users Who Wishlisted Product
-|--------------------------------------------------------------------------
-*/
+    |--------------------------------------------------------------------------
+    | Users Who Wishlisted Product
+    |--------------------------------------------------------------------------
+    */
+
     public function wishlistedBy(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -395,5 +402,11 @@ class Product extends Model
             'product_id',
             'user_id'
         )->withTimestamps();
+    }
+
+    public function wholesalePriceTiers()
+    {
+        return $this->hasMany(ProductWholesalePriceTier::class)
+            ->orderBy('min_quantity');
     }
 }
