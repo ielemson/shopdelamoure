@@ -1,32 +1,53 @@
-<section class="dela-product-section">
+@if (isset($products) && $products->isNotEmpty())
+    <section class="dela-product-section">
 
-    <div class="container container-xxl py-8 py-lg-10">
+        <div class="container py-8 py-lg-12">
 
-        <div class="row align-items-end mb-7">
-
-            <div class="col-sm-8" data-animate="fadeInUp">
+            {{-- Section Label and Description --}}
+            <div class="dela-product-heading text-center mb-10 mb-lg-12" data-animate="fadeInUp">
 
                 <h2 class="h3 mb-0">
                     {{ $title }}
                 </h2>
 
                 @if (!empty($subtitle))
-                    <p class="fs-16px text-body mb-0 mt-3 mw-lg-75">
+                    <p class="fs-16px text-body mt-4 mb-0">
                         {{ $subtitle }}
                     </p>
                 @endif
 
             </div>
 
+            {{-- Product Grid --}}
+            <div class="row dela-product-grid">
 
-            <div class="col-md-4 col-sm-4 text-sm-end mt-4 mt-sm-0" data-animate="fadeInUp">
+                @foreach ($products as $product)
+                    <div class="col-lg-3 col-md-4 col-sm-6 col-12 dela-product-column" data-animate="fadeInUp">
+
+                        @include('frontend.partials.product-card', [
+                            'product' => $product,
+                            'gridStyle' => 'grid-1',
+                            'actionLayout' => 'horizontal',
+                            'compact' => false,
+                            'showCategory' => false,
+                            'showVariantCount' => false,
+                            'showCompare' => true,
+                        ])
+
+                    </div>
+                @endforeach
+
+            </div>
+
+            {{-- Shop All Products --}}
+            <div class="text-center mt-10 mt-lg-12" data-animate="fadeInUp">
 
                 <a href="{{ $viewAllUrl ?? (Route::has('shop') ? route('shop') : url('/shop')) }}"
-                    class="btn btn-link p-0 text-body-emphasis text-decoration-none fw-semibold text-primary-hover dela-shop-all">
+                    class="btn btn-outline-dark dela-shop-all">
 
-                    Shop All Products
+                    <span>Shop All Products</span>
 
-                    <svg class="icon ms-1">
+                    <svg class="icon ms-3" aria-hidden="true" focusable="false">
                         <use xlink:href="#icon-arrow-right"></use>
                     </svg>
 
@@ -36,70 +57,92 @@
 
         </div>
 
+    </section>
+@endif
 
-        {{-- =========================================================
-            PRODUCT SLIDER
-        ========================================================== --}}
-        <div class="slick-slider dela-product-slider" data-animate="fadeInUp"
-            data-slick-options='{
-        "arrows": true,
-        "dots": false,
-        "infinite": true,
-        "speed": 500,
-        "autoplay": true,
-        "autoplaySpeed": 3500,
-        "slidesToShow": 5,
-        "slidesToScroll": 1,
-        "responsive": [
-            {
-                "breakpoint": 1560,
-                "settings": {
-                    "arrows": false,
-                    "dots": true,
-                    "slidesToShow": 5
+@once
+    @push('styles')
+        <style>
+            .dela-product-section .dela-product-heading {
+                max-width: 680px;
+                margin-right: auto;
+                margin-left: auto;
+            }
+
+            .dela-product-section .dela-product-heading h2 {
+                line-height: 1.3;
+            }
+
+            .dela-product-section .dela-product-heading p {
+                line-height: 1.75;
+            }
+
+            .dela-product-section .dela-product-grid {
+                row-gap: 50px;
+            }
+
+            .dela-product-section .dela-product-column {
+                min-width: 0;
+            }
+
+            .dela-product-section .dela-product-column>.card {
+                height: 100%;
+            }
+
+            .dela-product-section .card-product {
+                background: transparent;
+                border: 0;
+                border-radius: 0;
+            }
+
+            .dela-product-section .card-product .card-body {
+                padding: 0;
+                text-align: center;
+            }
+
+            .dela-product-section .card-product .price {
+                justify-content: center;
+                flex-wrap: wrap;
+                row-gap: 4px;
+            }
+
+            .dela-product-section .card-product .product-title {
+                font-size: 15px;
+                line-height: 1.6;
+            }
+
+            .dela-product-section .dela-shop-all {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 50px;
+                padding: 14px 30px;
+                border-radius: 0;
+                font-size: 14px;
+                font-weight: 600;
+            }
+
+            .dela-product-section .dela-shop-all .icon {
+                width: 18px;
+                height: 18px;
+                flex-shrink: 0;
+            }
+
+            .dela-product-section .dela-shop-all:focus-visible {
+                outline: 3px solid #b89156;
+                outline-offset: 4px;
+            }
+
+            @media (max-width: 575.98px) {
+                .dela-product-section .dela-product-grid {
+                    row-gap: 36px;
                 }
-            },
-            {
-                "breakpoint": 1200,
-                "settings": {
-                    "arrows": false,
-                    "dots": true,
-                    "slidesToShow": 3
-                }
-            },
-            {
-                "breakpoint": 992,
-                "settings": {
-                    "arrows": false,
-                    "dots": true,
-                    "slidesToShow": 2
-                }
-            },
-            {
-                "breakpoint": 576,
-                "settings": {
-                    "arrows": false,
-                    "dots": true,
-                    "slidesToShow": 1
+
+                .dela-product-section .dela-shop-all {
+                    width: 100%;
+                    max-width: 300px;
                 }
             }
-        ]
-    }'>
-            @foreach ($products as $product)
-                <div>
-                    @include('frontend.partials.product-card', [
-                        'product' => $product,
-                        'gridStyle' => 'grid-1',
-                        'actionLayout' => 'horizontal',
-                        'compact' => false,
-                        'showCategory' => false,
-                        'showVariantCount' => false,
-                        'showCompare' => true,
-                    ])
-                </div>
-            @endforeach
-        </div>
-
-    </div>
-
-</section>
+        </style>
+    @endpush
+@endonce

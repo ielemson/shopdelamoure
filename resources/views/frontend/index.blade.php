@@ -9,11 +9,8 @@
         @if ($section['products']->isNotEmpty())
             @include('frontend.partials.products', [
                 'title' => $section['title'],
-            
                 'subtitle' => $section['subtitle'] ?? null,
-            
                 'products' => $section['products'],
-            
                 'viewAllUrl' => $section['view_all_url'] ?? (Route::has('shop') ? route('shop') : url('/shop')),
             ])
         @endif
