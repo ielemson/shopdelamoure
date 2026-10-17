@@ -32,7 +32,7 @@
                 <div class="slick-slider dela-category-slider"
                     data-slick-options='{
                         "arrows": true,
-                        "centerMode": false,
+                        "centerMode": true,
                         "centerPadding": "calc((100% - 1440px) / 2)",
                         "dots": true,
                         "infinite": true,
@@ -50,7 +50,7 @@
                                 "settings": {
                                     "arrows": true,
                                     "dots": false,
-                                    "centerMode": false,
+                                    "centerMode": true,
                                     "slidesToShow": 3
                                 }
                             },
@@ -60,7 +60,7 @@
                                 "settings": {
                                     "arrows": false,
                                     "dots": false,
-                                    "centerMode": false,
+                                    "centerMode": true,
                                     "slidesToShow": 2
                                 }
                             },
