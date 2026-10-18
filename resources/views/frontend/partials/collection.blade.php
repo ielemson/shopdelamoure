@@ -19,12 +19,49 @@
 
     @if (isset($categories) && $categories->isNotEmpty())
 
-        <div class="row gy-30px">
+        @php
+            $carouselOptions = [
+                'slidesToShow' => 3,
+                'slidesToScroll' => 1,
+                'arrows' => true,
+                'dots' => true,
+                'infinite' => false,
+                'autoplay' => true,
+                'speed' => 400,
+                'adaptiveHeight' => false,
+                'centerMode' => false,
+                'accessibility' => true,
+                'swipe' => true,
+                'draggable' => true,
+                'responsive' => [
+                    [
+                        'breakpoint' => 992,
+                        'settings' => [
+                            'slidesToShow' => 2,
+                            'arrows' => true,
+                            'dots' => true,
+                        ],
+                    ],
+                    [
+                        'breakpoint' => 576,
+                        'settings' => [
+                            'slidesToShow' => 1,
+                            'arrows' => true,
+                            'dots' => true,
+                        ],
+                    ],
+                ],
+            ];
+        @endphp
+
+        {{-- Category Carousel --}}
+        <div class="slick-slider dela-collections-slider mb-0" data-animate="fadeInUp"
+            data-slick-options="{{ json_encode($carouselOptions) }}" role="region"
+            aria-label="Shop our collections carousel">
 
             @foreach ($categories as $category)
                 @php
                     $placeholder = asset('assets/images/products/product-placeholder.jpg');
-
                     $categoryImage = $placeholder;
 
                     if (!empty($category->image)) {
@@ -38,7 +75,7 @@
                     $categoryUrl = route('shop.category', $category->slug);
                 @endphp
 
-                <div class="col-md-4 col-sm-6 col-12" data-animate="fadeInUp">
+                <div class="dela-collection-slide">
 
                     <article class="card border-0 rounded-0 hover-zoom-in hover-shine dela-collection-card">
 
@@ -49,7 +86,7 @@
 
                         <div class="card-img-overlay d-flex flex-column p-6 p-lg-9 justify-content-end text-center">
 
-                            <div class="position-relative dela-collection-content">
+                            <div class="dela-collection-content">
 
                                 @if (isset($category->products_count))
                                     <p class="dela-collection-count mb-3">
@@ -87,6 +124,26 @@
 
 @push('styles')
     <style>
+        /* Preserve the original 30px spacing between cards. */
+        #shop_categories .dela-collections-slider .slick-list {
+            margin: 0 -15px;
+        }
+
+        #shop_categories .dela-collection-slide {
+            padding: 0 15px;
+        }
+
+        /* Keep a usable layout while the carousel initializes. */
+        #shop_categories .dela-collections-slider:not(.slick-initialized) {
+            display: flex;
+            overflow-x: auto;
+        }
+
+        #shop_categories .dela-collections-slider:not(.slick-initialized)>.dela-collection-slide {
+            flex: 0 0 33.333333%;
+            min-width: 0;
+        }
+
         #shop_categories .dela-collection-card {
             isolation: isolate;
             overflow: hidden;
@@ -159,7 +216,23 @@
             outline-offset: 4px;
         }
 
+        #shop_categories .dela-collections-slider .slick-dots {
+            position: static;
+            margin-top: 24px;
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 991.98px) {
+            #shop_categories .dela-collections-slider:not(.slick-initialized)>.dela-collection-slide {
+                flex-basis: 50%;
+            }
+        }
+
         @media (max-width: 575.98px) {
+            #shop_categories .dela-collections-slider:not(.slick-initialized)>.dela-collection-slide {
+                flex-basis: 100%;
+            }
+
             #shop_categories .dela-collection-image {
                 aspect-ratio: 1 / 1;
             }
@@ -172,7 +245,8 @@
         @media (prefers-reduced-motion: reduce) {
 
             #shop_categories .dela-collection-image,
-            #shop_categories .dela-collection-button {
+            #shop_categories .dela-collection-button,
+            #shop_categories .slick-track {
                 transition: none !important;
             }
 
