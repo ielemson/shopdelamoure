@@ -1,166 +1,79 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use Illuminate\Foundation\Auth\RegistersUsers;
+use App\Mail\ContactUsMail;
+use App\Models\WebsiteSetting;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Validator;
-use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 
-class RegisterController extends Controller
+class ContactController extends Controller
 {
-    use RegistersUsers;
-
-    protected $redirectTo = '/home';
-
-    public function __construct()
+    public function send(Request $request)
     {
-        $this->middleware('guest');
-    }
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Contact Details
+        |--------------------------------------------------------------------------
+        */
 
-    /*
-    |--------------------------------------------------------------------------
-    | Registration Form
-    |--------------------------------------------------------------------------
-    */
-
-    public function showRegistrationForm()
-    {
-        // Remove any values left by the previous arithmetic CAPTCHA.
-        session()->forget([
-            'captcha_question',
-            'captcha_answer',
-        ]);
-
-        return view('auth.register');
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Registration Validation
-    |--------------------------------------------------------------------------
-    */
-
-    protected function validator(array $data)
-    {
-        $validator = Validator::make($data, [
-            'first_name' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-
-            'last_name' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'max:255',
-                'unique:users,email',
-            ],
-
-            'phone' => [
-                'required',
-                'string',
-                'max:20',
-                'regex:/^[0-9+\-\s()]+$/',
-            ],
-
-            'password' => [
-                'required',
-                'string',
-                'min:8',
-                'confirmed',
-            ],
-
-            'agree' => [
-                'required',
-                'accepted',
-            ],
-
-            'cf-turnstile-response' => [
-                'required',
-                'string',
-                'max:2048',
-            ],
+        $validated = $request->validate([
+            'name' => 'required|string|min:2|max:100',
+            'email' => 'required|email|max:150',
+            'subject' => 'required|string|min:3|max:200',
+            'message' => 'required|string|min:10|max:3000',
+            'cf-turnstile-response' => 'required|string|max:2048',
         ], [
-            'agree.required' => 'Please accept the terms to continue.',
-
-            'agree.accepted' => 'Please accept the terms to continue.',
-
             'cf-turnstile-response.required' => 'Please complete the security verification.',
-
-            'phone.regex' => 'Please enter a valid phone number.',
         ]);
 
-        $validator->after(function ($validator) use ($data) {
-            // Verify Turnstile only after the other fields pass validation.
-            if ($validator->errors()->isNotEmpty()) {
-                return;
-            }
+        /*
+        |--------------------------------------------------------------------------
+        | Verify Cloudflare Turnstile
+        |--------------------------------------------------------------------------
+        */
 
-            $error = $this->verifyTurnstile(
-                $data['cf-turnstile-response']
-            );
-
-            if ($error !== null) {
-                $validator->errors()->add(
-                    'cf-turnstile-response',
-                    $error
-                );
-            }
-        });
-
-        return $validator;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Cloudflare Turnstile Verification
-    |--------------------------------------------------------------------------
-    */
-
-    private function verifyTurnstile(string $token): ?string
-    {
         $secretKey = config('services.turnstile.secret_key');
 
         if (empty($secretKey)) {
-            return 'Security verification is unavailable. Please try again later.';
+            return response()->json([
+                'status' => false,
+                'message' => 'Security verification is unavailable. Please try again later.',
+            ], 503);
         }
 
         try {
-            $response = Http::asForm()
+            $verification = Http::asForm()
                 ->connectTimeout(5)
                 ->timeout(15)
                 ->post(
                     'https://challenges.cloudflare.com/turnstile/v0/siteverify',
                     [
                         'secret' => $secretKey,
-                        'response' => $token,
+                        'response' => $validated['cf-turnstile-response'],
                     ]
                 );
         } catch (ConnectionException $exception) {
             report($exception);
 
-            return 'Unable to connect to security verification. Please try again.';
+            return response()->json([
+                'status' => false,
+                'message' => 'Unable to connect to security verification. Please try again.',
+            ], 503);
         }
 
-        if (! $response->successful()) {
-            return 'Security verification is temporarily unavailable. Please try again.';
+        if (! $verification->successful()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Security verification is temporarily unavailable. Please try again.',
+            ], 503);
         }
 
-        $result = $response->json();
+        $result = $verification->json();
 
         $allowedHostnames = [
             'shopdelamoure.com',
@@ -174,74 +87,48 @@ class RegisterController extends Controller
                 $allowedHostnames,
                 true
             ) ||
-            data_get($result, 'action') !== 'register'
+            data_get($result, 'action') !== 'contact'
         ) {
-            return 'Security verification failed or expired. Please verify again.';
+            throw ValidationException::withMessages([
+                'cf-turnstile-response' => 'Security verification failed or expired. Please verify again.',
+            ]);
         }
 
-        return null;
-    }
+        /*
+        |--------------------------------------------------------------------------
+        | Get Recipient
+        |--------------------------------------------------------------------------
+        */
 
-    /*
-    |--------------------------------------------------------------------------
-    | Create Customer Account
-    |--------------------------------------------------------------------------
-    */
+        $setting = WebsiteSetting::first();
 
-    protected function create(array $data)
-    {
-        return DB::transaction(function () use ($data) {
-            $firstName = trim($data['first_name']);
-            $lastName = trim($data['last_name']);
+        $toEmail = $setting?->email ?: config('mail.from.address');
 
-            $user = User::create([
-                'name' => $firstName.' '.$lastName,
-                'email' => $data['email'],
-                'phone' => $data['phone'],
-                'password' => Hash::make($data['password']),
-            ]);
+        if (empty($toEmail)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'We cannot receive messages right now. Please try again later.',
+            ], 503);
+        }
 
-            $user->customerProfile()->create([
-                'first_name' => $firstName,
-                'last_name' => $lastName,
-                'country' => 'Nigeria',
-                'status' => 'active',
-                'customer_type' => 'regular',
-            ]);
+        /*
+        |--------------------------------------------------------------------------
+        | Send Contact Email
+        |--------------------------------------------------------------------------
+        */
 
-            $customerRole = Role::firstOrCreate([
-                'name' => 'Customer',
-                'guard_name' => $this->guard()->getName() === ''
-                    ? config('auth.defaults.guard', 'web')
-                    : config('auth.defaults.guard', 'web'),
-            ]);
-
-            $user->assignRole($customerRole);
-
-            return $user;
-        });
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Registration Response
-    |--------------------------------------------------------------------------
-    */
-
-    protected function registered(Request $request, $user)
-    {
-        $redirect = redirect()->intended(
-            url($this->redirectPath())
+        Mail::to($toEmail)->send(
+            new ContactUsMail(
+                name: $validated['name'],
+                email: $validated['email'],
+                subjectText: $validated['subject'],
+                contactMessage: $validated['message']
+            )
         );
 
-        if ($request->expectsJson()) {
-            return response()->json([
-                'status' => true,
-                'message' => 'Account created successfully.',
-                'redirect' => $redirect->getTargetUrl(),
-            ]);
-        }
-
-        return $redirect;
+        return response()->json([
+            'status' => true,
+            'message' => 'Thank you. Your message has been sent successfully.',
+        ]);
     }
 }
