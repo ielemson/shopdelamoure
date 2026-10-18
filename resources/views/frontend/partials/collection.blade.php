@@ -23,9 +23,9 @@
             $carouselOptions = [
                 'slidesToShow' => 3,
                 'slidesToScroll' => 1,
-                'arrows' => true,
+                'arrows' => false,
                 'dots' => true,
-                'infinite' => false,
+                'infinite' => true,
                 'autoplay' => true,
                 'speed' => 400,
                 'adaptiveHeight' => false,
@@ -168,9 +168,9 @@
         }
 
         /*
-                 * Keep the content static so Bootstrap's stretched link
-                 * covers the full card overlay.
-                 */
+                         * Keep the content static so Bootstrap's stretched link
+                         * covers the full card overlay.
+                         */
         #shop_categories .dela-collection-content {
             position: static !important;
         }
