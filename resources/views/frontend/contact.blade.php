@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('meta_title', 'Contact Us | Dela Moure Luxury Fragrances & Home Scents')
+
 @section('meta_description',
     'Contact Dela Moure for enquiries, product assistance, orders, delivery support and help
     with our luxury perfumes, diffusers, candles, essential oils and gift sets.')
@@ -39,6 +40,7 @@
 
                         <form id="contactForm" class="contact-form" method="POST" action="{{ route('contact.send') }}"
                             data-parsley-validate novalidate>
+
                             @csrf
 
                             <div class="row mb-8 mb-md-10">
@@ -48,7 +50,7 @@
                                     </label>
 
                                     <input type="text" name="name" id="contact-name" class="form-control input-focus"
-                                        placeholder="Your name" required
+                                        placeholder="Your name" autocomplete="name" required
                                         data-parsley-required-message="Please enter your name." data-parsley-minlength="2">
                                 </div>
 
@@ -58,7 +60,8 @@
                                     </label>
 
                                     <input type="email" name="email" id="contact-email" class="form-control input-focus"
-                                        placeholder="you@example.com" required data-parsley-type="email"
+                                        placeholder="you@example.com" autocomplete="email" required
+                                        data-parsley-type="email"
                                         data-parsley-required-message="Please enter your email address."
                                         data-parsley-type-message="Please enter a valid email address.">
                                 </div>
@@ -84,14 +87,20 @@
                                     data-parsley-minlength-message="Your message should contain at least 10 characters."></textarea>
                             </div>
 
+                            {{-- Cloudflare Turnstile --}}
+                            <div class="mb-8">
+                                <div id="contact-turnstile" class="cf-turnstile"
+                                    data-sitekey="{{ config('services.turnstile.site_key') }}" data-action="contact"
+                                    data-theme="light" data-size="flexible">
+                                </div>
+                            </div>
+
                             <button type="submit" id="contactSubmitBtn"
                                 class="btn btn-dark btn-hover-bg-primary btn-hover-border-primary px-11">
                                 Send Message
                             </button>
                         </form>
-
                     </div>
-
 
                     {{-- Contact Information --}}
                     <div class="col-lg-5 ps-lg-18 ps-xl-21 mt-13 mt-lg-0">
@@ -126,7 +135,6 @@
                                             </p>
                                         @endif
                                     </div>
-
                                 </div>
                             @endif
 
@@ -136,7 +144,6 @@
                                 </a>
                             @endif
                         </div>
-
 
                         {{-- Contact Details --}}
                         <div class="mb-11">
@@ -162,7 +169,6 @@
                                     </li>
                                 @endif
 
-
                                 @if (!empty($setting?->phone))
                                     <li class="d-flex mb-5">
                                         <i class="fas fa-phone-alt me-4 mt-1" aria-hidden="true"></i>
@@ -180,7 +186,6 @@
                                     </li>
                                 @endif
 
-
                                 @if (!empty($setting?->email))
                                     <li class="d-flex">
                                         <i class="fas fa-envelope me-4 mt-1" aria-hidden="true"></i>
@@ -190,16 +195,15 @@
                                                 Email
                                             </span>
 
-                                            <a href="mailto:{{ $setting->email }}" class="text-decoration-none text-body">
+                                            <a href="mailto:{{ $setting->email }}"
+                                                class="text-decoration-none text-body">
                                                 {{ $setting->email }}
                                             </a>
                                         </div>
                                     </li>
                                 @endif
-
                             </ul>
                         </div>
-
 
                         {{-- WhatsApp --}}
                         @if (!empty($setting?->support_phone) || !empty($setting?->phone))
@@ -228,7 +232,6 @@
                             </div>
                         @endif
 
-
                         {{-- Business Hours --}}
                         <div>
                             <h3 class="fs-5 mb-5">
@@ -245,52 +248,85 @@
                                 </p>
                             </div>
                         </div>
-
                     </div>
 
                 </div>
             </div>
         </section>
-
     </section>
 @endsection
 
-
 @push('scripts')
+    {{-- Include the Turnstile API only once per page. --}}
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
+
     <script>
         $(function() {
             const form = $('#contactForm');
             const parsley = form.parsley();
+            const button = $('#contactSubmitBtn');
+            const originalText = button.html();
+
+            let submitting = false;
+
+            function notify(message, type = 'error') {
+                $.notify(message, {
+                    className: type,
+                    globalPosition: 'top right',
+                    autoHideDelay: type === 'success' ? 4000 : 5000
+                });
+            }
 
             form.on('submit', function(e) {
                 e.preventDefault();
 
-                if (!parsley.isValid()) {
-                    parsley.validate();
+                if (submitting) {
                     return;
                 }
 
-                const button = $('#contactSubmitBtn');
-                const originalText = button.html();
+                // Validate the contact fields first.
+                if (!parsley.validate()) {
+                    return;
+                }
+
+                // Turnstile creates this hidden input automatically.
+                const token = form
+                    .find('[name="cf-turnstile-response"]')
+                    .val();
+
+                if (!token) {
+                    notify(
+                        'Please complete the security verification before sending.'
+                    );
+
+                    return;
+                }
+
+                submitting = true;
 
                 button
                     .prop('disabled', true)
-                    .html('<span class="spinner-border spinner-border-sm me-2"></span>Sending...');
+                    .html(
+                        '<span class="spinner-border spinner-border-sm me-2" ' +
+                        'aria-hidden="true"></span>Sending...'
+                    );
 
                 $.ajax({
                     url: form.attr('action'),
                     type: 'POST',
                     data: form.serialize(),
 
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+
                     success: function(response) {
-                        $.notify(
+                        notify(
                             response.message ||
-                            'Your message has been sent successfully.', {
-                                className: 'success',
-                                globalPosition: 'top right',
-                                autoHideDelay: 4000
-                            }
+                            'Your message has been sent successfully.',
+                            'success'
                         );
 
                         form[0].reset();
@@ -298,23 +334,37 @@
                     },
 
                     error: function(xhr) {
-                        let message = 'Something went wrong. Please try again.';
+                        let message =
+                            'Something went wrong. Please try again.';
 
-                        if (xhr.status === 422 && xhr.responseJSON?.errors) {
-                            const errors = xhr.responseJSON.errors;
-                            message = Object.values(errors).flat()[0];
+                        if (
+                            xhr.status === 422 &&
+                            xhr.responseJSON?.errors
+                        ) {
+                            message = Object
+                                .values(xhr.responseJSON.errors)
+                                .flat()[0] || message;
+                        } else if (xhr.status === 419) {
+                            message =
+                                'Your session has expired. Refresh the page and try again.';
+                        } else if (xhr.status === 429) {
+                            message =
+                                'Too many attempts. Please wait before trying again.';
                         } else if (xhr.responseJSON?.message) {
                             message = xhr.responseJSON.message;
                         }
 
-                        $.notify(message, {
-                            className: 'error',
-                            globalPosition: 'top right',
-                            autoHideDelay: 5000
-                        });
+                        notify(message);
                     },
 
                     complete: function() {
+                        // Refresh verification after every submission attempt.
+                        if (window.turnstile) {
+                            window.turnstile.reset('#contact-turnstile');
+                        }
+
+                        submitting = false;
+
                         button
                             .prop('disabled', false)
                             .html(originalText);
