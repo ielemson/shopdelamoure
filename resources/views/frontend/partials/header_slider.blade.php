@@ -21,7 +21,7 @@
                         </p>
                     </div>
 
-                    <a href="{{ url('/shop') }}" data-animate="fadeInUp"
+                    <a href="{{ route('shop') }}" data-animate="fadeInUp"
                         class="btn btn-lg btn-light btn-hover-border-primary">
                         Shop the Collection
                     </a>
