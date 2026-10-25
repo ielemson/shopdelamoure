@@ -585,9 +585,7 @@
                     {{-- Pagination --}}
                     @if ($products->hasPages())
                         <div class="mt-4">
-
-                            {{ $products->links() }}
-
+                            {{ $products->withQueryString()->links('pagination::bootstrap-5') }}
                         </div>
                     @endif
 
