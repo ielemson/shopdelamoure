@@ -226,6 +226,30 @@
         </div>
     </div>
 
+    <div class="col-12">
+        <div class="border rounded p-3">
+            <h6 class="fw-bold mb-3">Variant Item Weight</h6>
+            <label for="{{ $prefix }}-shipping_weight_kg" class="form-label">Weight of one unit of this variant (kg)</label>
+            <input type="number" id="{{ $prefix }}-shipping_weight_kg" name="shipping_weight_kg"
+                class="form-control {{ $useOld && $errors->has('shipping_weight_kg') ? 'is-invalid' : '' }}"
+                min="0.001" max="9999999.999" step="0.001"
+                value="{{ $value('shipping_weight_kg') }}"
+                aria-describedby="{{ $prefix }}-item-weight-help">
+            @if ($useOld)
+                @error('shipping_weight_kg')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            @endif
+            <p id="{{ $prefix }}-item-weight-help" class="small text-muted mt-3 mb-0">
+                Weigh one unit of this size with its bottle or jar and any retail packaging
+                that always accompanies it. Exclude the outer dispatch box and extra shipping
+                padding; these will be accounted for separately. Enter measured kg, not ml.
+                Each variant uses its own item weight. Leave blank if unknown; clearing the
+                input removes its saved weight.
+            </p>
+        </div>
+    </div>
+
     <div class="col-md-3">
         <label class="form-label" for="{{ $prefix }}-stock_quantity">Quantity</label>
         <input id="{{ $prefix }}-stock_quantity" type="number" name="stock_quantity" min="0" required

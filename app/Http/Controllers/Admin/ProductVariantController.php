@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\Concerns\ValidatesShippingMeasurements;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
@@ -15,6 +16,8 @@ use Throwable;
 
 class ProductVariantController extends Controller
 {
+    use ValidatesShippingMeasurements;
+
     public function index(Product $product)
     {
         $variants = $product->variants()
@@ -218,6 +221,8 @@ class ProductVariantController extends Controller
             'is_default' => ['required', 'boolean'],
             'sort_order' => ['required', 'integer', 'min:0'],
         ]);
+
+        $data = array_merge($data, $this->validatedShippingMeasurements($request));
 
         $options = [];
 

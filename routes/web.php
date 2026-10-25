@@ -8,17 +8,19 @@
 
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\DeliverySettingController;
 /*
 |--------------------------------------------------------------------------
 | General Controllers
 |--------------------------------------------------------------------------
 */
 
-use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ShippingPackageController;
 use App\Http\Controllers\Admin\ShippingRateController;
 use App\Http\Controllers\Admin\WebsiteSettingController;
 use App\Http\Controllers\CheckoutController;
@@ -87,16 +89,9 @@ Route::get('/collections/shop', [FrontendProductController::class, 'shop'])
 Route::get('/product/search', [FrontendProductController::class, 'search'])
     ->name('products.search');
 
-Route::get('/product/quick-view/{product:slug}', [
-    FrontendProductController::class,
-    'quickView',
-])->name('products.quick-view');
-
-Route::get('/product/{slug}', [FrontendProductController::class, 'show'])
-    ->name('products.show');
-
-Route::get('/shop/category/{slug}', [FrontendProductController::class, 'category'])
-    ->name('shop.category');
+Route::get('/product/quick-view/{product:slug}', [FrontendProductController::class, 'quickView'])->name('products.quick-view');
+Route::get('/product/{slug}', [FrontendProductController::class, 'show'])->name('products.show');
+Route::get('/shop/category/{slug}', [FrontendProductController::class, 'category'])->name('shop.category');
 
 /*
 |--------------------------------------------------------------------------
@@ -273,6 +268,18 @@ Route::prefix('admin')
     ->middleware(['auth', 'role:Admin'])
     ->group(function () {
 
+        Route::get('/shipping-packages', [ShippingPackageController::class, 'index'])
+            ->name('shipping-packages.index');
+        Route::post('/shipping-packages', [ShippingPackageController::class, 'store'])
+            ->name('shipping-packages.store');
+        Route::put('/shipping-packages/{shippingPackage}', [ShippingPackageController::class, 'update'])
+            ->name('shipping-packages.update');
+        Route::post('/shipping-packages/quote', [ShippingPackageController::class, 'quote'])
+            ->middleware('throttle:3,1')->name('shipping-packages.quote');
+
+        Route::get('/shipping-packages/cities', [ShippingPackageController::class, 'cities',
+        ])->middleware('throttle:10,1')->name('shipping-packages.cities');
+
         /*
         |--------------------------------------------------------------------------
         | Categories
@@ -375,6 +382,28 @@ Route::prefix('admin')
 
         /*
         |--------------------------------------------------------------------------
+        | Delivery Settings
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/delivery-settings', [
+            DeliverySettingController::class,
+            'edit',
+        ])->name('delivery.settings');
+
+        Route::put('/delivery-settings', [
+            DeliverySettingController::class,
+            'update',
+        ])->name('delivery.settings.update');
+
+        Route::post('/delivery-settings/test-connection', [
+            DeliverySettingController::class,
+            'testConnection',
+        ])->middleware('throttle:5,1')
+            ->name('delivery.settings.test');
+
+        /*
+        |--------------------------------------------------------------------------
         | Shipping Rates
         |--------------------------------------------------------------------------
         */
@@ -441,6 +470,9 @@ Route::prefix('admin')
             CouponController::class,
             'toggleStatus',
         ])->name('coupons.toggle-status');
+
+        require __DIR__.'/terminal-checkout-admin.php';
+
     });
 
 /*
@@ -511,3 +543,5 @@ Route::prefix('customer')
         Route::patch('/profile/password', [ProfileController::class, 'updatePassword'])
             ->name('profile.password');
     });
+
+require __DIR__.'/terminal-checkout.php';

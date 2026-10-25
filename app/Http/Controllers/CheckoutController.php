@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\ShippingRate;
 use App\Models\State;
+use App\Models\WebsiteSetting;
 use App\Services\OrderPaymentService;
 use Darryldecode\Cart\Facades\CartFacade as Cart;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ use Illuminate\Validation\ValidationException;
 
 class CheckoutController extends Controller
 {
+    use \App\Http\Controllers\Concerns\HandlesTerminalCheckout;
     private const MAX_QUANTITY = 4294967295;
 
     /*
@@ -216,6 +218,9 @@ class CheckoutController extends Controller
     {
         $user = auth()->user();
         $userId = $user?->id;
+        $terminalService = app(\App\Services\TerminalCheckoutService::class);
+        $deliverySetting = WebsiteSetting::firstOrCreate([]);
+        $terminalMode = $terminalService->available($deliverySetting);
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
@@ -236,7 +241,7 @@ class CheckoutController extends Controller
             ],
             'shipping_rate_id' => [
                 'nullable',
-                'required_if:delivery_method,shipping',
+                \Illuminate\Validation\Rule::requiredIf(fn () => $request->input('delivery_method') === 'shipping' && !$terminalMode),
                 'integer',
                 'exists:shipping_rates,id',
             ],
@@ -252,10 +257,41 @@ class CheckoutController extends Controller
                 'integer',
                 'exists:pickup_locations,id',
             ],
+            'terminal_city' => ['nullable', 'string', 'max:100', \Illuminate\Validation\Rule::requiredIf(fn () => $terminalMode && $request->input('delivery_method') === 'shipping')],
+            'terminal_zip' => ['nullable', 'string', 'max:20'],
+            'terminal_rate_id' => ['nullable', 'string', 'max:255', \Illuminate\Validation\Rule::requiredIf(fn () => $terminalMode && $request->input('delivery_method') === 'shipping')],
+            'terminal_quote_token' => ['nullable', 'string', 'max:100', \Illuminate\Validation\Rule::requiredIf(fn () => $terminalMode && $request->input('delivery_method') === 'shipping')],
             'delivery_note' => ['nullable', 'string', 'max:1000'],
             'payment_method' => ['required', 'in:paystack'],
             'terms' => ['required', 'accepted'],
         ]);
+
+        $deliverySetting = WebsiteSetting::firstOrCreate([]);
+
+        $shippingProvider = $validated['delivery_method'] === 'pickup'
+            ? 'pickup'
+            : ($terminalMode ? 'terminal_africa' : ($deliverySetting->delivery_provider ?? 'local'));
+
+        // Enforce the pickup setting on the server as well as the page.
+        if (
+            $validated['delivery_method'] === 'pickup'
+            && ! $deliverySetting->enable_store_pickup
+        ) {
+            throw ValidationException::withMessages([
+                'delivery_method' => 'Store pickup is currently unavailable.',
+            ]);
+        }
+
+        // Prevent unfinished providers from using local rates accidentally.
+        if (
+            $validated['delivery_method'] === 'shipping'
+            && !in_array($shippingProvider, ['local', 'terminal_africa'], true)
+        ) {
+            throw ValidationException::withMessages([
+                'delivery_method' => 'The selected delivery service is currently unavailable.',
+            ]);
+        }
+
         $cartItems = Cart::getContent();
         if ($cartItems->isEmpty()) {
             return redirect()
@@ -267,6 +303,7 @@ class CheckoutController extends Controller
         | Resolve Fulfilment Method
         |--------------------------------------------------------------------------
         */
+        $terminalSelection = null;
         $shippingRate = null;
         $pickupLocation = null;
         $shipping = 0;
@@ -281,19 +318,26 @@ class CheckoutController extends Controller
                         'state_id' => 'The selected state does not belong to the selected country.',
                     ]);
             }
-            $shippingRate = $this->resolveShippingRate(
-                (int) $validated['country_id'],
-                (int) $validated['state_id'],
-                (int) $validated['shipping_rate_id']
-            );
-            if (! $shippingRate) {
-                return back()
-                    ->withInput()
-                    ->withErrors([
-                        'shipping_rate_id' => 'The selected delivery zone is currently unavailable.',
-                    ]);
+            if ($shippingProvider === 'terminal_africa') {
+                $terminalSelection = $this->resolveTerminalSelection(
+                    $validated, $this->prepareCheckoutCart($cartItems)['cartItems']
+                );
+                $shipping = $terminalSelection['total'];
+            } else {
+                $shippingRate = $this->resolveShippingRate(
+                    (int) $validated['country_id'],
+                    (int) $validated['state_id'],
+                    (int) $validated['shipping_rate_id']
+                );
+                if (! $shippingRate) {
+                    return back()
+                        ->withInput()
+                        ->withErrors([
+                            'shipping_rate_id' => 'The selected delivery zone is currently unavailable.',
+                        ]);
+                }
+                $shipping = (float) $shippingRate->shipping_cost;
             }
-            $shipping = (float) $shippingRate->shipping_cost;
         } else {
             $pickupLocation = PickupLocation::with('state')
                 ->where('is_active', true)
@@ -314,9 +358,16 @@ class CheckoutController extends Controller
                 $shippingRate,
                 $pickupLocation,
                 $shipping,
+                $shippingProvider,
+                $terminalSelection,
                 $userId
             ) {
                 $prepared = $this->prepareCheckoutCart($cartItems, true);
+                if ($shippingProvider === 'terminal_africa') {
+                    // Recheck fresh weights, settings, address and expiry under the cart locks.
+                    $terminalSelection = $this->resolveTerminalSelection($validated, $prepared['cartItems']);
+                    $shipping = $terminalSelection['total'];
+                }
                 foreach ($prepared['cartItems'] as $fresh) {
                     $previous = $cartItems->get($fresh->id);
                     if (! $previous || abs((float) $previous->price - $fresh->price) > 0.005
@@ -360,7 +411,7 @@ class CheckoutController extends Controller
                             'phone' => $validated['phone'],
                             'country_id' => $validated['country_id'],
                             'state_id' => $validated['state_id'],
-                            'city' => $shippingRate?->zone_name,
+                            'city' => $terminalSelection['city'] ?? $shippingRate?->zone_name,
                             'street_address' => $validated['street_address'],
                             'delivery_note' => $validated['delivery_note'] ?? null,
                             'is_default' => true,
@@ -375,7 +426,7 @@ class CheckoutController extends Controller
                 if ($validated['delivery_method'] === 'shipping') {
                     $orderCountryId = (int) $validated['country_id'];
                     $orderStateId = (int) $validated['state_id'];
-                    $orderCity = $shippingRate?->zone_name;
+                    $orderCity = $terminalSelection['city'] ?? $shippingRate?->zone_name;
                     $orderAddress = $validated['street_address'];
                 } else {
                     $orderCountryId = $pickupLocation?->state?->country_id;
@@ -403,6 +454,10 @@ class CheckoutController extends Controller
                     'payment_status' => 'unpaid',
                     'subtotal' => $subtotal,
                     'shipping' => $shipping,
+                    'shipping_provider' => $shippingProvider,
+                    'shipping_base_cost' => $terminalSelection['base_cost'] ?? $shipping,
+                    'shipping_markup_percentage' => $terminalSelection['markup_percentage'] ?? 0,
+                    'shipping_markup_amount' => $terminalSelection['markup_amount'] ?? 0,
                     'vat' => $vat,
                     /*
                     |--------------------------------------------------------------------------
@@ -425,6 +480,11 @@ class CheckoutController extends Controller
                     'total' => $total,
                     'status' => 'pending',
                 ]);
+                if ($terminalSelection) {
+                    $order->forceFill([
+                        'terminal_shipping_snapshot' => json_encode($terminalSelection, JSON_THROW_ON_ERROR),
+                    ])->save();
+                }
                 /*
                 |--------------------------------------------------------------------------
                 | Order Items
@@ -1442,6 +1502,7 @@ class CheckoutController extends Controller
             $attributes = array_merge($existing?->attributes->toArray() ?? [], [
                 'product_id' => $product->id,
                 'variant_id' => $variant?->id,
+                'shipping_weight_kg' => ($variant ?? $product)->shipping_weight_kg,
                 'variant_options' => $variant?->options,
                 'variant_name' => $variant?->name,
                 'sku' => $variant?->sku ?? $product->sku,

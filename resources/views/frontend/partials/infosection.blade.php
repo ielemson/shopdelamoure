@@ -1,12 +1,12 @@
-<section class="bg-body-tertiary pt-12 pb-lg-13 pb-13">
+<section class="bg-body-tertiary pt-12 pb-13">
     <div class="container container-xxl">
-        <div class="row g-8">
+        <div class="row g-8 align-items-stretch">
 
             <!-- Delivery -->
-            <div class="col-xl-3 col-md-6" data-animate="fadeInUp">
-                <div class="icon-box icon-box-style-1 card border-0 text-center">
+            <div class="col-xl-3 col-md-6 d-flex" data-animate="fadeInUp">
+                <div class="icon-box icon-box-style-1 card border-0 text-center w-100 h-100">
                     <div class="icon-box-icon card-img fs-70px text-primary">
-                        <svg class="icon">
+                        <svg class="icon" aria-hidden="true">
                             <use xlink:href="#icon-box-01"></use>
                         </svg>
                     </div>
@@ -16,37 +16,37 @@
                             Reliable Delivery
                         </h3>
                         <p class="icon-box-desc card-text fs-18px mb-0">
-                            Carefully packaged and delivered securely to your doorstep.
+                            Your favourite scents, carefully packaged for a safe journey to your doorstep.
                         </p>
                     </div>
                 </div>
             </div>
 
-            <!-- Authentic Products -->
-            <div class="col-xl-3 col-md-6" data-animate="fadeInUp">
-                <div class="icon-box icon-box-style-1 card border-0 text-center">
+            <!-- Quality -->
+            <div class="col-xl-3 col-md-6 d-flex" data-animate="fadeInUp">
+                <div class="icon-box icon-box-style-1 card border-0 text-center w-100 h-100">
                     <div class="icon-box-icon card-img fs-70px text-primary">
-                        <svg class="icon">
+                        <svg class="icon" aria-hidden="true">
                             <use xlink:href="#icon-box-02"></use>
                         </svg>
                     </div>
 
                     <div class="icon-box-content card-body pt-4">
                         <h3 class="icon-box-title card-title fs-5 mb-4 pb-2">
-                            Authentic Fragrances
+                            Signature Scents
                         </h3>
                         <p class="icon-box-desc card-text fs-18px mb-0">
-                            Carefully selected fragrances sourced with quality and authenticity in mind.
+                            Discover distinctive fragrances that bring warmth, character and elegance to your space.
                         </p>
                     </div>
                 </div>
             </div>
 
-            <!-- Customer Support -->
-            <div class="col-xl-3 col-md-6" data-animate="fadeInUp">
-                <div class="icon-box icon-box-style-1 card border-0 text-center">
+            <!-- Support -->
+            <div class="col-xl-3 col-md-6 d-flex" data-animate="fadeInUp">
+                <div class="icon-box icon-box-style-1 card border-0 text-center w-100 h-100">
                     <div class="icon-box-icon card-img fs-70px text-primary">
-                        <svg class="icon">
+                        <svg class="icon" aria-hidden="true">
                             <use xlink:href="#icon-box-03"></use>
                         </svg>
                     </div>
@@ -56,27 +56,27 @@
                             Personalised Support
                         </h3>
                         <p class="icon-box-desc card-text fs-18px mb-0">
-                            Need help choosing a scent? Our team is ready to assist you.
+                            Find your favourite fragrance with thoughtful guidance from our friendly customer team.
                         </p>
                     </div>
                 </div>
             </div>
 
-            <!-- Secure Payment -->
-            <div class="col-xl-3 col-md-6" data-animate="fadeInUp">
-                <div class="icon-box icon-box-style-1 card border-0 text-center">
+            <!-- Payment -->
+            <div class="col-xl-3 col-md-6 d-flex" data-animate="fadeInUp">
+                <div class="icon-box icon-box-style-1 card border-0 text-center w-100 h-100">
                     <div class="icon-box-icon card-img fs-70px text-primary">
-                        <svg class="icon">
+                        <svg class="icon" aria-hidden="true">
                             <use xlink:href="#icon-box-04"></use>
                         </svg>
                     </div>
 
                     <div class="icon-box-content card-body pt-4">
                         <h3 class="icon-box-title card-title fs-5 mb-4 pb-2">
-                            Secure & Flexible Payment
+                            Easy Ordering
                         </h3>
                         <p class="icon-box-desc card-text fs-18px mb-0">
-                            Pay securely online or place your order conveniently via WhatsApp.
+                            Shop and pay securely online, or contact our team through WhatsApp to order.
                         </p>
                     </div>
                 </div>

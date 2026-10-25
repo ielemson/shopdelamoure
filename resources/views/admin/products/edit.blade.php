@@ -550,6 +550,8 @@
                     <!-- RIGHT COLUMN -->
                     <!-- ====================================================== -->
                     <div class="col-xl-4 col-lg-4">
+
+                        @include('admin.products.partials.shipping-measurements', ['shippingItem' => $product])
                         <!-- PRODUCT IMAGES -->
                         <div class="card mb-3">
                             <div class="card-header py-3 bg-transparent border-bottom-0">

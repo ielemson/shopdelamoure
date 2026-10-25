@@ -324,6 +324,8 @@
                     </div>
                     <!-- RIGHT -->
                     <div class="col-xl-4 col-lg-4">
+
+                        @include('admin.products.partials.shipping-measurements', ['shippingItem' => null])
                         <!-- IMAGE -->
                         <!-- PRODUCT IMAGES -->
                         <div class="card mb-3">

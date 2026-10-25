@@ -75,6 +75,13 @@
 
         $storePickupEnabled = (bool) ($websiteSetting?->enable_store_pickup ?? true);
 
+        $terminalService = app(\App\Services\TerminalCheckoutService::class);
+        $terminalMode = $websiteSetting && $terminalService->available($websiteSetting);
+        $terminalPreview = $terminalMode && $terminalService->preview();
+        $deliveryProvider = $websiteSetting?->delivery_provider ?? 'local';
+        $localDeliveryAvailable = $deliveryProvider === 'local';
+        $homeDeliveryAvailable = $localDeliveryAvailable || $terminalMode;
+
         /*
         |--------------------------------------------------------------------------
         | Pickup Locations
@@ -105,6 +112,10 @@
         | Force Shipping When Pickup Is Unavailable
         |--------------------------------------------------------------------------
         */
+
+        if (!$homeDeliveryAvailable && $hasPickupLocations) {
+            $selectedDeliveryMethod = 'pickup';
+        }
 
         if (!$storePickupEnabled || ($selectedDeliveryMethod === 'pickup' && !$hasPickupLocations)) {
             $selectedDeliveryMethod = 'shipping';
@@ -528,7 +539,7 @@
 
                                 <span id="checkoutShippingLabel">
 
-                                    Shipping:
+                                    Delivery & Handling:
 
                                 </span>
 
@@ -608,6 +619,17 @@
                             DELIVERY METHOD SELECTOR
                         ================================================== --}}
 
+                        @unless ($homeDeliveryAvailable)
+                            <div class="alert alert-warning" role="status">
+                                Home delivery is temporarily unavailable.
+                                @if ($hasPickupLocations)
+                                    Please select store pickup to continue.
+                                @else
+                                    Please contact us for assistance with your order.
+                                @endif
+                            </div>
+                        @endunless
+
                         <div class="mb-8">
 
                             <label class="mb-4 fs-13px letter-spacing-01 fw-semibold text-uppercase">
@@ -626,6 +648,7 @@
 
                                     <input type="radio" class="btn-check delivery-method-input" name="delivery_method"
                                         id="deliveryShipping" value="shipping" autocomplete="off"
+                                        @disabled(!$homeDeliveryAvailable)
                                         {{ $selectedDeliveryMethod === 'shipping' ? 'checked' : '' }}>
 
 
@@ -807,6 +830,9 @@
                             SHIPPING FIELDS
                         ================================================== --}}
 
+                        @if($terminalPreview)
+                            <div class="alert alert-warning">Sandbox checkout preview. Service selection updates the total; payment is disabled for home delivery. Preview ends after 30 minutes. Return to Admin → Terminal Checkout to end it sooner.</div>
+                        @endif
                         <div id="shippingFields">
 
 
@@ -917,6 +943,7 @@
 
 
 
+                            @include('frontend.checkout.terminal-fields')
                             {{-- Delivery Zone --}}
 
                             <div class="mb-7">
@@ -1595,6 +1622,10 @@
             |--------------------------------------------------------------------------
             */
 
+            const localDeliveryAvailable = @json($homeDeliveryAvailable);
+            const terminalMode = @json((bool) $terminalMode);
+            const terminalPreview = @json((bool) $terminalPreview);
+
             let shippingAmount = 0;
 
             let shippingReady = false;
@@ -1757,7 +1788,7 @@
                 shippingReady = false;
 
                 shippingLabel.textContent =
-                    'Shipping:';
+                    'Delivery & Handling:';
 
                 shippingDisplay.textContent =
                     message;
@@ -1912,6 +1943,23 @@
                 |--------------------------------------------------------------------------
                 */
 
+                if (!localDeliveryAvailable) {
+                    shippingFields.classList.add('d-none');
+                    pickupFields?.classList.add('d-none');
+                    shippingFields.querySelectorAll('input, select, textarea').forEach(input => {
+                        input.disabled = true;
+                        input.required = false;
+                    });
+                    pickupRadios.forEach(input => input.disabled = true);
+                    shippingAmount = 0;
+                    shippingReady = false;
+                    shippingDisplay.textContent = 'Unavailable';
+                    locationNotice.textContent = 'Home delivery is temporarily unavailable.';
+                    placeOrderBtn.disabled = true;
+                    refreshCheckoutTotal();
+                    return;
+                }
+
                 shippingFields.classList.remove(
                     'd-none'
                 );
@@ -1939,7 +1987,11 @@
                 stateSelect.disabled = false;
                 stateSelect.required = true;
 
-                zoneSelect.required = true;
+                zoneSelect.required = !terminalMode;
+                if (terminalMode) {
+                    zoneSelect.disabled = true;
+                    document.getElementById('terminalCity').disabled = false;
+                }
 
 
                 deliveryNoteLabel.innerHTML =
@@ -1950,7 +2002,7 @@
 
 
                 shippingLabel.textContent =
-                    'Shipping:';
+                    'Delivery & Handling:';
 
 
                 /*
@@ -2127,6 +2179,7 @@
                 }
 
 
+                if (terminalMode) { await loadTerminalCities(); return; }
                 resetZones();
 
 
@@ -2356,7 +2409,7 @@
                 shippingRateId
             ) {
 
-                if (deliveryMethod() !== 'shipping') {
+                if (terminalMode || !localDeliveryAvailable || deliveryMethod() !== 'shipping') {
                     return;
                 }
 
@@ -2523,7 +2576,7 @@
 
 
                     shippingLabel.textContent =
-                        'Shipping:';
+                        'Delivery & Handling:';
 
                     shippingDisplay.textContent =
                         formatMoney(
@@ -3278,11 +3331,23 @@
                     */
 
                     if (method === 'shipping') {
+                        if (terminalMode && terminalPreview) {
+                            event.preventDefault();
+                            terminalMessage('Sandbox preview only. No order or payment was created.');
+                            return;
+                        }
+                        if (!localDeliveryAvailable) {
+                            event.preventDefault();
+                            shippingMessage.textContent = 'Home delivery is temporarily unavailable.';
+                            shippingMessage.classList.remove('d-none');
+                            shippingMessage.classList.add('text-danger');
+                            return;
+                        }
 
                         if (
                             !countrySelect.value ||
                             !stateSelect.value ||
-                            !zoneSelect.value ||
+                            (!terminalMode && !zoneSelect.value) ||
                             !streetAddress.value.trim() ||
                             !shippingReady
                         ) {
@@ -3365,6 +3430,142 @@
             );
 
 
+            // Terminal Africa uses the existing checkout summary and coupon calculation.
+            let terminalRequestVersion = 0;
+            let terminalRates = [];
+            let terminalExpiryTimer;
+            const terminalCity = document.getElementById('terminalCity');
+            const terminalZip = document.getElementById('terminalZip');
+            const terminalRate = document.getElementById('terminalRate');
+            const terminalToken = document.getElementById('terminalQuoteToken');
+            const terminalGetRates = document.getElementById('terminalGetRates');
+            const terminalNotice = document.getElementById('terminalNotice');
+            function terminalMessage(message) {
+                if (terminalNotice) terminalNotice.textContent = message;
+            }
+            function invalidateTerminal() {
+                if (!terminalMode) return;
+                terminalRequestVersion++;
+                clearTimeout(terminalExpiryTimer);
+                terminalRates = [];
+                terminalToken.value = '';
+                terminalRate.replaceChildren(new Option('Request rates first', ''));
+                terminalRate.disabled = true;
+                if (deliveryMethod() === 'shipping') resetShipping('Request delivery rates');
+                terminalMessage('');
+            }
+            async function terminalJSON(response) {
+                let data;
+                try { data = await response.json(); }
+                catch (_) { throw new Error('Unable to load delivery services. Please try again.'); }
+                if (!response.ok) {
+                    const first = data.errors ? Object.values(data.errors).flat().find(Boolean) : null;
+                    throw new Error(first || data.message || 'Unable to load delivery services.');
+                }
+                return data;
+            }
+            async function loadTerminalCities() {
+                if (!terminalMode) return;
+                invalidateTerminal();
+                const version = terminalRequestVersion;
+                terminalCity.replaceChildren(new Option('Loading cities...', ''));
+                terminalCity.disabled = true;
+                if (!stateSelect.value || deliveryMethod() !== 'shipping') {
+                    terminalCity.replaceChildren(new Option('Select your state first', ''));
+                    return;
+                }
+                try {
+                    const url = new URL(@json(route('checkout.terminal.cities')), window.location.origin);
+                    url.searchParams.set('state_id', stateSelect.value);
+                    const data = await terminalJSON(await fetch(url, {headers: {'Accept': 'application/json'}}));
+                    if (version !== terminalRequestVersion || deliveryMethod() !== 'shipping') return;
+                    terminalCity.replaceChildren(new Option('Select delivery city', ''));
+                    for (const city of data.cities) terminalCity.add(new Option(city, city));
+                    terminalCity.disabled = false;
+                } catch (error) {
+                    if (version !== terminalRequestVersion) return;
+                    terminalCity.replaceChildren(new Option('Unable to load cities', ''));
+                    terminalMessage(error.message);
+                }
+            }
+            if (terminalMode) {
+                // Keep local zone elements in the DOM because existing local JS references them.
+                zoneSelect.closest('.mb-7').hidden = true;
+                zoneSelect.required = false;
+                zoneSelect.disabled = true;
+                for (const input of [streetAddress, terminalCity, terminalZip]) {
+                    input.addEventListener('input', invalidateTerminal);
+                    input.addEventListener('change', invalidateTerminal);
+                }
+                countrySelect.addEventListener('change', () => {
+                    invalidateTerminal();
+                    terminalCity.replaceChildren(new Option('Select your state first', ''));
+                    terminalCity.disabled = true;
+                });
+                // Existing state listener calls loadShippingZones, which delegates to loadTerminalCities.
+
+                document.querySelectorAll('.delivery-method-input').forEach(input => {
+                    input.addEventListener('change', () => {
+                        invalidateTerminal();
+                        const shipping = deliveryMethod() === 'shipping';
+                        terminalCity.disabled = !shipping;
+                        terminalCity.required = shipping;
+                        terminalZip.disabled = !shipping;
+                        terminalGetRates.disabled = !shipping;
+                        if (shipping && stateSelect.value) loadTerminalCities();
+                    });
+                });
+                terminalGetRates.addEventListener('click', async () => {
+                    invalidateTerminal();
+                    const version = terminalRequestVersion;
+                    if (!countrySelect.value || !stateSelect.value || !terminalCity.value || !streetAddress.value.trim()) {
+                        terminalMessage('Complete your street address, state and city first.');
+                        return;
+                    }
+                    terminalGetRates.disabled = true;
+                    terminalGetRates.textContent = 'Loading delivery rates…';
+                    terminalMessage('Fetching carrier rates. This can take up to 90 seconds.');
+                    try {
+                        const data = await terminalJSON(await fetch(@json(route('checkout.terminal.rates')), {
+                            method: 'POST', headers: {'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken},
+                            body: JSON.stringify({
+                                country_id: countrySelect.value, state_id: stateSelect.value,
+                                terminal_city: terminalCity.value, terminal_zip: terminalZip.value,
+                                street_address: streetAddress.value
+                            })
+                        }));
+                        if (version !== terminalRequestVersion || deliveryMethod() !== 'shipping') return;
+                        terminalRates = data.rates;
+                        terminalToken.value = data.quote_token;
+                        terminalRate.replaceChildren(new Option('Select delivery service', ''));
+                        for (const rate of terminalRates) {
+                            terminalRate.add(new Option(rate.carrier + ' / ' + rate.service + ' — ' + formatMoney(rate.total) + ' (' + rate.estimate + ')', rate.id));
+                        }
+                        terminalRate.disabled = terminalRates.length === 0;
+                        terminalMessage(terminalRates.length
+                            ? (terminalPreview ? 'Sandbox estimates only. Product eligibility is unverified. Payment is disabled.' : 'Choose a delivery service. Rates expire in five minutes.')
+                            : 'No delivery services are available for this parcel and destination.');
+                        terminalExpiryTimer = setTimeout(() => {
+                            invalidateTerminal(); terminalMessage('Rates expired. Please request delivery rates again.');
+                        }, data.expires_in * 1000);
+                    } catch (error) {
+                        if (version === terminalRequestVersion) terminalMessage(error.message);
+                    } finally {
+                        terminalGetRates.disabled = deliveryMethod() !== 'shipping';
+                        terminalGetRates.textContent = 'Get delivery rates';
+                    }
+                });
+                terminalRate.addEventListener('change', () => {
+                    const rate = terminalRates.find(rate => rate.id === terminalRate.value);
+                    shippingAmount = rate ? Number(rate.total) : 0;
+                    shippingReady = Boolean(rate && terminalToken.value);
+                    shippingDisplay.textContent = rate ? formatMoney(shippingAmount) : 'Select delivery service';
+                    refreshCheckoutTotal();
+                    placeOrderBtn.disabled = !shippingReady || terminalPreview || checkoutCartChanged;
+                    locationNotice.textContent = rate ? rate.carrier + ' / ' + rate.service + (terminalPreview ? ' — sandbox preview' : '') : 'Select a delivery service.';
+                });
+            }
+
             /*
             |--------------------------------------------------------------------------
             | Initial State
@@ -3375,6 +3576,7 @@
 
 
             if (
+                localDeliveryAvailable &&
                 deliveryMethod() === 'shipping' &&
                 countrySelect.value
             ) {

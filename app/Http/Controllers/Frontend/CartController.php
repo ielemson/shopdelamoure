@@ -54,8 +54,8 @@ class CartController extends Controller
             // Keep HTML callers from receiving unexpected JSON.
             return response(
                 '<div class="alert alert-danger mb-0" role="alert">'
-                . e($message)
-                . '</div>',
+                .e($message)
+                .'</div>',
                 422
             );
         }
@@ -97,7 +97,7 @@ class CartController extends Controller
                 'nullable',
                 'integer',
                 'min:1',
-                'max:' . self::MAX_QUANTITY,
+                'max:'.self::MAX_QUANTITY,
             ],
         ]);
 
@@ -153,7 +153,7 @@ class CartController extends Controller
                 'required',
                 'integer',
                 'min:1',
-                'max:' . self::MAX_QUANTITY,
+                'max:'.self::MAX_QUANTITY,
             ],
         ]);
 
@@ -205,13 +205,13 @@ class CartController extends Controller
                 'required',
                 'integer',
                 'min:1',
-                'max:' . self::MAX_QUANTITY,
+                'max:'.self::MAX_QUANTITY,
             ],
         ]);
 
         $rows = $this->rows();
 
-        if (!isset($rows[$data['id']])) {
+        if (! isset($rows[$data['id']])) {
             return $this->error('Cart item not found.', 404);
         }
 
@@ -237,7 +237,7 @@ class CartController extends Controller
     {
         $rows = $this->rows();
 
-        if (!isset($rows[$id])) {
+        if (! isset($rows[$id])) {
             return $this->error('Cart item not found.', 404);
         }
 
@@ -347,10 +347,10 @@ class CartController extends Controller
         bool $wholesale = false
     ): string {
         $id = $variantId !== null
-            ? $productId . '_' . (int) $variantId
+            ? $productId.'_'.(int) $variantId
             : (string) $productId;
 
-        return $wholesale ? 'wholesale_' . $id : $id;
+        return $wholesale ? 'wholesale_'.$id : $id;
     }
 
     /*
@@ -366,13 +366,13 @@ class CartController extends Controller
         );
 
         $hasRetail = collect($rows)->contains(
-            fn ($row) => !$row['wholesale']
+            fn ($row) => ! $row['wholesale']
         );
 
         if ($hasWholesale && $hasRetail) {
             $this->invalid(
                 'Retail and wholesale products cannot be purchased together. '
-                . 'Please complete or clear your current cart before switching.'
+                .'Please complete or clear your current cart before switching.'
             );
         }
 
@@ -384,7 +384,7 @@ class CartController extends Controller
             && (
                 collect(Cart::getConditions())->isNotEmpty()
                 || Cart::getContent()->contains(
-                    fn ($item) => !empty($item->conditions)
+                    fn ($item) => ! empty($item->conditions)
                 )
             )
         ) {
@@ -421,7 +421,7 @@ class CartController extends Controller
 
             $product = $products->get($row['product_id']);
 
-            if (!$product) {
+            if (! $product) {
                 $this->invalid(
                     'A product in your cart is no longer available. Remove it to continue.'
                 );
@@ -435,7 +435,7 @@ class CartController extends Controller
                     $row['variant_id']
                 );
 
-                if (!$variant || !$variant->is_active) {
+                if (! $variant || ! $variant->is_active) {
                     $this->invalid(
                         "Select an available option for {$product->name}."
                     );
@@ -448,7 +448,7 @@ class CartController extends Controller
 
             $source = $variant ?? $product;
 
-            $stockKey = $product->id . ':' . ($variant?->id ?? 'simple');
+            $stockKey = $product->id.':'.($variant?->id ?? 'simple');
 
             $stockTotals[$stockKey] =
                 ($stockTotals[$stockKey] ?? 0) + $row['quantity'];
@@ -457,9 +457,9 @@ class CartController extends Controller
 
             if ($row['wholesale']) {
                 if (
-                    !$product->wholesale_enabled
+                    ! $product->wholesale_enabled
                     || (int) $product->wholesale_min_quantity < 1
-                    || ($variant && !$variant->wholesale_enabled)
+                    || ($variant && ! $variant->wholesale_enabled)
                     || $this->kobo($source->wholesale_price_ngn) <= 0
                 ) {
                     $this->invalid(
@@ -492,7 +492,7 @@ class CartController extends Controller
             ) {
                 $this->invalid(
                     "{$product->name}: only {$stock['available']} unit(s) "
-                    . 'available for this option. Retail and wholesale quantities share this stock.'
+                    .'available for this option. Retail and wholesale quantities share this stock.'
                 );
             }
 
@@ -507,10 +507,10 @@ class CartController extends Controller
                 if ($qualifying < (int) $product->wholesale_min_quantity) {
                     $this->invalid(
                         "{$product->name} requires at least "
-                        . "{$product->wholesale_min_quantity} wholesale units"
-                        . (
+                        ."{$product->wholesale_min_quantity} wholesale units"
+                        .(
                             $product->has_variants
-                            && !$product->wholesale_allow_mixed_variants
+                            && ! $product->wholesale_allow_mixed_variants
                                 ? ' per option.'
                                 : '.'
                         )
@@ -598,7 +598,7 @@ class CartController extends Controller
 
         try {
             foreach (Cart::getContent() as $item) {
-                if (!isset($plan['lines'][$item->id])) {
+                if (! isset($plan['lines'][$item->id])) {
                     if (Cart::remove($item->id) === false) {
                         throw new \RuntimeException(
                             'The cart removal was cancelled.'
@@ -641,8 +641,7 @@ class CartController extends Controller
         // Clear session coupons only after a successful wholesale cart write.
         if (
             collect($plan['lines'])->contains(
-                fn ($line) =>
-                    $line['attributes']['purchase_type'] === 'wholesale'
+                fn ($line) => $line['attributes']['purchase_type'] === 'wholesale'
             )
         ) {
             session()->forget('coupon');
@@ -677,30 +676,41 @@ class CartController extends Controller
         $variant,
         string $currency
     ): float {
-        $regularField = $currency === 'USD' ? 'price_usd' : 'price_ngn';
-        $saleField = $currency === 'USD' ? 'sale_price_usd' : 'sale_price_ngn';
-
-        $source = $variant && $variant->{$regularField} !== null
+        // Preserve the existing variant-to-product fallback.
+        $source = $variant && $variant->price_ngn !== null
             ? $variant
             : $product;
 
-        $regularPrice = (float) $source->{$regularField};
-        $salePrice = (float) ($source->{$saleField} ?? 0);
+        $regularPrice = (float) ($source->price_ngn ?? 0);
+        $salePrice = (float) ($source->sale_price_ngn ?? 0);
+
+        if (! is_finite($regularPrice) || $regularPrice <= 0) {
+            return 0;
+        }
+
         $now = now();
 
         $saleActive = (
-            !$product->sale_starts_at
+            ! $product->sale_starts_at
             || $now->gte($product->sale_starts_at)
         ) && (
-            !$product->sale_ends_at
+            ! $product->sale_ends_at
             || $now->lte($product->sale_ends_at)
         );
 
-        return $saleActive
+        $purchasePriceNgn = $saleActive
+            && is_finite($salePrice)
             && $salePrice > 0
             && $salePrice < $regularPrice
                 ? $salePrice
                 : $regularPrice;
+
+        $price = app(\App\Services\CurrencyService::class)
+            ->convert($purchasePriceNgn, $currency);
+
+        return is_finite($price) && $price > 0
+            ? round($price, 2)
+            : 0;
     }
 
     private function wholesalePrice($source, int $quantity): float
@@ -730,7 +740,7 @@ class CartController extends Controller
     private function kobo($price): int
     {
         if (
-            !preg_match(
+            ! preg_match(
                 '/^\d{1,13}(?:\.\d{1,2})?$/',
                 (string) $price
             )

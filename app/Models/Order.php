@@ -54,6 +54,10 @@ class Order extends Model
         'coupon_discount_type',
         'coupon_discount_value',
         'coupon_discount_amount',
+        'shipping_provider',
+        'shipping_base_cost',
+        'shipping_markup_percentage',
+        'shipping_markup_amount',
     ];
 
     /*
@@ -69,6 +73,10 @@ class Order extends Model
         'total' => 'decimal:2',
 
         'paid_at' => 'datetime',
+
+        'shipping_base_cost' => 'decimal:2',
+        'shipping_markup_percentage' => 'decimal:2',
+        'shipping_markup_amount' => 'decimal:2',
     ];
 
     /*

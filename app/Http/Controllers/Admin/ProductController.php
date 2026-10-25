@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\Concerns\ValidatesShippingMeasurements;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
@@ -15,6 +16,8 @@ use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
+    use ValidatesShippingMeasurements;
+
     public function index()
     {
         $products = Product::with(['category', 'subcategory'])
@@ -75,6 +78,7 @@ class ProductController extends Controller
             'meta_keywords' => 'nullable|string',
             'sort_order' => 'nullable|integer|min:0',
         ]);
+        $shippingData = $this->validatedShippingMeasurements($request);
         $wholesale = $this->validatedWholesaleData($request);
         /*
     |--------------------------------------------------------------------------
@@ -99,7 +103,7 @@ class ProductController extends Controller
     | Create Product
     |--------------------------------------------------------------------------
     */
-        $product = DB::transaction(function () use ($request, $validated, $imagePath, $wholesale) {
+        $product = DB::transaction(function () use ($request, $validated, $imagePath, $wholesale, $shippingData) {
             $product = Product::create(array_merge([
                 'category_id' => $validated['category_id'],
                 'subcategory_id' => $validated['subcategory_id'] ?? null,
@@ -137,7 +141,7 @@ class ProductController extends Controller
                 'meta_keywords' => $validated['meta_keywords'] ?? null,
                 'status' => $request->boolean('status'),
                 'sort_order' => $validated['sort_order'] ?? 0,
-            ], $wholesale['attributes'] ?? []));
+            ], $wholesale['attributes'] ?? [], $shippingData));
             if ($wholesale !== null) {
                 $this->syncWholesalePriceTiers($product, $wholesale['tiers']);
             }
@@ -410,6 +414,7 @@ class ProductController extends Controller
                 'boolean',
             ],
         ]);
+        $shippingData = $this->validatedShippingMeasurements($request);
         $wholesale = $this->validatedWholesaleData($request, $product);
         /*
         |--------------------------------------------------------------------------
@@ -478,7 +483,7 @@ class ProductController extends Controller
         | Update Product
         |--------------------------------------------------------------------------
         */
-        DB::transaction(function () use ($request, $validated, $imagePath, $wholesale, $product) {
+        DB::transaction(function () use ($request, $validated, $imagePath, $wholesale, $product, $shippingData) {
             $product->update(array_merge([
                 /*
                 |--------------------------------------------------------------------------
@@ -552,7 +557,7 @@ class ProductController extends Controller
                 */
                 'status' => $request->boolean('status'),
                 'sort_order' => $validated['sort_order'] ?? 0,
-            ], $wholesale['attributes'] ?? []));
+            ], $wholesale['attributes'] ?? [], $shippingData));
             if ($wholesale !== null) {
                 $this->syncWholesalePriceTiers($product, $wholesale['tiers']);
             }

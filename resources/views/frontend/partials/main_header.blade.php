@@ -464,16 +464,62 @@
 
 
                             {{-- Shop --}}
-                            <li class="nav-item transition-all-xl-1 py-xl-11 py-0 px-xxl-4 px-xl-3">
-
-                                <a class="nav-link position-relative py-xl-0 px-xl-0 text-uppercase fw-semibold ls-1 fs-14px
-                                    {{ request()->routeIs('shop') ? 'active' : '' }}"
-                                    href="{{ route('shop') }}">
-
-                                    Shop
-
-                                </a>
-
+                            <li
+                                class="nav-item transition-all-xl-1 py-xl-11 py-0 px-xxl-4 px-xl-3 dropdown dropdown-hover dropdown-fullwidth position-static">
+                                <a class="nav-link d-flex justify-content-between position-relative py-xl-0 px-xl-0 text-uppercase fw-semibold ls-1 fs-15px fs-xl-14px dropdown-toggle {{ request()->routeIs('shop', 'shop.category') ? 'active' : '' }}"
+                                    href="{{ route('shop') }}" data-bs-toggle="dropdown" id="menu-item-shop"
+                                    aria-haspopup="true" aria-expanded="false">Shop</a>
+                                <div class="dropdown-menu mega-menu start-0 py-6 w-100"
+                                    aria-labelledby="menu-item-shop">
+                                    <div class="megamenu-shop container-wide py-8 px-12">
+                                        @php
+                                            $megaMenuCategories = \App\Models\Category::query()
+                                                ->where('status', 1)
+                                                ->orderBy('name')
+                                                ->get();
+                                            $megaMenuColumns = $megaMenuCategories->chunk(
+                                                max(1, (int) ceil($megaMenuCategories->count() / 3)),
+                                            );
+                                        @endphp
+                                        <div class="row">
+                                            <div class="col">
+                                                <h6 class="fs-18px">Discover De Lamoure</h6>
+                                                <ul class="list-unstyled mb-0">
+                                                    <li>
+                                                        <a href="{{ route('shop') }}"
+                                                            class="border-hover text-decoration-none py-3 d-block">
+                                                            <span class="border-hover-target">Shop All Products</span>
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="{{ url('shop/wholesale') }}"
+                                                            class="border-hover text-decoration-none py-3 d-block">
+                                                            <span class="border-hover-target">Wholesale
+                                                                Collection</span>
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            @foreach ($megaMenuColumns as $megaMenuColumn)
+                                                <div class="col">
+                                                    <h6 class="fs-18px">
+                                                        {{ $loop->first ? 'Our Collections' : 'Explore More' }}</h6>
+                                                    <ul class="list-unstyled mb-0">
+                                                        @foreach ($megaMenuColumn as $megaMenuCategory)
+                                                            <li>
+                                                                <a href="{{ route('shop.category', $megaMenuCategory->slug) }}"
+                                                                    class="border-hover text-decoration-none py-3 d-block">
+                                                                    <span
+                                                                        class="border-hover-target">{{ $megaMenuCategory->name }}</span>
+                                                                </a>
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
                             </li>
 
 
@@ -691,3 +737,6 @@
     </div>
 
 </header>
+
+
+{{-- @include('frontend.partials.mobile-menu') --}}

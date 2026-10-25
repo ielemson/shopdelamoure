@@ -10,6 +10,12 @@ class ProductVariant extends Model
     use HasFactory;
 
     protected $fillable = [
+        // Measured packed dimensions for one sellable unit (not product volume).
+        'shipping_weight_kg',
+        'shipping_length_cm',
+        'shipping_width_cm',
+        'shipping_height_cm',
+
         'product_id',
         'name',
         'sku',
@@ -36,6 +42,11 @@ class ProductVariant extends Model
     ];
 
     protected $casts = [
+        'shipping_weight_kg' => 'decimal:3',
+        'shipping_length_cm' => 'decimal:2',
+        'shipping_width_cm' => 'decimal:2',
+        'shipping_height_cm' => 'decimal:2',
+
         'options' => 'array',
 
         'price_ngn' => 'decimal:2',

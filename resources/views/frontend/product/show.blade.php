@@ -30,13 +30,18 @@
         | Currency
         |--------------------------------------------------------------------------
         */
-        $currency = session('currency', 'NGN');
-
-        $priceField = $currency === 'USD' ? 'price_usd' : 'price_ngn';
-
-        $salePriceField = $currency === 'USD' ? 'sale_price_usd' : 'sale_price_ngn';
-
+        $currency = strtoupper((string) session('currency', 'NGN'));
+        $currency = in_array($currency, ['NGN', 'USD'], true) ? $currency : 'NGN';
         $currencySymbol = $currency === 'USD' ? '$' : '₦';
+        $currencyService = app(\App\Services\CurrencyService::class);
+
+        // Stored prices are always NGN.
+        $priceField = 'price_ngn';
+        $salePriceField = 'sale_price_ngn';
+        $now = now();
+        $saleActive =
+            (!$product->sale_starts_at || $now->gte($product->sale_starts_at)) &&
+            (!$product->sale_ends_at || $now->lte($product->sale_ends_at));
 
         /*
         |--------------------------------------------------------------------------
@@ -157,12 +162,12 @@
 
                     return true;
                 })
-                ->sortBy(function ($variant) use ($priceField, $salePriceField) {
+                ->sortBy(function ($variant) use ($priceField, $salePriceField, $saleActive) {
                     $price = $variant->{$priceField};
 
                     $sale = $variant->{$salePriceField};
 
-                    return $sale && $sale > 0 && $sale < $price ? $sale : $price;
+                    return $saleActive && $sale > 0 && $sale < $price ? $sale : $price;
                 })
                 ->first();
 
@@ -180,9 +185,15 @@
         | Sale
         |--------------------------------------------------------------------------
         */
-        $hasSale = $regularPrice && $salePrice && $salePrice > 0 && $salePrice < $regularPrice;
+        $regularPrice = is_numeric($regularPrice) && $regularPrice > 0 ? (float) $regularPrice : null;
+        $salePrice = is_numeric($salePrice) && $salePrice > 0 ? (float) $salePrice : null;
 
-        $discountPercentage = $hasSale ? round((($regularPrice - $salePrice) / $regularPrice) * 100) : null;
+        $hasSale = $saleActive && $regularPrice !== null && $salePrice !== null && $salePrice < $regularPrice;
+
+        $discountPercentage = $hasSale ? (int) round((($regularPrice - $salePrice) / $regularPrice) * 100) : null;
+
+        $regularPrice = $regularPrice !== null ? $currencyService->convert($regularPrice, $currency) : null;
+        $salePrice = $hasSale ? $currencyService->convert($salePrice, $currency) : null;
 
         /*
         |--------------------------------------------------------------------------
@@ -241,14 +252,25 @@
 
                         <div class="p-6">
 
+                            @php
+                                $isShowWishlisted = auth()->check()
+                                    ? \App\Models\Wishlist::where('user_id', auth()->id())
+                                        ->where('product_id', $product->id)
+                                        ->exists()
+                                    : collect(session()->get('wishlist', []))
+                                        ->map(fn($id) => (int) $id)
+                                        ->contains((int) $product->id);
+                            @endphp
                             <a href="#"
-                                class="d-flex align-items-center justify-content-center product-gallery-action rounded-circle"
-                                data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Add to wishlist">
-
+                                class="d-flex align-items-center justify-content-center product-gallery-action rounded-circle product-show-wishlist-toggle {{ $isShowWishlisted ? 'wishlist-active' : '' }}"
+                                data-product-id="{{ $product->id }}" data-url="{{ route('wishlist.toggle', $product->id) }}"
+                                data-csrf="{{ csrf_token() }}" data-bs-toggle="tooltip" data-bs-placement="left"
+                                data-bs-title="{{ $isShowWishlisted ? 'Remove From Wishlist' : 'Add To Wishlist' }}"
+                                aria-label="{{ $isShowWishlisted ? 'Remove From Wishlist' : 'Add To Wishlist' }}"
+                                aria-pressed="{{ $isShowWishlisted ? 'true' : 'false' }}">
                                 <svg class="icon fs-4">
                                     <use xlink:href="#icon-star-light"></use>
                                 </svg>
-
                             </a>
 
                         </div>
@@ -439,9 +461,20 @@
 
                             @foreach ($product->variants as $variant)
                                 @php
-                                    $variantPrice = $variant->{$priceField};
-
-                                    $variantSalePrice = $variant->{$salePriceField};
+                                    $variantRegularNgn = (float) ($variant->price_ngn ?? 0);
+                                    $variantSaleNgn = (float) ($variant->sale_price_ngn ?? 0);
+                                    $variantSaleActive =
+                                        $saleActive &&
+                                        $variantRegularNgn > 0 &&
+                                        $variantSaleNgn > 0 &&
+                                        $variantSaleNgn < $variantRegularNgn;
+                                    $variantPrice =
+                                        $variantRegularNgn > 0
+                                            ? $currencyService->convert($variantRegularNgn, $currency)
+                                            : null;
+                                    $variantSalePrice = $variantSaleActive
+                                        ? $currencyService->convert($variantSaleNgn, $currency)
+                                        : null;
 
                                     $variantHasSale =
                                         $variantPrice &&
@@ -504,9 +537,20 @@
 
                             @foreach ($product->variants as $variant)
                                 @php
-                                    $variantPrice = $variant->{$priceField};
-
-                                    $variantSalePrice = $variant->{$salePriceField};
+                                    $variantRegularNgn = (float) ($variant->price_ngn ?? 0);
+                                    $variantSaleNgn = (float) ($variant->sale_price_ngn ?? 0);
+                                    $variantSaleActive =
+                                        $saleActive &&
+                                        $variantRegularNgn > 0 &&
+                                        $variantSaleNgn > 0 &&
+                                        $variantSaleNgn < $variantRegularNgn;
+                                    $variantPrice =
+                                        $variantRegularNgn > 0
+                                            ? $currencyService->convert($variantRegularNgn, $currency)
+                                            : null;
+                                    $variantSalePrice = $variantSaleActive
+                                        ? $currencyService->convert($variantSaleNgn, $currency)
+                                        : null;
 
                                     $variantCartQuantity = (int) $variantCartQuantities->get((string) $variant->id, 0);
 
@@ -1986,6 +2030,76 @@
                 applyVariantState();
             }
 
+        });
+    </script>
+@endpush
+
+@push('scripts')
+    <script>
+        document.addEventListener('click', async function(event) {
+            const button = event.target.closest('.product-show-wishlist-toggle');
+            if (!button) return;
+            event.preventDefault();
+            if (button.classList.contains('wishlist-loading')) return;
+
+            button.classList.add('wishlist-loading');
+            button.setAttribute('aria-busy', 'true');
+
+            try {
+                const response = await fetch(button.dataset.url, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-CSRF-TOKEN': button.dataset.csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                if (!response.ok || data.status === false) {
+                    throw new Error(data.message || 'Unable to update your wishlist.');
+                }
+
+                const active = Boolean(data.wishlisted);
+                const label = active ? 'Remove From Wishlist' : 'Add To Wishlist';
+                document.querySelectorAll(
+                    '.wishlist-toggle[data-product-id="' + button.dataset.productId + '"], ' +
+                    '.product-show-wishlist-toggle[data-product-id="' + button.dataset.productId + '"]'
+                ).forEach(function(item) {
+                    item.classList.toggle('wishlist-active', active);
+                    item.setAttribute('data-bs-title', label);
+                    item.setAttribute('aria-label', label);
+                    item.setAttribute('aria-pressed', String(active));
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                        const tooltip = bootstrap.Tooltip.getInstance(item);
+                        if (tooltip && typeof tooltip.setContent === 'function') {
+                            tooltip.setContent({
+                                '.tooltip-inner': label
+                            });
+                        }
+                    }
+                });
+
+                if (data.count !== undefined) {
+                    document.querySelectorAll('.wishlist-count').forEach(function(counter) {
+                        counter.textContent = String(data.count);
+                        counter.classList.toggle('d-none', Number(data.count) <= 0);
+                    });
+                }
+
+                const message = data.message || (active ?
+                    'Product added to your wishlist.' :
+                    'Product removed from your wishlist.');
+                if (typeof notyf !== 'undefined') notyf.success(message);
+                else if (typeof toastr !== 'undefined') toastr.success(message);
+            } catch (error) {
+                if (typeof notyf !== 'undefined') notyf.error(error.message);
+                else if (typeof toastr !== 'undefined') toastr.error(error.message);
+                else window.alert(error.message);
+            } finally {
+                button.classList.remove('wishlist-loading');
+                button.removeAttribute('aria-busy');
+            }
         });
     </script>
 @endpush
