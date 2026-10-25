@@ -11,7 +11,8 @@ use Spatie\Permission\Models\Role;
 
 class AdminUserController extends Controller
 {
-    private const SETTINGS_PERMISSIONS = [
+    private const ASSIGNABLE_PERMISSIONS = [
+        'manage store',
         'manage website settings',
         'manage delivery settings',
     ];
@@ -23,7 +24,10 @@ class AdminUserController extends Controller
             ->whereNotIn('name', ['Admin', 'Customer', 'Super Admin'])
             ->whereHas('permissions')
             ->whereDoesntHave('permissions', function ($query) {
-                $query->whereNotIn('name', self::SETTINGS_PERMISSIONS);
+                $query->whereNotIn(
+                    'name',
+                    self::ASSIGNABLE_PERMISSIONS
+                );
             })
             ->orderBy('name')
             ->get();
@@ -59,8 +63,9 @@ class AdminUserController extends Controller
                 'password' => $data['password'],
             ]);
 
-            $admin->assignRole('Admin');
-            $admin->assignRole($data['roles']);
+            $admin->syncRoles(
+                array_merge(['Admin'], $data['roles'])
+            );
         });
 
         return redirect()
@@ -99,9 +104,13 @@ class AdminUserController extends Controller
 
             $admin->save();
 
-            // Access is controlled entirely through the selected roles.
+            // Replace direct permissions and previous roles
+            // with the roles selected in this form.
             $admin->syncPermissions([]);
-            $admin->syncRoles(array_merge(['Admin'], $data['roles']));
+
+            $admin->syncRoles(
+                array_merge(['Admin'], $data['roles'])
+            );
         });
 
         return redirect()
@@ -113,15 +122,22 @@ class AdminUserController extends Controller
         Request $request,
         ?User $admin = null
     ): array {
-        $allowedRoles = $this->availableRoles()->pluck('name')->all();
+        $allowedRoles = $this->availableRoles()
+            ->pluck('name')
+            ->all();
 
         return $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+            ],
             'email' => [
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')->ignore($admin?->id),
+                Rule::unique('users', 'email')
+                    ->ignore($admin?->id),
             ],
             'password' => [
                 $admin ? 'nullable' : 'required',
@@ -129,7 +145,11 @@ class AdminUserController extends Controller
                 'min:12',
                 'confirmed',
             ],
-            'roles' => ['required', 'array', 'min:1'],
+            'roles' => [
+                'required',
+                'array',
+                'min:1',
+            ],
             'roles.*' => [
                 'required',
                 'string',
@@ -146,7 +166,7 @@ class AdminUserController extends Controller
         abort_if(
             $admin->id === auth()->id()
                 || $admin->can('manage admins')
-                || $admin->can('manage store'),
+                || $admin->hasRole('Super Admin'),
             403,
             'This administrator cannot be changed from this page.'
         );
@@ -164,7 +184,7 @@ class AdminUserController extends Controller
                 })
                 ->exists(),
             403,
-            'This account has roles outside settings administration.'
+            'This account has protected or unrelated roles.'
         );
     }
 }
