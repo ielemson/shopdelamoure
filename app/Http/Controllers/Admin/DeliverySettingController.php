@@ -67,41 +67,72 @@ class DeliverySettingController extends Controller
     {
         $setting = WebsiteSetting::firstOrCreate([]);
         $environment = $setting->terminal_environment ?? 'test';
+
         if (! in_array($environment, ['test', 'live'], true)) {
-            return response()->json(['success' => false, 'message' => 'Save a valid environment first.'], 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'Save a valid environment first.',
+            ], 422);
         }
 
         try {
-            $secret = ($setting->terminal_credentials ?? [])[$environment] ?? null;
-            if (! $secret) {
-                return response()->json(['success' => false, 'message' => 'Save a secret key for the selected environment first.'], 422);
+            // The model's encrypted:array cast decrypts credentials automatically.
+            $credentials = $setting->terminal_credentials ?? [];
+            $secret = trim((string) ($credentials[$environment] ?? ''));
+
+            if ($secret === '') {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Save a secret key for the selected {$environment} environment first.",
+                ], 422);
             }
 
-            // Fixed provider URLs; no user-controlled API host or redirects.
+            // Fixed provider URLs; redirects are disabled.
             $baseUrl = $environment === 'test'
                 ? 'https://sandbox.terminal.africa/v1'
                 : 'https://api.terminal.africa/v1';
 
-            $response = Http::withToken($secret)->acceptJson()
-                ->connectTimeout(10)->timeout(20)
+            $response = Http::withToken($secret)
+                ->acceptJson()
+                ->connectTimeout(10)
+                ->timeout(20)
                 ->withOptions(['allow_redirects' => false])
-                ->get($baseUrl.'/carriers', ['perPage' => 1]);
+                ->get($baseUrl.'/users/carriers', [
+                    'perPage' => 1,
+                ]);
 
-            if (in_array($response->status(), [401, 403], true)) {
-                return response()->json(['success' => false, 'message' => 'Authentication failed. Check the saved key and environment.'], 422);
+            if ($response->status() === 401) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Terminal Africa rejected the saved {$environment} secret key (HTTP 401). Re-enter the matching secret key, save settings, then test again.",
+                ], 422);
+            }
+
+            if ($response->status() === 403) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Terminal Africa denied access to the carrier list in {$environment} mode (HTTP 403). Check API/account permissions with Terminal Africa.",
+                ], 422);
             }
 
             if (! $response->successful() || $response->json('status') !== true) {
-                return response()->json(['success' => false, 'message' => 'Terminal Africa did not confirm the connection. Please try again later.'], 502);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terminal Africa did not confirm the connection (HTTP '
+                        .$response->status().'). Please try again later.',
+                ], 502);
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Connected to Terminal Africa ('.$environment.'). No shipment was booked. This test does not verify rates or product eligibility.',
+                'message' => "Connected to Terminal Africa ({$environment}). No shipment was booked. This test does not verify rates or product eligibility.",
             ]);
         } catch (\Throwable $e) {
-            // Do not expose or log an HTTP exception containing Authorization headers.
-            return response()->json(['success' => false, 'message' => 'Connection could not be completed. Check server connectivity and configuration.'], 502);
+            // Do not expose credentials, headers, or raw exception details.
+            return response()->json([
+                'success' => false,
+                'message' => 'Connection could not be completed. Check server connectivity and configuration.',
+            ], 502);
         }
     }
 }
