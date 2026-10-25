@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\WebsiteSetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 class WebsiteSettingController extends Controller
@@ -18,10 +21,9 @@ class WebsiteSettingController extends Controller
 
     public function update(Request $request)
     {
-        $setting = WebsiteSetting::firstOrCreate([]);
+        abort_unless($request->user(), 401);
 
-        $data = $request->validate([
-
+        $validated = $request->validate([
             'website_name' => 'nullable|string|max:255',
 
             'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp,avif|max:2048',
@@ -35,12 +37,10 @@ class WebsiteSettingController extends Controller
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
 
-            'facebook' => 'nullable|url',
-            'instagram' => 'nullable|url',
-            'twitter' => 'nullable|url',
-            'linkedin' => 'nullable|url',
-            'youtube' => 'nullable|url',
-            'tiktok' => 'nullable|url',
+            'facebook' => 'nullable|url|max:255',
+            'instagram' => 'nullable|url|max:255',
+            'snapchat' => 'nullable|url|max:255',
+            'tiktok' => 'nullable|url|max:255',
 
             'support_name' => 'nullable|string|max:255',
             'support_role' => 'nullable|string|max:255',
@@ -51,88 +51,115 @@ class WebsiteSettingController extends Controller
             'support_message_title' => 'nullable|string|max:255',
             'support_message_body' => 'nullable|string',
 
-            /*
-            |--------------------------------------------------------------------------
-            | Checkout Settings
-            |--------------------------------------------------------------------------
-            */
+            // Admin password
+            'current_password' => [
+                'nullable',
+                'required_with:password,password_confirmation',
+                'current_password',
+            ],
+            'password' => [
+                'nullable',
+                'required_with:current_password,password_confirmation',
+                'string',
+                'min:8',
+                'confirmed',
+            ],
+            'password_confirmation' => [
+                'nullable',
+                'required_with:password',
+                'string',
+            ],
 
+            // Checkout settings
             'enable_store_pickup' => 'required|boolean',
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Store Pickup
-        |--------------------------------------------------------------------------
-        */
+        $setting = WebsiteSetting::firstOrCreate([]);
 
-        $data['enable_store_pickup'] =
-            $request->boolean('enable_store_pickup');
+        // Password fields belong to the user, not website settings.
+        $data = Arr::except($validated, [
+            'current_password',
+            'password',
+            'password_confirmation',
+        ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Logo
-        |--------------------------------------------------------------------------
-        */
+        $data['enable_store_pickup'] = $request->boolean(
+            'enable_store_pickup'
+        );
 
-        if ($request->hasFile('logo')) {
+        $passwordChanged = $request->filled('password');
 
-            if ($setting->logo) {
-                Storage::disk('public')->delete($setting->logo);
-            }
+        $newPasswordHash = $passwordChanged
+            ? Hash::make($validated['password'])
+            : null;
 
-            $data['logo'] = $request
-                ->file('logo')
-                ->store('settings', 'public');
-        }
+        $newFiles = [];
+        $oldFiles = [];
 
-        /*
-        |--------------------------------------------------------------------------
-        | Favicon
-        |--------------------------------------------------------------------------
-        */
+        try {
+            // Upload replacements before removing existing images.
+            foreach ([
+                'logo' => 'settings',
+                'favicon' => 'settings',
+                'support_image' => 'settings/support',
+            ] as $field => $directory) {
+                if (! $request->hasFile($field)) {
+                    continue;
+                }
 
-        if ($request->hasFile('favicon')) {
-
-            if ($setting->favicon) {
-                Storage::disk('public')->delete($setting->favicon);
-            }
-
-            $data['favicon'] = $request
-                ->file('favicon')
-                ->store('settings', 'public');
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Support Profile Image
-        |--------------------------------------------------------------------------
-        */
-
-        if ($request->hasFile('support_image')) {
-
-            if ($setting->support_image) {
-                Storage::disk('public')->delete(
-                    $setting->support_image
+                $path = $request->file($field)->store(
+                    $directory,
+                    'public'
                 );
+
+                if (! $path) {
+                    throw new \RuntimeException(
+                        "Unable to upload {$field}."
+                    );
+                }
+
+                $data[$field] = $path;
+                $newFiles[] = $path;
+
+                if ($setting->{$field}) {
+                    $oldFiles[] = $setting->{$field};
+                }
             }
 
-            $data['support_image'] = $request
-                ->file('support_image')
-                ->store('settings/support', 'public');
+            DB::transaction(function () use (
+                $setting,
+                $data,
+                $request,
+                $passwordChanged,
+                $newPasswordHash
+            ) {
+                $setting->update($data);
+
+                if ($passwordChanged) {
+                    $request->user()->forceFill([
+                        'password' => $newPasswordHash,
+                    ])->save();
+                }
+            });
+        } catch (\Throwable $exception) {
+            // Remove new uploads if saving fails.
+            foreach ($newFiles as $path) {
+                Storage::disk('public')->delete($path);
+            }
+
+            throw $exception;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Update Website Settings
-        |--------------------------------------------------------------------------
-        */
-
-        $setting->update($data);
+        // Remove replaced images only after saving succeeds.
+        foreach ($oldFiles as $path) {
+            Storage::disk('public')->delete($path);
+        }
 
         return back()->with(
             'success',
-            'Website information updated successfully.'
+            $passwordChanged
+                ? 'Website settings and your admin password updated successfully.'
+                : 'Website settings updated successfully.'
         );
     }
 }

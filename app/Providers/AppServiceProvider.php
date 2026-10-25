@@ -2,10 +2,10 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Schema;
-use App\Models\WebsiteSetting;
 use App\Models\Category;
+use App\Models\WebsiteSetting;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,7 +34,6 @@ class AppServiceProvider extends ServiceProvider
 
         Schema::defaultStringLength(191);
 
-
         /*
         |--------------------------------------------------------------------------
         | Website Settings
@@ -48,7 +47,6 @@ class AppServiceProvider extends ServiceProvider
         }
 
         view()->share('setting', $setting);
-
 
         /*
         |--------------------------------------------------------------------------
@@ -67,5 +65,16 @@ class AppServiceProvider extends ServiceProvider
         }
 
         view()->share('footerCategories', $footerCategories);
+
+        \Illuminate\Support\Facades\View::composer(
+            ['layouts.admin', 'layouts.admin.*', 'admin.*'],
+            function (\Illuminate\View\View $view) {
+                $view->with(
+                    'adminWebsiteSetting',
+                    \App\Models\WebsiteSetting::query()->orderBy('id')->first()
+                );
+            }
+        );
+
     }
 }

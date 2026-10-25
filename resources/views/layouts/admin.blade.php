@@ -1,3 +1,13 @@
+@php
+    $adminBrandName = $adminWebsiteSetting?->website_name ?: 'De Lamoure';
+
+    $adminLogoUrl = $adminWebsiteSetting?->logo ? asset('storage/' . ltrim($adminWebsiteSetting->logo, '/')) : null;
+
+    $adminFaviconUrl = $adminWebsiteSetting?->favicon
+        ? asset('storage/' . ltrim($adminWebsiteSetting->favicon, '/'))
+        : asset('assets/images/others/favicon.ico');
+@endphp
+
 <!DOCTYPE html>
 <html lang="en" dir="ltr" class="no-js">
 
@@ -10,38 +20,38 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <!-- SEO -->
-    <meta name="description" content="Springcrest Trading Admin Dashboard">
-    <meta name="author" content="Springcrest Trading">
+    <!-- Admin Information -->
+    <meta name="description" content="{{ $adminBrandName }} Admin Dashboard">
+    <meta name="author" content="{{ $adminBrandName }}">
+    <meta name="robots" content="noindex, nofollow">
 
     <!-- Title -->
-    <title>
-        @yield('title', config('app.name', 'Springcrest Trading') . ' Admin')
-    </title>
-
-    {{-- <!-- Favicon -->
-    <link rel="icon"
-          type="image/png"
-          href="{{ asset('assets/images/favicon.png') }}">
-
-    <link rel="shortcut icon"
-          type="image/png"
-          href="{{ asset('assets/images/favicon.png') }}">
-
-    <!-- Apple Touch Icon -->
-    <link rel="apple-touch-icon"
-          href="{{ asset('assets/images/favicon.png') }}"> --}}
+    <title>@yield('title', $adminBrandName . ' Admin')</title>
 
     <!-- Theme Color -->
     <meta name="theme-color" content="#0d6efd">
+
+    <!-- Favicon -->
+    <link rel="icon" href="{{ $adminFaviconUrl }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <!-- Styles -->
+    <!-- Plugin Styles -->
+    <link rel="stylesheet" href="{{ asset('admin/assets/plugin/datatables/responsive.datatables.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('admin/assets/plugin/datatables/datatables.bootstrap5.min.css') }}">
+
+    <!-- Project Styles -->
+    <link rel="stylesheet" href="{{ asset('admin/assets/css/ebazar.style.min.css') }}">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+
     @stack('styles')
-</head> <!-- Favicon-->
+</head>
 
 <!-- plugin css file  -->
 <link rel="stylesheet" href="{{ asset('admin/assets/plugin/datatables/responsive.datatables.min.css') }}">

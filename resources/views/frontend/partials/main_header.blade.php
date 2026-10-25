@@ -82,7 +82,6 @@
 
         <div class="container container-xxl d-flex align-items-center py-4">
 
-
             {{-- Social Media --}}
             <div class="w-50 d-none d-lg-block">
 
@@ -91,69 +90,45 @@
                     {{-- Instagram --}}
                     @if (!empty($setting?->instagram))
                         <li class="list-inline-item">
-
                             <a href="{{ $setting->instagram }}" target="_blank" rel="noopener noreferrer"
                                 title="Instagram">
-
-                                <svg class="icon">
-                                    <use xlink:href="#instagram"></use>
-                                </svg>
-
+                                <i class="fa-brands fa-instagram" aria-hidden="true"></i>
                             </a>
-
                         </li>
                     @endif
-
 
                     {{-- Facebook --}}
                     @if (!empty($setting?->facebook))
                         <li class="list-inline-item ms-6">
-
                             <a href="{{ $setting->facebook }}" target="_blank" rel="noopener noreferrer"
                                 title="Facebook">
-
-                                <svg class="icon">
-                                    <use xlink:href="#facebook"></use>
-                                </svg>
-
+                                <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
                             </a>
-
                         </li>
                     @endif
 
-
-                    {{-- WhatsApp --}}
-                    @if (!empty($setting?->phone))
+                    {{-- Snapchat --}}
+                    @if (!empty($setting?->snapchat))
                         <li class="list-inline-item ms-6">
-
-                            <a href="https://wa.me/{{ preg_replace('/\D+/', '', $setting->phone) }}" target="_blank"
-                                rel="noopener noreferrer" title="WhatsApp">
-
-                                <svg class="icon">
-                                    <use xlink:href="#whatsapp"></use>
-                                </svg>
-
+                            <a href="{{ $setting->snapchat }}" target="_blank" rel="noopener noreferrer"
+                                title="Snapchat">
+                                <i class="fa-brands fa-snapchat" aria-hidden="true"></i>
                             </a>
+                        </li>
+                    @endif
 
+                    {{-- TikTok --}}
+                    @if (!empty($setting?->tiktok))
+                        <li class="list-inline-item ms-6">
+                            <a href="{{ $setting->tiktok }}" target="_blank" rel="noopener noreferrer" title="TikTok">
+                                <i class="fa-brands fa-tiktok" aria-hidden="true"></i>
+                            </a>
                         </li>
                     @endif
 
                 </ul>
 
             </div>
-
-
-
-            {{-- Announcement --}}
-            {{-- <div class="flex-grow-1 text-center px-3">
-
-                <p class="mb-0 fs-14px fw-bold text-primary text-uppercase">
-
-                    Discover New Arrivals, Accessories & Gift Sets
-
-                </p>
-
-            </div> --}}
 
 
 

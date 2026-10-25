@@ -129,7 +129,7 @@
                         </div>
 
                         {{-- SEO SETTINGS --}}
-                        <div class="card mb-3">
+                        {{-- <div class="card mb-3">
                             <div class="card-header py-3">
                                 <h6 class="mb-0 fw-bold">SEO & Meta Information</h6>
                             </div>
@@ -153,52 +153,43 @@
                                 </div>
 
                             </div>
-                        </div>
+                        </div> --}}
 
                         {{-- SOCIAL MEDIA --}}
+
                         <div class="card">
                             <div class="card-header py-3">
                                 <h6 class="mb-0 fw-bold">Social Media Links</h6>
                             </div>
 
                             <div class="card-body">
-
                                 <div class="mb-3">
-                                    <label class="form-label">Facebook</label>
-                                    <input type="url" name="facebook" class="form-control"
-                                        value="{{ old('facebook', $setting->facebook) }}">
+                                    <label for="facebook" class="form-label">Facebook</label>
+                                    <input type="url" id="facebook" name="facebook" class="form-control"
+                                        value="{{ old('facebook', $setting->facebook) }}"
+                                        placeholder="https://www.facebook.com/yourpage">
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">Instagram</label>
-                                    <input type="url" name="instagram" class="form-control"
-                                        value="{{ old('instagram', $setting->instagram) }}">
+                                    <label for="instagram" class="form-label">Instagram</label>
+                                    <input type="url" id="instagram" name="instagram" class="form-control"
+                                        value="{{ old('instagram', $setting->instagram) }}"
+                                        placeholder="https://www.instagram.com/yourusername">
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">X (Twitter)</label>
-                                    <input type="url" name="twitter" class="form-control"
-                                        value="{{ old('twitter', $setting->twitter) }}">
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">LinkedIn</label>
-                                    <input type="url" name="linkedin" class="form-control"
-                                        value="{{ old('linkedin', $setting->linkedin) }}">
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">YouTube</label>
-                                    <input type="url" name="youtube" class="form-control"
-                                        value="{{ old('youtube', $setting->youtube) }}">
+                                    <label for="snapchat" class="form-label">Snapchat</label>
+                                    <input type="url" id="snapchat" name="snapchat" class="form-control"
+                                        value="{{ old('snapchat', $setting->snapchat) }}"
+                                        placeholder="https://www.snapchat.com/add/yourusername">
                                 </div>
 
                                 <div class="mb-0">
-                                    <label class="form-label">TikTok</label>
-                                    <input type="url" name="tiktok" class="form-control"
-                                        value="{{ old('tiktok', $setting->tiktok) }}">
+                                    <label for="tiktok" class="form-label">TikTok</label>
+                                    <input type="url" id="tiktok" name="tiktok" class="form-control"
+                                        value="{{ old('tiktok', $setting->tiktok) }}"
+                                        placeholder="https://www.tiktok.com/@yourusername">
                                 </div>
-
                             </div>
                         </div>
 
@@ -267,6 +258,53 @@
                                     Recommended size: 300 × 300px
                                 </small>
 
+                            </div>
+                        </div>
+
+                        {{-- ADMIN PASSWORD --}}
+                        <div class="card mb-3">
+                            <div class="card-header py-3">
+                                <h6 class="mb-0 fw-bold">Update Admin Password</h6>
+                            </div>
+
+                            <div class="card-body">
+                                <p class="text-muted small">
+                                    Leave these fields blank to keep your current password.
+                                </p>
+
+                                <div class="mb-3">
+                                    <label for="current_password" class="form-label">
+                                        Current Password
+                                    </label>
+                                    <input type="password" id="current_password" name="current_password"
+                                        class="form-control @error('current_password') is-invalid @enderror"
+                                        autocomplete="current-password">
+
+                                    @error('current_password')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">
+                                        New Password
+                                    </label>
+                                    <input type="password" id="password" name="password"
+                                        class="form-control @error('password') is-invalid @enderror"
+                                        autocomplete="new-password" minlength="8">
+
+                                    @error('password')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-0">
+                                    <label for="password_confirmation" class="form-label">
+                                        Confirm New Password
+                                    </label>
+                                    <input type="password" id="password_confirmation" name="password_confirmation"
+                                        class="form-control" autocomplete="new-password" minlength="8">
+                                </div>
                             </div>
                         </div>
 

@@ -117,69 +117,39 @@
 
                     <ul class="list-inline fs-18px ms-sm-6 mb-0">
 
-                        @if (!empty($setting->twitter))
+                        @if (!empty($setting?->snapchat))
                             <li class="list-inline-item me-8">
-
-                                <a href="{{ $setting->twitter }}" target="_blank" rel="noopener" aria-label="Twitter">
-
-                                    <i class="fab fa-twitter"></i>
-
+                                <a href="{{ $setting->snapchat }}" target="_blank" rel="noopener noreferrer"
+                                    aria-label="Snapchat">
+                                    <i class="fa-brands fa-snapchat" aria-hidden="true"></i>
                                 </a>
-
                             </li>
                         @endif
 
-
-                        @if (!empty($setting->facebook))
+                        @if (!empty($setting?->facebook))
                             <li class="list-inline-item me-8">
-
-                                <a href="{{ $setting->facebook }}" target="_blank" rel="noopener"
+                                <a href="{{ $setting->facebook }}" target="_blank" rel="noopener noreferrer"
                                     aria-label="Facebook">
-
-                                    <i class="fab fa-facebook-f"></i>
-
+                                    <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
                                 </a>
-
                             </li>
                         @endif
 
-
-                        @if (!empty($setting->instagram))
+                        @if (!empty($setting?->instagram))
                             <li class="list-inline-item me-8">
-
-                                <a href="{{ $setting->instagram }}" target="_blank" rel="noopener"
+                                <a href="{{ $setting->instagram }}" target="_blank" rel="noopener noreferrer"
                                     aria-label="Instagram">
-
-                                    <i class="fab fa-instagram"></i>
-
+                                    <i class="fa-brands fa-instagram" aria-hidden="true"></i>
                                 </a>
-
                             </li>
                         @endif
 
-
-                        @if (!empty($setting->youtube))
-                            <li class="list-inline-item me-8">
-
-                                <a href="{{ $setting->youtube }}" target="_blank" rel="noopener" aria-label="YouTube">
-
-                                    <i class="fab fa-youtube"></i>
-
-                                </a>
-
-                            </li>
-                        @endif
-
-
-                        @if (!empty($setting->tiktok))
+                        @if (!empty($setting?->tiktok))
                             <li class="list-inline-item">
-
-                                <a href="{{ $setting->tiktok }}" target="_blank" rel="noopener" aria-label="TikTok">
-
-                                    <i class="fab fa-tiktok"></i>
-
+                                <a href="{{ $setting->tiktok }}" target="_blank" rel="noopener noreferrer"
+                                    aria-label="TikTok">
+                                    <i class="fa-brands fa-tiktok" aria-hidden="true"></i>
                                 </a>
-
                             </li>
                         @endif
 
