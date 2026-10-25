@@ -1,8 +1,17 @@
 @extends('layouts.app')
 
-@section('meta_title', 'Wholesale | Dela Moure Fragrances & Home Scents')
-@section('meta_description', 'Explore Dela Moure wholesale products, minimum order quantities and volume pricing for
-    fragrances and home scent essentials.')
+{{-- Wholesale Page SEO / Social Sharing --}}
+@section('meta_title', 'Wholesale | De Lamoure Fragrances & Home Scents')
+
+@section('meta_description', 'Shop De Lamoure fragrances and home scents at wholesale prices. Explore our collection,
+    minimum order quantities and pricing for retailers, resellers and bulk buyers.')
+
+@section('meta_keywords', 'De Lamoure wholesale, wholesale fragrances Nigeria, bulk home scents, wholesale diffusers,
+    scented candles, air fresheners, fragrance resellers')
+
+@section('meta_image', asset('assets/images/others/social-share.jpg'))
+@section('meta_image_alt', 'De Lamoure Wholesale — Fragrances and Home Scents')
+@section('meta_type', 'website')
 
 @section('PageContent')
     <section class="pb-lg-20 pb-16">

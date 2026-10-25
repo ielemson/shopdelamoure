@@ -1,6 +1,17 @@
 @extends('layouts.app')
 
-@section('meta_title', 'About Dela Moure | Luxury Fragrances & Home Scents')
+{{-- About Page SEO / Social Sharing --}}
+@section('meta_title', 'About De Lamoure | Signature Fragrances & Home Scents')
+
+@section('meta_description', 'Discover De Lamoure and our passion for everyday luxury through thoughtfully curated
+    fragrances, home scents and gifts for the moments that matter.')
+
+@section('meta_keywords', 'about De Lamoure, Delamoure, home fragrances, luxury home scents, diffusers, scented candles,
+    essential oils, fragrance gifts Nigeria')
+
+@section('meta_image', asset('assets/images/others/social-share.jpg'))
+@section('meta_image_alt', 'About De Lamoure — Signature Fragrances and Home Scents')
+@section('meta_type', 'website')
 
 @section('meta_description',
     'Discover the story behind Dela Moure and our passion for luxury perfumes, diffusers,
@@ -233,10 +244,10 @@
 @push('styles')
     <style>
         /*
-                |--------------------------------------------------------------------------
-                | Delamoure About Page
-                |--------------------------------------------------------------------------
-                */
+                    |--------------------------------------------------------------------------
+                    | Delamoure About Page
+                    |--------------------------------------------------------------------------
+                    */
 
         .about-eyebrow {
             display: inline-block;
@@ -262,10 +273,10 @@
         }
 
         /*
-                |--------------------------------------------------------------------------
-                | Introduction Image
-                |--------------------------------------------------------------------------
-                */
+                    |--------------------------------------------------------------------------
+                    | Introduction Image
+                    |--------------------------------------------------------------------------
+                    */
 
         .about-image-wrapper {
             position: relative;
@@ -291,10 +302,10 @@
         }
 
         /*
-                |--------------------------------------------------------------------------
-                | Brand Values
-                |--------------------------------------------------------------------------
-                */
+                    |--------------------------------------------------------------------------
+                    | Brand Values
+                    |--------------------------------------------------------------------------
+                    */
 
         .about-values {
             background: #fbf9f6;
@@ -337,10 +348,10 @@
         }
 
         /*
-                |--------------------------------------------------------------------------
-                | Mission and Vision
-                |--------------------------------------------------------------------------
-                */
+                    |--------------------------------------------------------------------------
+                    | Mission and Vision
+                    |--------------------------------------------------------------------------
+                    */
 
         .about-mission-section {
             background: #3b2d27;
@@ -373,10 +384,10 @@
         }
 
         /*
-                |--------------------------------------------------------------------------
-                | CTA
-                |--------------------------------------------------------------------------
-                */
+                    |--------------------------------------------------------------------------
+                    | CTA
+                    |--------------------------------------------------------------------------
+                    */
 
         .about-cta {
             background: #faf7f2;
@@ -384,10 +395,10 @@
         }
 
         /*
-                |--------------------------------------------------------------------------
-                | Responsive
-                |--------------------------------------------------------------------------
-                */
+                    |--------------------------------------------------------------------------
+                    | Responsive
+                    |--------------------------------------------------------------------------
+                    */
 
         @media (max-width: 991.98px) {
             .about-title {

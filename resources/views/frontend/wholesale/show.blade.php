@@ -1,8 +1,41 @@
 @extends('layouts.app')
 
-@section('meta_title', $product->name . ' Wholesale | Dela Moure')
-@section('meta_description', \Illuminate\Support\Str::limit(strip_tags($product->short_description ??
-    ($product->description ?? 'Explore Dela Moure wholesale prices and quantity discounts.')), 155))
+@php
+    $wholesaleMetaTitle = $product->name . ' Wholesale | De Lamoure';
+
+    $cleanWholesaleMetaText = static function ($value) {
+        $text = html_entity_decode(strip_tags((string) $value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return trim(preg_replace('/[\s\x{00A0}]+/u', ' ', strip_tags($text)) ?? '');
+    };
+
+    $wholesaleMetaDescription = $cleanWholesaleMetaText($product->short_description);
+
+    if ($wholesaleMetaDescription === '') {
+        $wholesaleMetaDescription = $cleanWholesaleMetaText($product->description);
+    }
+
+    if ($wholesaleMetaDescription === '') {
+        $wholesaleMetaDescription =
+            'Explore wholesale pricing and minimum order quantities for ' . $product->name . ' at De Lamoure.';
+    }
+
+    $wholesaleMetaImagePath =
+        $product->main_image ?:
+        $product->images->first(fn($image) => filled($image->image))?->image ?:
+        $product->variants->first(fn($variant) => filled($variant->image))?->image;
+
+    $wholesaleMetaImage = $wholesaleMetaImagePath
+        ? asset($wholesaleMetaImagePath)
+        : asset('assets/images/others/social-share.jpg');
+@endphp
+
+{{-- Wholesale Product SEO / Social Sharing --}}
+@section('meta_title', $wholesaleMetaTitle)
+@section('meta_description', $wholesaleMetaDescription)
+@section('meta_image', $wholesaleMetaImage)
+@section('meta_image_alt', $product->name . ' — De Lamoure Wholesale')
+@section('meta_type', 'product')
 
 @section('PageContent')
     @php

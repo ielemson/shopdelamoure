@@ -1,6 +1,59 @@
 @extends('layouts.app')
 
-@section('meta_title', $product->name . ' | Dela Moure Luxury Fragrances')
+@php
+    /*
+    |--------------------------------------------------------------------------
+    | Product Sharing Metadata
+    |--------------------------------------------------------------------------
+    */
+
+    $productMetaTitle = $product->name . ' | De Lamoure';
+
+    // Convert descriptions to clean plain text for social previews.
+    $cleanMetaText = static function ($value) {
+        $text = html_entity_decode(strip_tags((string) $value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        $text = strip_tags($text);
+
+        return trim(preg_replace('/[\s\x{00A0}]+/u', ' ', $text) ?? '');
+    };
+
+    $productMetaDescription = $cleanMetaText($product->short_description);
+
+    if ($productMetaDescription === '') {
+        $productMetaDescription = $cleanMetaText($product->description);
+    }
+
+    if ($productMetaDescription === '') {
+        $productMetaDescription = 'Discover ' . $product->name . ' at De Lamoure.';
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sharing Image
+    |--------------------------------------------------------------------------
+    |
+    | Use the main image, then a gallery image, then a variant image.
+    | Paths follow the same asset() convention as your product gallery.
+    |
+    */
+
+    $productMetaImagePath =
+        $product->main_image ?:
+        $product->images->firstWhere('image', '!=', '')?->image ?:
+        $product->variants->firstWhere('image', '!=', '')?->image;
+
+    $productMetaImage = $productMetaImagePath
+        ? asset($productMetaImagePath)
+        : asset('assets/images/others/social-share.jpg');
+@endphp
+
+@section('meta_title', $productMetaTitle)
+@section('meta_description', $productMetaDescription)
+@section('meta_image', $productMetaImage)
+@section('meta_image_alt', $product->name)
+@section('meta_type', 'product')
+
 
 @section('meta_description',
     Str::limit(

@@ -1,6 +1,19 @@
 @extends('layouts.app')
 
-@section('meta_title', 'Contact Us | Dela Moure Luxury Fragrances & Home Scents')
+{{-- Contact Page SEO / Social Sharing --}}
+@section('meta_title', 'Contact De Lamoure | We’re Here to Help')
+
+@section('meta_description',
+    'Get in touch with De Lamoure for product enquiries, order assistance, wholesale
+    opportunities and help choosing fragrances for your home, bathroom or car.')
+
+@section('meta_keywords',
+    'contact De Lamoure, Delamoure customer support, fragrance enquiries, order assistance,
+    wholesale fragrances Nigeria')
+
+@section('meta_image', asset('assets/images/others/social-share.jpg'))
+@section('meta_image_alt', 'Contact De Lamoure — Product Enquiries and Customer Support')
+@section('meta_type', 'website')
 
 @section('meta_description',
     'Contact Dela Moure for enquiries, product assistance, orders, delivery support and help
