@@ -1,78 +1,142 @@
 @php
-    $catalogOpen = request()->routeIs(
-        'admin.products.*',
-        'admin.categories.*'
-    );
-
-    $inventoryOpen = request()->routeIs('admin.inventory.*');
-
-    $deliveryOpen = request()->routeIs(
-        'admin.delivery.settings*',
-        'admin.shipping-rates.*',
-        'admin.shipping-packages.*',
-        'admin.terminal-checkout.*'
-    );
-
-    $catalogLinks = [
+    $menus = [
         [
-            'label' => 'All Products',
-            'route' => 'admin.products.index',
-            'active' => request()->routeIs('admin.products.*')
-                && !request()->routeIs('admin.products.create'),
+            'label' => 'Dashboard',
+            'icon' => 'icofont-home',
+            'permission' => 'manage store',
+            'route' => 'home',
+            'patterns' => ['home'],
         ],
         [
-            'label' => 'Add Product',
-            'route' => 'admin.products.create',
-            'active' => request()->routeIs('admin.products.create'),
+            'label' => 'Orders',
+            'icon' => 'icofont-notepad',
+            'permission' => 'manage store',
+            'route' => 'admin.orders.index',
+            'patterns' => ['admin.orders.*'],
         ],
         [
-            'label' => 'Categories',
-            'route' => 'admin.categories.index',
-            'active' => request()->routeIs('admin.categories.*')
-                && !request()->routeIs('admin.categories.create'),
+            'label' => 'Customers',
+            'icon' => 'icofont-users-alt-5',
+            'permission' => 'manage store',
+            'route' => 'admin.customers.index',
+            'patterns' => ['admin.customers.*'],
         ],
         [
-            'label' => 'Add Category',
-            'route' => 'admin.categories.create',
-            'active' => request()->routeIs('admin.categories.create'),
-        ],
-    ];
-
-    $inventoryLinks = [
-        [
-            'label' => 'Stock List',
-            'route' => 'admin.inventory.index',
-        ],
-        [
-            'label' => 'Low Stock',
-            'route' => 'admin.inventory.low-stock',
-        ],
-        [
-            'label' => 'Stock Movements',
-            'route' => 'admin.inventory.movements',
-        ],
-    ];
-
-    $deliveryLinks = [
-        [
-            'label' => 'Delivery Settings',
-            'route' => 'admin.delivery.settings',
-            'active' => request()->routeIs('admin.delivery.settings*'),
-        ],
-        [
-            'label' => 'Local Delivery Rates',
-            'route' => 'admin.shipping-rates.index',
-            'active' => request()->routeIs('admin.shipping-rates.*'),
+            'label' => 'Catalog',
+            'icon' => 'icofont-box',
+            'permission' => 'manage store',
+            'id' => 'menu-catalog',
+            'patterns' => ['admin.products.*', 'admin.categories.*'],
+            'children' => [
+                [
+                    'label' => 'All Products',
+                    'route' => 'admin.products.index',
+                    'active' => request()->routeIs('admin.products.*')
+                        && ! request()->routeIs('admin.products.create'),
+                ],
+                [
+                    'label' => 'Add Product',
+                    'route' => 'admin.products.create',
+                    'active' => request()->routeIs('admin.products.create'),
+                ],
+                [
+                    'label' => 'Categories',
+                    'route' => 'admin.categories.index',
+                    'active' => request()->routeIs('admin.categories.*')
+                        && ! request()->routeIs('admin.categories.create'),
+                ],
+                [
+                    'label' => 'Add Category',
+                    'route' => 'admin.categories.create',
+                    'active' => request()->routeIs('admin.categories.create'),
+                ],
+            ],
         ],
         [
-            'label' => 'Packaging & Quote Tests',
-            'route' => 'admin.shipping-packages.index',
-            'active' => request()->routeIs('admin.shipping-packages.*'),
+            'label' => 'Inventory',
+            'icon' => 'icofont-chart-histogram',
+            'permission' => 'manage store',
+            'id' => 'menu-inventory',
+            'patterns' => ['admin.inventory.*'],
+            'children' => [
+                [
+                    'label' => 'Stock List',
+                    'route' => 'admin.inventory.index',
+                    'active' => request()->routeIs('admin.inventory.index'),
+                ],
+                [
+                    'label' => 'Low Stock',
+                    'route' => 'admin.inventory.low-stock',
+                    'active' => request()->routeIs('admin.inventory.low-stock'),
+                ],
+                [
+                    'label' => 'Stock Movements',
+                    'route' => 'admin.inventory.movements',
+                    'active' => request()->routeIs('admin.inventory.movements'),
+                ],
+            ],
         ],
         [
-            'label' => 'Terminal Checkout',
-            'route' => 'admin.terminal-checkout.edit',
-            'active' => request()->routeIs('admin.terminal-checkout.*'),
+            'label' => 'Delivery',
+            'icon' => 'icofont-truck-alt',
+            'permission' => 'manage delivery settings',
+            'id' => 'menu-delivery',
+            'patterns' => [
+                'admin.delivery.settings*',
+                'admin.shipping-rates.*',
+                'admin.shipping-packages.*',
+                'admin.terminal-checkout.*',
+            ],
+            'children' => [
+                [
+                    'label' => 'Delivery Settings',
+                    'route' => 'admin.delivery.settings',
+                    'active' => request()->routeIs('admin.delivery.settings*'),
+                ],
+                [
+                    'label' => 'Local Delivery Rates',
+                    'route' => 'admin.shipping-rates.index',
+                    'active' => request()->routeIs('admin.shipping-rates.*'),
+                ],
+                [
+                    'label' => 'Packaging & Quote Tests',
+                    'route' => 'admin.shipping-packages.index',
+                    'active' => request()->routeIs('admin.shipping-packages.*'),
+                ],
+                [
+                    'label' => 'Terminal Checkout',
+                    'route' => 'admin.terminal-checkout.edit',
+                    'active' => request()->routeIs('admin.terminal-checkout.*'),
+                ],
+            ],
+        ],
+        [
+            'label' => 'Coupons',
+            'icon' => 'icofont-tag',
+            'permission' => 'manage store',
+            'route' => 'admin.coupons.index',
+            'patterns' => ['admin.coupons.*'],
+        ],
+        [
+            'label' => 'Admin Management',
+            'icon' => 'icofont-users-alt-5',
+            'permission' => 'manage admins',
+            'route' => 'admin.admins.index',
+            'patterns' => ['admin.admins.*'],
+        ],
+        [
+            'label' => 'Role Management',
+            'icon' => 'icofont-lock',
+            'permission' => 'manage admins',
+            'route' => 'admin.roles.index',
+            'patterns' => ['admin.roles.*'],
+        ],
+        [
+            'label' => 'Website Settings',
+            'icon' => 'icofont-gear',
+            'permission' => 'manage website settings',
+            'route' => 'admin.website.settings',
+            'patterns' => ['admin.website.settings*'],
         ],
     ];
 @endphp
@@ -96,156 +160,55 @@
 
         <ul class="menu-list flex-grow-1 mt-3">
 
-            {{-- Dashboard --}}
-            <li>
-                <a
-                    href="{{ route('home') }}"
-                    class="m-link {{ request()->routeIs('home') ? 'active' : '' }}"
-                >
-                    <i class="icofont-home fs-5"></i>
-                    <span>Dashboard</span>
-                </a>
-            </li>
+            {{-- Permission-controlled menus --}}
+            @foreach ($menus as $menu)
+                @can($menu['permission'])
+                    @php
+                        $menuActive = request()->routeIs(...$menu['patterns']);
+                    @endphp
 
-            {{-- Orders --}}
-            <li>
-                <a
-                    href="{{ route('admin.orders.index') }}"
-                    class="m-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}"
-                >
-                    <i class="icofont-notepad fs-5"></i>
-                    <span>Orders</span>
-                </a>
-            </li>
-
-            {{-- Customers --}}
-            <li>
-                <a
-                    href="{{ route('admin.customers.index') }}"
-                    class="m-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}"
-                >
-                    <i class="icofont-users-alt-5 fs-5"></i>
-                    <span>Customers</span>
-                </a>
-            </li>
-
-            {{-- Catalog --}}
-            <li>
-                <a
-                    href="#menu-catalog"
-                    class="m-link {{ $catalogOpen ? 'active' : 'collapsed' }}"
-                    data-bs-toggle="collapse"
-                    role="button"
-                    aria-expanded="{{ $catalogOpen ? 'true' : 'false' }}"
-                    aria-controls="menu-catalog"
-                >
-                    <i class="icofont-box fs-5"></i>
-                    <span>Catalog</span>
-                    <span class="arrow icofont-rounded-down ms-auto fs-5"></span>
-                </a>
-
-                <ul
-                    id="menu-catalog"
-                    class="sub-menu collapse {{ $catalogOpen ? 'show' : '' }}"
-                >
-                    @foreach ($catalogLinks as $link)
-                        <li>
+                    <li>
+                        @if (isset($menu['children']))
                             <a
-                                href="{{ route($link['route']) }}"
-                                class="ms-link {{ $link['active'] ? 'active' : '' }}"
+                                href="#{{ $menu['id'] }}"
+                                class="m-link {{ $menuActive ? 'active' : 'collapsed' }}"
+                                data-bs-toggle="collapse"
+                                role="button"
+                                aria-expanded="{{ $menuActive ? 'true' : 'false' }}"
+                                aria-controls="{{ $menu['id'] }}"
                             >
-                                {{ $link['label'] }}
+                                <i class="{{ $menu['icon'] }} fs-5"></i>
+                                <span>{{ $menu['label'] }}</span>
+                                <span class="arrow icofont-rounded-down ms-auto fs-5"></span>
                             </a>
-                        </li>
-                    @endforeach
-                </ul>
-            </li>
 
-            {{-- Inventory --}}
-            <li>
-                <a
-                    href="#menu-inventory"
-                    class="m-link {{ $inventoryOpen ? 'active' : 'collapsed' }}"
-                    data-bs-toggle="collapse"
-                    role="button"
-                    aria-expanded="{{ $inventoryOpen ? 'true' : 'false' }}"
-                    aria-controls="menu-inventory"
-                >
-                    <i class="icofont-chart-histogram fs-5"></i>
-                    <span>Inventory</span>
-                    <span class="arrow icofont-rounded-down ms-auto fs-5"></span>
-                </a>
-
-                <ul
-                    id="menu-inventory"
-                    class="sub-menu collapse {{ $inventoryOpen ? 'show' : '' }}"
-                >
-                    @foreach ($inventoryLinks as $link)
-                        <li>
+                            <ul
+                                id="{{ $menu['id'] }}"
+                                class="sub-menu collapse {{ $menuActive ? 'show' : '' }}"
+                            >
+                                @foreach ($menu['children'] as $link)
+                                    <li>
+                                        <a
+                                            href="{{ route($link['route']) }}"
+                                            class="ms-link {{ $link['active'] ? 'active' : '' }}"
+                                        >
+                                            {{ $link['label'] }}
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @else
                             <a
-                                href="{{ route($link['route']) }}"
-                                class="ms-link {{ request()->routeIs($link['route']) ? 'active' : '' }}"
+                                href="{{ route($menu['route']) }}"
+                                class="m-link {{ $menuActive ? 'active' : '' }}"
                             >
-                                {{ $link['label'] }}
+                                <i class="{{ $menu['icon'] }} fs-5"></i>
+                                <span>{{ $menu['label'] }}</span>
                             </a>
-                        </li>
-                    @endforeach
-                </ul>
-            </li>
-
-            {{-- Delivery --}}
-            <li>
-                <a
-                    href="#menu-delivery"
-                    class="m-link {{ $deliveryOpen ? 'active' : 'collapsed' }}"
-                    data-bs-toggle="collapse"
-                    role="button"
-                    aria-expanded="{{ $deliveryOpen ? 'true' : 'false' }}"
-                    aria-controls="menu-delivery"
-                >
-                    <i class="icofont-truck-alt fs-5"></i>
-                    <span>Delivery</span>
-                    <span class="arrow icofont-rounded-down ms-auto fs-5"></span>
-                </a>
-
-                <ul
-                    id="menu-delivery"
-                    class="sub-menu collapse {{ $deliveryOpen ? 'show' : '' }}"
-                >
-                    @foreach ($deliveryLinks as $link)
-                        <li>
-                            <a
-                                href="{{ route($link['route']) }}"
-                                class="ms-link {{ $link['active'] ? 'active' : '' }}"
-                            >
-                                {{ $link['label'] }}
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-            </li>
-
-            {{-- Coupons --}}
-            <li>
-                <a
-                    href="{{ route('admin.coupons.index') }}"
-                    class="m-link {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}"
-                >
-                    <i class="icofont-tag fs-5"></i>
-                    <span>Coupons</span>
-                </a>
-            </li>
-
-            {{-- Website Settings --}}
-            <li>
-                <a
-                    href="{{ route('admin.website.settings') }}"
-                    class="m-link {{ request()->routeIs('admin.website.settings*') ? 'active' : '' }}"
-                >
-                    <i class="icofont-gear fs-5"></i>
-                    <span>Website Settings</span>
-                </a>
-            </li>
+                        @endif
+                    </li>
+                @endcan
+            @endforeach
 
             {{-- Storefront --}}
             <li>
@@ -276,6 +239,7 @@
                     </form>
                 </li>
             @endauth
+
         </ul>
 
         {{-- Collapse Sidebar --}}
@@ -288,5 +252,6 @@
                 <i class="icofont-bubble-right"></i>
             </span>
         </button>
+
     </div>
 </div>

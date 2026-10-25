@@ -70,7 +70,7 @@ return Application::configure(
     })
 
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+
     })
 
     ->create();

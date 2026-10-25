@@ -6,20 +6,22 @@
 |--------------------------------------------------------------------------
 */
 
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DeliverySettingController;
+use App\Http\Controllers\Admin\InventoryController;
 /*
 |--------------------------------------------------------------------------
 | General Controllers
 |--------------------------------------------------------------------------
 */
 
-use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\ShippingPackageController;
 use App\Http\Controllers\Admin\ShippingRateController;
 use App\Http\Controllers\Admin\WebsiteSettingController;
@@ -268,77 +270,22 @@ Route::prefix('admin')
     ->middleware(['auth', 'role:Admin'])
     ->group(function () {
 
-        Route::get('/shipping-packages', [ShippingPackageController::class, 'index'])
-            ->name('shipping-packages.index');
-        Route::post('/shipping-packages', [ShippingPackageController::class, 'store'])
-            ->name('shipping-packages.store');
-        Route::put('/shipping-packages/{shippingPackage}', [ShippingPackageController::class, 'update'])
-            ->name('shipping-packages.update');
-        Route::post('/shipping-packages/quote', [ShippingPackageController::class, 'quote'])
-            ->middleware('throttle:3,1')->name('shipping-packages.quote');
-
-        Route::get('/shipping-packages/cities', [ShippingPackageController::class, 'cities',
-        ])->middleware('throttle:10,1')->name('shipping-packages.cities');
-
         /*
         |--------------------------------------------------------------------------
-        | Categories
+        | Admin and Role Management
         |--------------------------------------------------------------------------
         */
 
-        Route::resource('categories', AdminCategoryController::class);
+        Route::middleware('permission:manage admins')
+            ->group(function () {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Products
-        |--------------------------------------------------------------------------
-        */
+                Route::resource('roles', RoleController::class)
+                    ->only(['index', 'store', 'update', 'destroy']);
 
-        Route::resource('products', AdminProductController::class);
+                Route::resource('admins', AdminUserController::class)
+                    ->only(['index', 'create', 'store', 'edit', 'update']);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Product Variants
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('products/{product}/variants', [
-            ProductVariantController::class,
-            'index',
-        ])->name('products.variants.index');
-
-        Route::get('products/{product}/variants/create', [
-            ProductVariantController::class,
-            'create',
-        ])->name('products.variants.create');
-
-        Route::post('products/{product}/variants', [
-            ProductVariantController::class,
-            'store',
-        ])->name('products.variants.store');
-
-        Route::get('products/{product}/variants/{variant}/edit', [
-            ProductVariantController::class,
-            'edit',
-        ])->name('products.variants.edit');
-
-        Route::put('products/{product}/variants/{variant}', [
-            ProductVariantController::class,
-            'update',
-        ])->name('products.variants.update');
-
-        Route::delete('products/{product}/variants/{variant}', [
-            ProductVariantController::class,
-            'destroy',
-        ])->name('products.variants.destroy');
-
-        /*
-        |--------------------------------------------------------------------------
-        | Customers
-        |--------------------------------------------------------------------------
-        */
-
-        Route::resource('customers', CustomerController::class);
+            });
 
         /*
         |--------------------------------------------------------------------------
@@ -346,132 +293,286 @@ Route::prefix('admin')
         |--------------------------------------------------------------------------
         */
 
-        Route::get('/website-settings', [WebsiteSettingController::class, 'edit'])
-            ->name('website.settings');
-
-        Route::put('/website-settings', [WebsiteSettingController::class, 'update'])
-            ->name('website.settings.update');
-
-        /*
-        |--------------------------------------------------------------------------
-        | Orders
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('/orders', [OrderController::class, 'index'])
-            ->name('orders.index');
-
-        Route::get('/orders/{order}', [OrderController::class, 'show'])
-            ->name('orders.show');
-
-        Route::patch('/orders/{order}/status', [
-            OrderController::class,
-            'updateStatus',
-        ])->name('orders.updateStatus');
-
-        Route::patch('/orders/{order}/payment-status', [
-            OrderController::class,
-            'updatePaymentStatus',
-        ])->name('orders.updatePaymentStatus');
-
-        Route::post('/orders/{order}/refund', [OrderController::class, 'refund'])
-            ->name('orders.refund');
-
-        Route::patch('/orders/{order}/return', [OrderController::class, 'updateReturn'])
-            ->name('orders.return.update');
-
-        /*
-        |--------------------------------------------------------------------------
-        | Delivery Settings
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('/delivery-settings', [
-            DeliverySettingController::class,
-            'edit',
-        ])->name('delivery.settings');
-
-        Route::put('/delivery-settings', [
-            DeliverySettingController::class,
-            'update',
-        ])->name('delivery.settings.update');
-
-        Route::post('/delivery-settings/test-connection', [
-            DeliverySettingController::class,
-            'testConnection',
-        ])->middleware('throttle:5,1')
-            ->name('delivery.settings.test');
-
-        /*
-        |--------------------------------------------------------------------------
-        | Shipping Rates
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('/shipping-rates', [ShippingRateController::class, 'index'])
-            ->name('shipping-rates.index');
-
-        Route::get('/shipping-rates/states/{country}', [
-            ShippingRateController::class,
-            'states',
-        ])->name('shipping-rates.states');
-
-        Route::post('/shipping-rates', [ShippingRateController::class, 'store'])
-            ->name('shipping-rates.store');
-
-        Route::get('/shipping-rates/{shippingRate}/edit', [
-            ShippingRateController::class,
-            'edit',
-        ])->name('shipping-rates.edit');
-
-        Route::put('/shipping-rates/{shippingRate}', [
-            ShippingRateController::class,
-            'update',
-        ])->name('shipping-rates.update');
-
-        Route::delete('/shipping-rates/{shippingRate}', [
-            ShippingRateController::class,
-            'destroy',
-        ])->name('shipping-rates.destroy');
-
-        /*
-        |--------------------------------------------------------------------------
-        | Inventory
-        |--------------------------------------------------------------------------
-        */
-
-        Route::prefix('inventory')
-            ->name('inventory.')
+        Route::middleware('permission:manage website settings')
             ->group(function () {
 
-                Route::get('/', [InventoryController::class, 'index'])
-                    ->name('index');
+                Route::get('/website-settings', [
+                    WebsiteSettingController::class,
+                    'edit',
+                ])->name('website.settings');
 
-                Route::get('/low-stock', [InventoryController::class, 'lowStock'])
-                    ->name('low-stock');
+                Route::put('/website-settings', [
+                    WebsiteSettingController::class,
+                    'update',
+                ])->name('website.settings.update');
 
-                Route::get('/movements', [InventoryController::class, 'movements'])
-                    ->name('movements');
-
-                Route::post('/adjust', [InventoryController::class, 'adjust'])
-                    ->name('adjust');
             });
 
         /*
         |--------------------------------------------------------------------------
-        | Coupons
+        | Delivery Management
         |--------------------------------------------------------------------------
         */
 
-        Route::resource('coupons', CouponController::class)
-            ->except('show');
+        Route::middleware('permission:manage delivery settings')
+            ->group(function () {
 
-        Route::patch('coupons/{coupon}/toggle-status', [
-            CouponController::class,
-            'toggleStatus',
-        ])->name('coupons.toggle-status');
+                /*
+                |--------------------------------------------------------------------------
+                | Delivery Settings
+                |--------------------------------------------------------------------------
+                */
 
-        require __DIR__.'/terminal-checkout-admin.php';
+                Route::get('/delivery-settings', [
+                    DeliverySettingController::class,
+                    'edit',
+                ])->name('delivery.settings');
+
+                Route::put('/delivery-settings', [
+                    DeliverySettingController::class,
+                    'update',
+                ])->name('delivery.settings.update');
+
+                Route::post('/delivery-settings/test-connection', [
+                    DeliverySettingController::class,
+                    'testConnection',
+                ])
+                    ->middleware('throttle:5,1')
+                    ->name('delivery.settings.test');
+
+                /*
+                |--------------------------------------------------------------------------
+                | Shipping Packages
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get('/shipping-packages', [
+                    ShippingPackageController::class,
+                    'index',
+                ])->name('shipping-packages.index');
+
+                Route::get('/shipping-packages/cities', [
+                    ShippingPackageController::class,
+                    'cities',
+                ])
+                    ->middleware('throttle:10,1')
+                    ->name('shipping-packages.cities');
+
+                Route::post('/shipping-packages/quote', [
+                    ShippingPackageController::class,
+                    'quote',
+                ])
+                    ->middleware('throttle:3,1')
+                    ->name('shipping-packages.quote');
+
+                Route::post('/shipping-packages', [
+                    ShippingPackageController::class,
+                    'store',
+                ])->name('shipping-packages.store');
+
+                Route::put('/shipping-packages/{shippingPackage}', [
+                    ShippingPackageController::class,
+                    'update',
+                ])->name('shipping-packages.update');
+
+                /*
+                |--------------------------------------------------------------------------
+                | Shipping Rates
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get('/shipping-rates', [
+                    ShippingRateController::class,
+                    'index',
+                ])->name('shipping-rates.index');
+
+                Route::get('/shipping-rates/states/{country}', [
+                    ShippingRateController::class,
+                    'states',
+                ])->name('shipping-rates.states');
+
+                Route::post('/shipping-rates', [
+                    ShippingRateController::class,
+                    'store',
+                ])->name('shipping-rates.store');
+
+                Route::get('/shipping-rates/{shippingRate}/edit', [
+                    ShippingRateController::class,
+                    'edit',
+                ])->name('shipping-rates.edit');
+
+                Route::put('/shipping-rates/{shippingRate}', [
+                    ShippingRateController::class,
+                    'update',
+                ])->name('shipping-rates.update');
+
+                Route::delete('/shipping-rates/{shippingRate}', [
+                    ShippingRateController::class,
+                    'destroy',
+                ])->name('shipping-rates.destroy');
+
+                /*
+                |--------------------------------------------------------------------------
+                | Terminal Checkout
+                |--------------------------------------------------------------------------
+                */
+
+                require __DIR__.'/terminal-checkout-admin.php';
+
+            });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Store Management
+        |--------------------------------------------------------------------------
+        */
+
+        Route::middleware('permission:manage store')
+            ->group(function () {
+
+                /*
+                |--------------------------------------------------------------------------
+                | Categories
+                |--------------------------------------------------------------------------
+                */
+
+                Route::resource('categories', AdminCategoryController::class);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Products
+                |--------------------------------------------------------------------------
+                */
+
+                Route::resource('products', AdminProductController::class);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Product Variants
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get('products/{product}/variants', [
+                    ProductVariantController::class,
+                    'index',
+                ])->name('products.variants.index');
+
+                Route::get('products/{product}/variants/create', [
+                    ProductVariantController::class,
+                    'create',
+                ])->name('products.variants.create');
+
+                Route::post('products/{product}/variants', [
+                    ProductVariantController::class,
+                    'store',
+                ])->name('products.variants.store');
+
+                Route::get('products/{product}/variants/{variant}/edit', [
+                    ProductVariantController::class,
+                    'edit',
+                ])->name('products.variants.edit');
+
+                Route::put('products/{product}/variants/{variant}', [
+                    ProductVariantController::class,
+                    'update',
+                ])->name('products.variants.update');
+
+                Route::delete('products/{product}/variants/{variant}', [
+                    ProductVariantController::class,
+                    'destroy',
+                ])->name('products.variants.destroy');
+
+                /*
+                |--------------------------------------------------------------------------
+                | Customers
+                |--------------------------------------------------------------------------
+                */
+
+                Route::resource('customers', CustomerController::class);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Orders
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get('/orders', [
+                    OrderController::class,
+                    'index',
+                ])->name('orders.index');
+
+                Route::get('/orders/{order}', [
+                    OrderController::class,
+                    'show',
+                ])->name('orders.show');
+
+                Route::patch('/orders/{order}/status', [
+                    OrderController::class,
+                    'updateStatus',
+                ])->name('orders.updateStatus');
+
+                Route::patch('/orders/{order}/payment-status', [
+                    OrderController::class,
+                    'updatePaymentStatus',
+                ])->name('orders.updatePaymentStatus');
+
+                Route::post('/orders/{order}/refund', [
+                    OrderController::class,
+                    'refund',
+                ])->name('orders.refund');
+
+                Route::patch('/orders/{order}/return', [
+                    OrderController::class,
+                    'updateReturn',
+                ])->name('orders.return.update');
+
+                /*
+                |--------------------------------------------------------------------------
+                | Inventory
+                |--------------------------------------------------------------------------
+                */
+
+                Route::prefix('inventory')
+                    ->name('inventory.')
+                    ->group(function () {
+
+                        Route::get('/', [
+                            InventoryController::class,
+                            'index',
+                        ])->name('index');
+
+                        Route::get('/low-stock', [
+                            InventoryController::class,
+                            'lowStock',
+                        ])->name('low-stock');
+
+                        Route::get('/movements', [
+                            InventoryController::class,
+                            'movements',
+                        ])->name('movements');
+
+                        Route::post('/adjust', [
+                            InventoryController::class,
+                            'adjust',
+                        ])->name('adjust');
+
+                    });
+
+                /*
+                |--------------------------------------------------------------------------
+                | Coupons
+                |--------------------------------------------------------------------------
+                */
+
+                Route::resource('coupons', CouponController::class)
+                    ->except('show');
+
+                Route::patch('coupons/{coupon}/toggle-status', [
+                    CouponController::class,
+                    'toggleStatus',
+                ])->name('coupons.toggle-status');
+
+            });
 
     });
 
