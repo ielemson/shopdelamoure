@@ -1,4 +1,6 @@
 @php
+    $isStoreManager = auth()->user()?->hasRole('Store Manager') ?? false;
+
     $menus = [
         [
             'label' => 'Dashboard',
@@ -137,6 +139,7 @@
             'permission' => 'manage website settings',
             'route' => 'admin.website.settings',
             'patterns' => ['admin.website.settings*'],
+            'hidden' => $isStoreManager,
         ],
     ];
 @endphp
@@ -162,6 +165,8 @@
 
             {{-- Permission-controlled menus --}}
             @foreach ($menus as $menu)
+                @continue($menu['hidden'] ?? false)
+
                 @can($menu['permission'])
                     @php
                         $menuActive = request()->routeIs(...$menu['patterns']);

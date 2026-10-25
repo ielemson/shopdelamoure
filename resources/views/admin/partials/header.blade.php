@@ -14,29 +14,52 @@
 
     $headerLinks = [
         [
+            'label' => 'Dashboard',
+            'route' => 'home',
+            'icon' => 'icofont-dashboard',
+            'permission' => 'manage store',
+        ],
+        [
+            'label' => 'Admin Management',
+            'route' => 'admin.admins.index',
+            'icon' => 'icofont-users-alt-5',
+            'permission' => 'manage admins',
+        ],
+        [
+            'label' => 'Role Management',
+            'route' => 'admin.roles.index',
+            'icon' => 'icofont-lock',
+            'permission' => 'manage admins',
+        ],
+        [
             'label' => 'Website Settings',
             'route' => 'admin.website.settings',
             'icon' => 'icofont-gear',
+            'permission' => 'manage website settings',
         ],
         [
             'label' => 'Delivery Settings',
             'route' => 'admin.delivery.settings',
             'icon' => 'icofont-truck-alt',
+            'permission' => 'manage delivery settings',
         ],
         [
             'label' => 'Local Delivery Rates',
             'route' => 'admin.shipping-rates.index',
             'icon' => 'icofont-location-pin',
+            'permission' => 'manage delivery settings',
         ],
         [
             'label' => 'Packaging & Quote Tests',
             'route' => 'admin.shipping-packages.index',
             'icon' => 'icofont-box',
+            'permission' => 'manage delivery settings',
         ],
         [
             'label' => 'Terminal Checkout',
             'route' => 'admin.terminal-checkout.edit',
             'icon' => 'icofont-truck-alt',
+            'permission' => 'manage delivery settings',
         ],
     ];
 @endphp
@@ -66,6 +89,7 @@
                         <p class="mb-0 lh-sm">
                             <span class="fw-semibold">{{ $adminName }}</span>
                         </p>
+
                         <small class="text-muted">Administrator</small>
                     </div>
 
@@ -90,18 +114,22 @@
 
                             <div class="card-body border-bottom">
                                 <p class="mb-1 fw-semibold">{{ $adminName }}</p>
+
                                 <small class="text-muted text-break">
                                     {{ $adminEmail }}
                                 </small>
                             </div>
 
                             <div class="list-group m-2">
+
                                 @foreach ($headerLinks as $link)
-                                    <a href="{{ route($link['route']) }}"
-                                        class="list-group-item list-group-item-action border-0">
-                                        <i class="{{ $link['icon'] }} fs-5 me-3" aria-hidden="true"></i>
-                                        {{ $link['label'] }}
-                                    </a>
+                                    @can($link['permission'])
+                                        <a href="{{ route($link['route']) }}"
+                                            class="list-group-item list-group-item-action border-0">
+                                            <i class="{{ $link['icon'] }} fs-5 me-3" aria-hidden="true"></i>
+                                            {{ $link['label'] }}
+                                        </a>
+                                    @endcan
                                 @endforeach
 
                                 @auth
@@ -115,8 +143,8 @@
                                         </button>
                                     </form>
                                 @endauth
-                            </div>
 
+                            </div>
                         </div>
                     </div>
                 </div>
