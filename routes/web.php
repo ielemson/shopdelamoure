@@ -351,20 +351,6 @@ Route::prefix('admin')
                     'index',
                 ])->name('shipping-packages.index');
 
-                Route::get('/shipping-packages/cities', [
-                    ShippingPackageController::class,
-                    'cities',
-                ])
-                    ->middleware('throttle:10,1')
-                    ->name('shipping-packages.cities');
-
-                Route::post('/shipping-packages/quote', [
-                    ShippingPackageController::class,
-                    'quote',
-                ])
-                    ->middleware('throttle:3,1')
-                    ->name('shipping-packages.quote');
-
                 Route::post('/shipping-packages', [
                     ShippingPackageController::class,
                     'store',
