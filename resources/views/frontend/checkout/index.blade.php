@@ -77,7 +77,7 @@
 
         $terminalService = app(\App\Services\TerminalCheckoutService::class);
         $terminalMode = $websiteSetting && $terminalService->available($websiteSetting);
-        $terminalPreview = $terminalMode && $terminalService->preview();
+        $terminalPreview = false;
         $deliveryProvider = $websiteSetting?->delivery_provider ?? 'local';
         $localDeliveryAvailable = $deliveryProvider === 'local';
         $homeDeliveryAvailable = $localDeliveryAvailable || $terminalMode;
@@ -830,9 +830,6 @@
                             SHIPPING FIELDS
                         ================================================== --}}
 
-                        @if($terminalPreview)
-                            <div class="alert alert-warning">Sandbox checkout preview. Service selection updates the total; payment is disabled for home delivery. Preview ends after 30 minutes. Return to Admin → Terminal Checkout to end it sooner.</div>
-                        @endif
                         <div id="shippingFields">
 
 
@@ -3340,11 +3337,6 @@
                     */
 
                     if (method === 'shipping') {
-                        if (terminalMode && terminalPreview) {
-                            event.preventDefault();
-                            terminalMessage('Sandbox preview only. No order or payment was created.');
-                            return;
-                        }
                         if (!localDeliveryAvailable) {
                             event.preventDefault();
                             shippingMessage.textContent = 'Home delivery is temporarily unavailable.';
@@ -3553,7 +3545,7 @@
                         }
                         terminalRate.disabled = terminalRates.length === 0;
                         terminalMessage(terminalRates.length
-                            ? (terminalPreview ? 'Sandbox estimates only. Product eligibility is unverified. Payment is disabled.' : 'Choose a delivery service. Rates expire in five minutes.')
+                            ? 'Choose a delivery service. Rates expire in five minutes.'
                             : 'No delivery services are available for this parcel and destination.');
                         terminalExpiryTimer = setTimeout(() => {
                             invalidateTerminal(); terminalMessage('Rates expired. Please request delivery rates again.');
@@ -3572,7 +3564,7 @@
                     shippingDisplay.textContent = rate ? formatMoney(shippingAmount) : 'Select delivery service';
                     refreshCheckoutTotal();
                     placeOrderBtn.disabled = !shippingReady || terminalPreview || checkoutCartChanged;
-                    locationNotice.textContent = rate ? rate.carrier + ' / ' + rate.service + (terminalPreview ? ' — sandbox preview' : '') : 'Select a delivery service.';
+                    locationNotice.textContent = rate ? rate.carrier + ' / ' + rate.service + '' : 'Select a delivery service.';
                 });
             }
 

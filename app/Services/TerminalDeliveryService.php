@@ -53,9 +53,8 @@ class TerminalDeliveryService
             $raw = $order->getRawOriginal('terminal_shipping_snapshot');
             $snapshot = is_string($raw) ? json_decode($raw, true) : null;
             if (!is_array($snapshot) || ($snapshot['environment'] ?? '') !== 'live') return null;
-            if (!in_array($snapshot['service_key'] ?? '', app(TerminalCheckoutService::class)->allowed($setting), true)
-                || !$setting->terminal_checkout_confirmed || $setting->terminal_environment !== 'live') {
-                $this->update($orderId, ['state' => 'failed', 'last_error' => 'The selected service is no longer approved or live settings are incomplete.']);
+            if ($setting->terminal_environment !== 'live') {
+                $this->update($orderId, ['state' => 'failed', 'last_error' => 'Save your live delivery settings before booking.']);
                 return null;
             }
             $this->update($orderId, ['state' => 'booking', 'attempted_at' => now(), 'last_error' => null]);

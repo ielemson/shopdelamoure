@@ -647,3 +647,4 @@ Route::prefix('customer')
 
 require __DIR__.'/terminal-checkout.php';
 require __DIR__.'/terminal_delivery.php';
+require __DIR__.'/terminal_live_services.php';

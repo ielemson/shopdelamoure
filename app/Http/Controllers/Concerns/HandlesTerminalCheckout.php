@@ -50,7 +50,7 @@ trait HandlesTerminalCheckout
         session()->forget('terminal_checkout_quote');
         $setting = WebsiteSetting::firstOrCreate([]);
         $destination = $this->terminalDestination($input);
-        if (!$service->preview() && $destination['zip'] === '') {
+        if ($destination['zip'] === '') {
             throw ValidationException::withMessages(['terminal_zip' => 'Enter the delivery postal code.']);
         }
         try {
@@ -67,7 +67,7 @@ trait HandlesTerminalCheckout
                 'pickup_snapshot' => $context['pickup'],
             ]]);
             return response()->json(['rates' => $result['rates'], 'quote_token' => $token,
-                'expires_in' => 300, 'sandbox' => $context['environment'] === 'test']);
+                'expires_in' => 300]);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             return response()->json(['message' => 'Delivery rates could not be loaded. Please try again.'], 502);
         }
@@ -77,9 +77,6 @@ trait HandlesTerminalCheckout
     {
         $service = app(TerminalCheckoutService::class);
         $setting = WebsiteSetting::firstOrCreate([]);
-        if ($service->preview() || $setting->terminal_environment !== 'live') {
-            throw ValidationException::withMessages(['terminal_shipping' => 'End sandbox preview before placing a live order.']);
-        }
         $context = $service->context($setting, $cart, $this->terminalDestination($input));
         $quote = session('terminal_checkout_quote', []);
         if (($quote['environment'] ?? '') !== 'live' || ($quote['expires_at'] ?? 0) <= time()
@@ -88,7 +85,7 @@ trait HandlesTerminalCheckout
             throw ValidationException::withMessages(['terminal_shipping' => 'Your cart, address or settings changed, or the quote expired. Request rates again.']);
         }
         $rate = collect($quote['rates'] ?? [])->firstWhere('id', $input['terminal_rate_id'] ?? '');
-        if (!$rate || !in_array($rate['service_key'], $service->allowed($setting), true)) {
+        if (!$rate) {
             throw ValidationException::withMessages(['terminal_shipping' => 'Select an available delivery service.']);
         }
         return $rate + ['parcel_id' => $quote['parcel_id'], 'pickup_address_id' => $quote['pickup_address_id'],
