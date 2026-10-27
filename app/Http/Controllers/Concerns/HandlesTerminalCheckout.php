@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Concerns;
 
 use App\Models\Country;
@@ -19,12 +18,10 @@ trait HandlesTerminalCheckout
         if (!$country || mb_strtolower(trim($country->name)) !== 'nigeria' || !$state) {
             throw ValidationException::withMessages(['state_id' => 'Choose a valid Nigerian state.']);
         }
-        return [
-            'country' => 'NG', 'state' => $state->name, 'city' => trim($input['terminal_city']),
+        return ['country' => 'NG', 'state' => $state->name, 'city' => trim($input['terminal_city']),
             'zip' => trim((string) ($input['terminal_zip'] ?? '')),
             'country_id' => (int) $country->id, 'state_id' => (int) $state->id,
-            'line1' => trim($input['street_address']),
-        ];
+            'line1' => trim($input['street_address'])];
     }
 
     public function terminalCities(Request $request, TerminalCheckoutService $service)
@@ -50,10 +47,12 @@ trait HandlesTerminalCheckout
             'terminal_zip' => ['nullable', 'string', 'max:20'],
             'street_address' => ['required', 'string', 'max:255'],
         ]);
-        // Invalidate before attempting a replacement, including provider failures.
         session()->forget('terminal_checkout_quote');
         $setting = WebsiteSetting::firstOrCreate([]);
         $destination = $this->terminalDestination($input);
+        if (!$service->preview() && $destination['zip'] === '') {
+            throw ValidationException::withMessages(['terminal_zip' => 'Enter the delivery postal code.']);
+        }
         try {
             $prepared = $this->prepareCheckoutCart(Cart::getContent());
             $context = $service->context($setting, $prepared['cartItems'], $destination);
@@ -65,17 +64,10 @@ trait HandlesTerminalCheckout
             session(['terminal_checkout_quote' => $result + [
                 'token' => $token, 'fingerprint' => $service->fingerprint($context),
                 'expires_at' => time() + 300, 'environment' => $context['environment'],
+                'pickup_snapshot' => $context['pickup'],
             ]]);
-            // Also used to populate exact-service approval checkboxes in admin settings.
-            if ($service->preview()) {
-                session(['terminal_checkout_seen_services' => collect($result['rates'])
-                    ->filter(fn ($rate) => $rate['service_key'] !== '')
-                    ->mapWithKeys(fn ($rate) => [$rate['service_key'] => $rate['carrier'].' / '.$rate['service']])->all()]);
-            }
-            return response()->json([
-                'rates' => $result['rates'], 'quote_token' => $token,
-                'expires_in' => 300, 'sandbox' => $context['environment'] === 'test',
-            ]);
+            return response()->json(['rates' => $result['rates'], 'quote_token' => $token,
+                'expires_in' => 300, 'sandbox' => $context['environment'] === 'test']);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             return response()->json(['message' => 'Delivery rates could not be loaded. Please try again.'], 502);
         }
@@ -85,26 +77,24 @@ trait HandlesTerminalCheckout
     {
         $service = app(TerminalCheckoutService::class);
         $setting = WebsiteSetting::firstOrCreate([]);
-        // A sandbox rate can never create an order or reach payment initialization.
         if ($service->preview() || $setting->terminal_environment !== 'live') {
-            throw ValidationException::withMessages(['terminal_shipping' => 'Sandbox preview only. End the preview to place an order using Local Delivery.']);
+            throw ValidationException::withMessages(['terminal_shipping' => 'End sandbox preview before placing a live order.']);
         }
         $context = $service->context($setting, $cart, $this->terminalDestination($input));
         $quote = session('terminal_checkout_quote', []);
         if (($quote['environment'] ?? '') !== 'live' || ($quote['expires_at'] ?? 0) <= time()
             || !hash_equals((string) ($quote['token'] ?? ''), (string) ($input['terminal_quote_token'] ?? ''))
             || !hash_equals((string) ($quote['fingerprint'] ?? ''), $service->fingerprint($context))) {
-            throw ValidationException::withMessages(['terminal_shipping' => 'Your cart, address or shipping settings changed, or the quote expired. Request delivery rates again.']);
+            throw ValidationException::withMessages(['terminal_shipping' => 'Your cart, address or settings changed, or the quote expired. Request rates again.']);
         }
         $rate = collect($quote['rates'] ?? [])->firstWhere('id', $input['terminal_rate_id'] ?? '');
         if (!$rate || !in_array($rate['service_key'], $service->allowed($setting), true)) {
             throw ValidationException::withMessages(['terminal_shipping' => 'Select an available delivery service.']);
         }
-        return $rate + [
-            'parcel_id' => $quote['parcel_id'], 'pickup_address_id' => $quote['pickup_address_id'],
-            'delivery_address_id' => $quote['delivery_address_id'],
+        return $rate + ['parcel_id' => $quote['parcel_id'], 'pickup_address_id' => $quote['pickup_address_id'],
+            'delivery_address_id' => $quote['delivery_address_id'], 'environment' => 'live',
+            'pickup_snapshot' => $context['pickup'], 'destination_snapshot' => $context['destination'],
             'city' => $context['destination']['city'], 'zip' => $context['destination']['zip'],
-            'quoted_at' => date(DATE_ATOM, $quote['expires_at'] - 300),
-        ];
+            'quoted_at' => date(DATE_ATOM, $quote['expires_at'] - 300)];
     }
 }

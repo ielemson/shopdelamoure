@@ -30,6 +30,7 @@ return Application::configure(
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
 
+        $middleware->validateCsrfTokens(except: ['webhooks/terminal-delivery']);
         /*
         |--------------------------------------------------------------------------
         | Currency Detection

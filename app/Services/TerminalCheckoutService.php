@@ -39,11 +39,11 @@ class TerminalCheckoutService
     {
         $environment = $this->preview() ? 'test' : 'live';
         try {
-            $secret = ($setting->terminal_credentials ?? [])[$environment] ?? '';
+            $secret = trim((string) (($setting->terminal_credentials ?? [])[$environment] ?? ''));
         } catch (\Throwable $e) {
             $this->fail('Re-save the Terminal Africa secret key in Delivery Settings.');
         }
-        if (!is_string($secret) || !str_starts_with($secret, 'sk_'.$environment.'_')) {
+        if ($secret === '' || preg_match('/[\r\n]/', $secret)) {
             $this->fail('Save the correct Terminal Africa '.$environment.' secret key first.');
         }
         return Http::baseUrl($environment === 'test'
@@ -133,6 +133,11 @@ class TerminalCheckoutService
             $this->fail('The saved shipping markup or additional fee is invalid.');
         }
         $pickup = [
+            'name' => (string) $setting->dispatch_name,
+            'email' => (string) $setting->dispatch_email,
+            'phone' => (string) $setting->dispatch_phone,
+            'line1' => (string) $setting->dispatch_line1,
+            'zip' => (string) $setting->dispatch_postal_code,
             'city' => (string) $setting->dispatch_city,
             'state' => (string) $setting->dispatch_state,
             'country' => (string) $setting->dispatch_country,
@@ -169,7 +174,7 @@ class TerminalCheckoutService
         $package += ['type' => 'box', 'size_unit' => 'cm', 'weight_unit' => 'kg'];
         $packagingId = $this->id($this->data($client->post('/packaging', $package), 'packaging'), 'packaging_id');
         $pickupId = $this->id($this->data($client->post('/addresses', $context['pickup']), 'pickup address'), 'address_id');
-        $destination = array_intersect_key($context['destination'], array_flip(['city', 'state', 'country', 'zip']));
+        $destination = array_intersect_key($context['destination'], array_flip(['line1', 'city', 'state', 'country', 'zip']));
         $destinationId = $this->id($this->data($client->post('/addresses', $destination), 'delivery address'), 'address_id');
         $items = array_map(function ($item) {
             unset($item['local_product'], $item['local_variant']);
@@ -184,6 +189,7 @@ class TerminalCheckoutService
             'parcel_id' => $parcelId, 'currency' => 'NGN',
         ]), 'rates');
         $rates = [];
+        $observed = [];
         foreach ($raw as $rate) {
             if (!is_array($rate) || ($rate['currency'] ?? '') !== 'NGN'
                 || !is_numeric($rate['amount'] ?? null)) continue;
@@ -195,6 +201,7 @@ class TerminalCheckoutService
             $description = (string) ($rate['carrier_rate_description'] ?? '');
             $serviceKey = $reference !== '' && $description !== ''
                 ? hash('sha256', $reference.'|'.$description) : '';
+            if ($serviceKey !== '') $observed[$serviceKey] = (string) ($rate['carrier_name'] ?? 'Carrier').' / '.$description;
             if ($context['environment'] === 'live' && (! $serviceKey || !in_array($serviceKey, $context['allowed'], true))) continue;
             $baseKobo = (int) round($amount * 100);
             $feeKobo = (int) round($context['extra_fee'] * 100);
@@ -209,6 +216,7 @@ class TerminalCheckoutService
                 'total' => ($baseKobo + $feeKobo + $markupKobo) / 100,
             ];
         }
+        if ($this->preview()) session(['terminal_checkout_seen_services' => $observed]);
         return ['rates' => $rates, 'parcel_id' => $parcelId,
             'pickup_address_id' => $pickupId, 'delivery_address_id' => $destinationId];
     }

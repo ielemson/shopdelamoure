@@ -1874,6 +1874,15 @@
                 const method =
                     deliveryMethod();
 
+                if (terminalMode) {
+                    for (const id of ['terminalCity', 'terminalZip', 'terminalRate', 'terminalQuoteToken']) {
+                        const input = document.getElementById(id);
+                        if (input && method === 'pickup') { input.disabled = true; input.required = false; }
+                    }
+                    const zipInput = document.getElementById('terminalZip');
+                    if (zipInput && method === 'shipping') { zipInput.disabled = false; zipInput.required = !terminalPreview; }
+                }
+
 
                 /*
                 |--------------------------------------------------------------------------
@@ -3511,6 +3520,7 @@
                         terminalCity.disabled = !shipping;
                         terminalCity.required = shipping;
                         terminalZip.disabled = !shipping;
+                        terminalZip.required = shipping && !terminalPreview;
                         terminalGetRates.disabled = !shipping;
                         if (shipping && stateSelect.value) loadTerminalCities();
                     });
@@ -3518,8 +3528,8 @@
                 terminalGetRates.addEventListener('click', async () => {
                     invalidateTerminal();
                     const version = terminalRequestVersion;
-                    if (!countrySelect.value || !stateSelect.value || !terminalCity.value || !streetAddress.value.trim()) {
-                        terminalMessage('Complete your street address, state and city first.');
+                    if (!countrySelect.value || !stateSelect.value || !terminalCity.value || !streetAddress.value.trim() || (!terminalPreview && !terminalZip.value.trim())) {
+                        terminalMessage('Complete your street address, state, city and postal code first.');
                         return;
                     }
                     terminalGetRates.disabled = true;
@@ -3576,7 +3586,7 @@
 
 
             if (
-                localDeliveryAvailable &&
+                (localDeliveryAvailable || terminalMode) &&
                 deliveryMethod() === 'shipping' &&
                 countrySelect.value
             ) {

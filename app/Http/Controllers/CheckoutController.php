@@ -258,7 +258,7 @@ class CheckoutController extends Controller
                 'exists:pickup_locations,id',
             ],
             'terminal_city' => ['nullable', 'string', 'max:100', \Illuminate\Validation\Rule::requiredIf(fn () => $terminalMode && $request->input('delivery_method') === 'shipping')],
-            'terminal_zip' => ['nullable', 'string', 'max:20'],
+            'terminal_zip' => ['nullable', 'string', 'max:20', \Illuminate\Validation\Rule::requiredIf(fn () => $terminalMode && $request->input('delivery_method') === 'shipping')],
             'terminal_rate_id' => ['nullable', 'string', 'max:255', \Illuminate\Validation\Rule::requiredIf(fn () => $terminalMode && $request->input('delivery_method') === 'shipping')],
             'terminal_quote_token' => ['nullable', 'string', 'max:100', \Illuminate\Validation\Rule::requiredIf(fn () => $terminalMode && $request->input('delivery_method') === 'shipping')],
             'delivery_note' => ['nullable', 'string', 'max:1000'],
