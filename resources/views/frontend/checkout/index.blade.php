@@ -336,7 +336,6 @@
                                                     (int) $item->attributes->get('product_id'),
                                         )
                                         ->sum('quantity');
-
                                 @endphp
 
 
@@ -592,122 +591,84 @@
 
                 <div class="col-lg-8 order-lg-first pe-xl-20 pe-lg-6">
 
-                    <div class="checkout">
-
-                        <h4 class="fs-4 mb-2">
-
-                            Delivery Information
-
-                        </h4>
-
-
-                        <p class="text-body fs-14px mb-7">
-
-                            @if ($storePickupEnabled)
-                                Choose delivery to your address or collect
-                                your order from a Dela Moure pickup location.
-                            @else
-                                Enter your delivery details to have your
-                                order delivered to your address.
-                            @endif
-
-                        </p>
+                    <div class="checkout" id="checkoutWizard">
+                        <nav id="checkoutProgress" class="checkout-progress mb-6" aria-label="Checkout progress" hidden>
+                            <ol>
+                                <li data-progress="0">1. Your details</li>
+                                <li data-progress="1">2. Delivery</li>
+                                <li data-progress="2">3. Review &amp; pay</li>
+                            </ol>
+                        </nav>
+                        <p id="checkoutStepStatus" class="fw-semibold" role="status" aria-live="polite" hidden></p>
+                        <div id="checkoutWizardError" class="alert alert-warning" role="alert" hidden></div>
+                        <section data-checkout-step="0" aria-label="Your details">
 
 
+                            <h4 class="fs-4 mb-2">
 
-                        {{-- ==================================================
+                                Your Details
+
+                            </h4>
+
+
+                            <p class="text-body fs-14px mb-7">
+
+                                @if ($storePickupEnabled)
+                                    Choose delivery to your address or collect
+                                    your order from a Dela Moure pickup location.
+                                @else
+                                    Enter your delivery details to have your
+                                    order delivered to your address.
+                                @endif
+
+                            </p>
+
+
+
+                            {{-- ==================================================
                             DELIVERY METHOD SELECTOR
                         ================================================== --}}
 
-                        @unless ($homeDeliveryAvailable)
-                            <div class="alert alert-warning" role="status">
-                                Home delivery is temporarily unavailable.
-                                @if ($hasPickupLocations)
-                                    Please select store pickup to continue.
-                                @else
-                                    Please contact us for assistance with your order.
-                                @endif
-                            </div>
-                        @endunless
-
-                        <div class="mb-8">
-
-                            <label class="mb-4 fs-13px letter-spacing-01 fw-semibold text-uppercase">
-
-                                How would you like to receive your order?
-
-                            </label>
-
-
-                            <div class="row g-3">
-
-
-                                {{-- Shipping --}}
-
-                                <div class="{{ $storePickupEnabled ? 'col-md-6' : 'col-12' }}">
-
-                                    <input type="radio" class="btn-check delivery-method-input" name="delivery_method"
-                                        id="deliveryShipping" value="shipping" autocomplete="off"
-                                        @disabled(!$homeDeliveryAvailable)
-                                        {{ $selectedDeliveryMethod === 'shipping' ? 'checked' : '' }}>
-
-
-                                    <label for="deliveryShipping" class="delivery-method-card border w-100 p-5">
-
-                                        <div class="d-flex align-items-center">
-
-                                            <div class="delivery-method-icon me-4">
-
-                                                <i class="fa-solid fa-truck-fast"></i>
-
-                                            </div>
-
-
-                                            <div>
-
-                                                <strong class="d-block fs-5">
-
-                                                    Ship
-
-                                                </strong>
-
-
-                                                <span class="text-body fs-14px">
-
-                                                    Deliver to your address
-
-                                                </span>
-
-                                            </div>
-
-                                        </div>
-
-                                    </label>
-
+                            @unless ($homeDeliveryAvailable)
+                                <div class="alert alert-warning" role="status">
+                                    Home delivery is temporarily unavailable.
+                                    @if ($hasPickupLocations)
+                                        Please select store pickup to continue.
+                                    @else
+                                        Please contact us for assistance with your order.
+                                    @endif
                                 </div>
+                            @endunless
+
+                            <div class="mb-8">
+
+                                <label class="mb-4 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+
+                                    How would you like to receive your order?
+
+                                </label>
 
 
+                                <div class="row g-3">
 
-                                {{-- Pickup --}}
 
-                                @if ($storePickupEnabled)
-                                    <div class="col-md-6">
+                                    {{-- Shipping --}}
+
+                                    <div class="{{ $storePickupEnabled ? 'col-md-6' : 'col-12' }}">
 
                                         <input type="radio" class="btn-check delivery-method-input"
-                                            name="delivery_method" id="deliveryPickup" value="pickup" autocomplete="off"
-                                            {{ $selectedDeliveryMethod === 'pickup' ? 'checked' : '' }}
-                                            {{ !$hasPickupLocations ? 'disabled' : '' }}>
+                                            name="delivery_method" id="deliveryShipping" value="shipping"
+                                            autocomplete="off" @disabled(!$homeDeliveryAvailable)
+                                            {{ $selectedDeliveryMethod === 'shipping' ? 'checked' : '' }}>
 
 
-                                        <label for="deliveryPickup"
-                                            class="delivery-method-card border w-100 p-5
-                                            {{ !$hasPickupLocations ? 'opacity-50' : '' }}">
+                                        <label for="deliveryShipping" class="delivery-method-card border w-100 p-5">
 
                                             <div class="d-flex align-items-center">
 
                                                 <div class="delivery-method-icon me-4">
 
-                                                    <i class="fa-solid fa-location-dot"></i>
+                                                    <i class="fa-solid fa-truck-fast"></i>
 
                                                 </div>
 
@@ -716,14 +677,14 @@
 
                                                     <strong class="d-block fs-5">
 
-                                                        Pickup
+                                                        Ship
 
                                                     </strong>
 
 
                                                     <span class="text-body fs-14px">
 
-                                                        {{ $hasPickupLocations ? 'Collect from Dela Moure' : 'Currently unavailable' }}
+                                                        Deliver to your address
 
                                                     </span>
 
@@ -734,531 +695,264 @@
                                         </label>
 
                                     </div>
-                                @endif
 
-                            </div>
 
-                        </div>
 
+                                    {{-- Pickup --}}
 
+                                    @if ($storePickupEnabled)
+                                        <div class="col-md-6">
 
-                        {{-- ==================================================
-                            CUSTOMER DETAILS
-                        ================================================== --}}
+                                            <input type="radio" class="btn-check delivery-method-input"
+                                                name="delivery_method" id="deliveryPickup" value="pickup"
+                                                autocomplete="off"
+                                                {{ $selectedDeliveryMethod === 'pickup' ? 'checked' : '' }}
+                                                {{ !$hasPickupLocations ? 'disabled' : '' }}>
 
-                        <div class="mb-7">
 
-                            <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+                                            <label for="deliveryPickup"
+                                                class="delivery-method-card border w-100 p-5
+                                            {{ !$hasPickupLocations ? 'opacity-50' : '' }}">
 
-                                Name
+                                                <div class="d-flex align-items-center">
 
-                                <span class="text-danger">
-                                    *
-                                </span>
+                                                    <div class="delivery-method-icon me-4">
 
-                            </label>
+                                                        <i class="fa-solid fa-location-dot"></i>
 
+                                                    </div>
 
-                            <div class="row">
 
-                                <div class="col-md-6 mb-md-0 mb-7">
+                                                    <div>
 
-                                    <input type="text" class="form-control" name="first_name"
-                                        value="{{ old('first_name', optional($defaultAddress)->first_name) }}"
-                                        placeholder="First Name" autocomplete="given-name" required>
+                                                        <strong class="d-block fs-5">
 
-                                </div>
-
-
-                                <div class="col-md-6">
-
-                                    <input type="text" class="form-control" name="last_name"
-                                        value="{{ old('last_name', optional($defaultAddress)->last_name) }}"
-                                        placeholder="Last Name" autocomplete="family-name" required>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-
-                        {{-- ==================================================
-                            CONTACT INFORMATION
-                        ================================================== --}}
-
-                        <div class="mb-7">
-
-                            <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
-
-                                Contact Information
-
-                                <span class="text-danger">
-                                    *
-                                </span>
-
-                            </label>
-
-
-                            <div class="row">
-
-                                <div class="col-md-6 mb-md-0 mb-7">
-
-                                    <input type="email" class="form-control" name="email"
-                                        value="{{ old('email', optional($defaultAddress)->email ?? optional(auth()->user())->email) }}"
-                                        placeholder="Email Address" autocomplete="email" required>
-
-                                </div>
-
-
-                                <div class="col-md-6">
-
-                                    <input type="tel" class="form-control" name="phone"
-                                        value="{{ old('phone', optional($defaultAddress)->phone) }}"
-                                        placeholder="Phone Number" autocomplete="tel" required>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-
-                        {{-- ==================================================
-                            SHIPPING FIELDS
-                        ================================================== --}}
-
-                        <div id="shippingFields">
-
-
-                            {{-- Street --}}
-
-                            <div class="mb-7">
-
-                                <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
-
-                                    Street Address
-
-                                    <span class="text-danger">
-                                        *
-                                    </span>
-
-                                </label>
-
-
-                                <input type="text" class="form-control shipping-required" name="street_address"
-                                    id="checkoutStreetAddress"
-                                    value="{{ old('street_address', optional($defaultAddress)->street_address) }}"
-                                    placeholder="House number and street name" autocomplete="street-address">
-
-                            </div>
-
-
-
-                            <div class="row">
-
-
-                                {{-- Country --}}
-
-                                <div class="col-md-6">
-
-                                    <div class="mb-7">
-
-                                        <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
-
-                                            Country
-
-                                            <span class="text-danger">
-                                                *
-                                            </span>
-
-                                        </label>
-
-
-                                        <select name="country_id" id="checkoutCountry"
-                                            class="form-select shipping-required" autocomplete="country">
-
-                                            <option value="">
-
-                                                Select Country
-
-                                            </option>
-
-
-                                            @foreach ($countries as $country)
-                                                <option value="{{ $country->id }}"
-                                                    {{ (string) $selectedCountryId === (string) $country->id ? 'selected' : '' }}>
-
-                                                    {{ $country->name }}
-
-                                                </option>
-                                            @endforeach
-
-                                        </select>
-
-                                    </div>
-
-                                </div>
-
-
-
-                                {{-- State --}}
-
-                                <div class="col-md-6">
-
-                                    <div class="mb-7">
-
-                                        <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
-
-                                            State
-
-                                            <span class="text-danger">
-                                                *
-                                            </span>
-
-                                        </label>
-
-
-                                        <select name="state_id" id="checkoutState" class="form-select shipping-required"
-                                            data-selected="{{ $selectedStateId }}" autocomplete="address-level1">
-
-                                            <option value="">
-
-                                                Select State
-
-                                            </option>
-
-                                        </select>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-
-
-                            @include('frontend.checkout.terminal-fields')
-                            {{-- Delivery Zone --}}
-
-                            <div class="mb-7">
-
-                                <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
-
-                                    Delivery Zone
-
-                                    <span class="text-danger">
-                                        *
-                                    </span>
-
-                                </label>
-
-
-                                <select name="shipping_rate_id" id="checkoutShippingZone"
-                                    class="form-select shipping-required" data-selected="{{ $selectedShippingRateId }}"
-                                    disabled>
-
-                                    <option value="">
-
-                                        Select delivery zone
-
-                                    </option>
-
-                                </select>
-
-
-                                <small id="zoneHelpText" class="text-muted d-block mt-2">
-
-                                    Select your state first to see available
-                                    delivery zones.
-
-                                </small>
-
-
-
-                                {{-- Covered Areas --}}
-
-                                <div id="zoneCoverageBox" class="border bg-light p-4 mt-4 d-none">
-
-                                    <div class="mb-2">
-
-                                        <strong id="zoneCoverageTitle">
-
-                                            Delivery Zone
-
-                                        </strong>
-
-                                    </div>
-
-
-                                    <div class="text-body fs-14px mb-3">
-
-                                        This delivery zone covers:
-
-                                    </div>
-
-
-                                    <div id="zoneCoverageAreas" class="d-flex flex-wrap gap-2"></div>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-
-                        {{-- ==================================================
-                            PICKUP
-                        ================================================== --}}
-
-                        @if ($storePickupEnabled)
-
-                            <div id="pickupFields" class="d-none mb-8">
-
-                                <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
-
-                                    Pickup Location
-
-                                    <span class="text-danger">
-                                        *
-                                    </span>
-
-                                </label>
-
-
-
-                                @forelse ($pickupLocationsCollection as $pickupLocation)
-                                    <div class="mb-3">
-
-                                        <input type="radio" class="btn-check pickup-location-input"
-                                            name="pickup_location_id" id="pickupLocation{{ $pickupLocation->id }}"
-                                            value="{{ $pickupLocation->id }}" autocomplete="off"
-                                            {{ (string) $selectedPickupLocationId === (string) $pickupLocation->id ? 'checked' : '' }}>
-
-
-                                        <label for="pickupLocation{{ $pickupLocation->id }}"
-                                            class="pickup-location-card border w-100 p-5">
-
-                                            <div class="d-flex justify-content-between gap-4">
-
-                                                <div>
-
-                                                    <div class="d-flex align-items-center mb-2">
-
-                                                        <i class="fa-solid fa-location-dot me-3"></i>
-
-
-                                                        <strong class="fs-5">
-
-                                                            {{ $pickupLocation->name }}
+                                                            Pickup
 
                                                         </strong>
 
-                                                    </div>
 
+                                                        <span class="text-body fs-14px">
 
-                                                    <div class="text-body fs-14px mb-2">
+                                                            {{ $hasPickupLocations ? 'Collect from Dela Moure' : 'Currently unavailable' }}
 
-                                                        {{ $pickupLocation->address }}
-
-
-                                                        @if ($pickupLocation->state?->name)
-                                                            <br>
-
-                                                            {{ $pickupLocation->state->name }}
-                                                        @endif
+                                                        </span>
 
                                                     </div>
 
-
-
-                                                    @if ($pickupLocation->opening_hours)
-                                                        <div class="small text-muted mb-1">
-
-                                                            <i class="far fa-clock me-1"></i>
-
-                                                            {{ $pickupLocation->opening_hours }}
-
-                                                        </div>
-                                                    @endif
-
-
-
-                                                    @if ($pickupLocation->pickup_time)
-                                                        <div class="small text-muted">
-
-                                                            <i class="far fa-circle-check me-1"></i>
-
-                                                            {{ $pickupLocation->pickup_time }}
-
-                                                        </div>
-                                                    @endif
-
                                                 </div>
 
+                                            </label>
 
+                                        </div>
+                                    @endif
 
-                                                <div class="text-end">
-
-                                                    <span class="badge bg-success">
-
-                                                        FREE
-
-                                                    </span>
-
-
-                                                    @if ($pickupLocation->is_default)
-                                                        <div class="small text-muted mt-2">
-
-                                                            Main Pickup
-
-                                                        </div>
-                                                    @endif
-
-                                                </div>
-
-                                            </div>
-
-                                        </label>
-
-                                    </div>
-
-
-                                @empty
-
-
-                                    <div class="alert alert-light border mb-0">
-
-                                        Pickup is currently unavailable.
-
-                                    </div>
-                                @endforelse
-
-
-
-                                @if ($hasPickupLocations)
-                                    <div class="alert alert-light border mt-4 mb-0 fs-14px">
-
-                                        <i class="fa-solid fa-circle-info me-2"></i>
-
-                                        You will be notified when your order
-                                        is ready for collection.
-
-                                        Please do not visit the pickup location
-                                        until your order has been confirmed ready.
-
-                                    </div>
-                                @endif
+                                </div>
 
                             </div>
 
-                        @endif
 
 
-
-                        {{-- ==================================================
-                            NOTE
+                            {{-- ==================================================
+                            CUSTOMER DETAILS
                         ================================================== --}}
 
-                        <div class="mb-10">
+                            <div class="mb-7">
 
-                            <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase"
-                                id="deliveryNoteLabel">
+                                <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
-                                Delivery Notes
+                                    Name
 
-                                <span class="text-body fw-normal">
+                                    <span class="text-danger">
+                                        *
+                                    </span>
 
-                                    (Optional)
-
-                                </span>
-
-                            </label>
+                                </label>
 
 
-                            <textarea name="delivery_note" class="form-control" rows="4" id="deliveryNote"
-                                placeholder="Special delivery instructions...">{{ old('delivery_note', optional($defaultAddress)->delivery_note) }}</textarea>
+                                <div class="row">
 
-                        </div>
+                                    <div class="col-md-6 mb-md-0 mb-7">
+
+                                        <input type="text" class="form-control" aria-label="First name"
+                                            name="first_name"
+                                            value="{{ old('first_name', optional($defaultAddress)->first_name) }}"
+                                            placeholder="First Name" autocomplete="given-name" required>
+
+                                    </div>
+
+
+                                    <div class="col-md-6">
+
+                                        <input type="text" class="form-control" aria-label="Last name"
+                                            name="last_name"
+                                            value="{{ old('last_name', optional($defaultAddress)->last_name) }}"
+                                            placeholder="Last Name" autocomplete="family-name" required>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
 
 
 
-                        {{-- ==================================================
-                            PAYMENT
+                            {{-- ==================================================
+                            CONTACT INFORMATION
                         ================================================== --}}
 
-                        <div class="checkout">
+                            <div class="mb-7">
 
-                            <h4 class="fs-4 mb-3">
+                                <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
-                                Payment
+                                    Contact Information
 
-                            </h4>
+                                    <span class="text-danger">
+                                        *
+                                    </span>
 
-
-                            <p class="text-body mb-7">
-
-                                Complete your order securely with Paystack.
-
-                            </p>
+                                </label>
 
 
+                                <div class="row">
 
-                            <div class="payment-method-card border p-6 mb-7">
+                                    <div class="col-md-6 mb-md-0 mb-7">
 
-                                <div class="d-flex align-items-center mb-3">
+                                        <input type="email" class="form-control" aria-label="Email address"
+                                            name="email"
+                                            value="{{ old('email', optional($defaultAddress)->email ?? optional(auth()->user())->email) }}"
+                                            placeholder="Email Address" autocomplete="email" required>
 
-                                    <i class="far fa-credit-card fs-2 me-4"></i>
+                                    </div>
 
 
-                                    <strong class="fs-5">
+                                    <div class="col-md-6">
 
-                                        Pay with Paystack
+                                        <input type="tel" class="form-control" aria-label="Phone number"
+                                            name="phone" value="{{ old('phone', optional($defaultAddress)->phone) }}"
+                                            placeholder="Phone Number" autocomplete="tel" required>
 
-                                    </strong>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+
+                            {{-- ==================================================
+                            SHIPPING FIELDS
+                        ================================================== --}}
+
+                        </section>
+                        <section data-checkout-step="1" aria-label="Delivery">
+                            <h4 tabindex="-1">Delivery or pickup</h4>
+                            <div id="wizardDeliveryInstructions" class="checkout-guide p-5 mb-6">
+                                Complete your address, click <strong>Get delivery dates &amp; cost</strong>, then select a
+                                delivery service before continuing.
+                            </div>
+                            <div id="shippingFields">
+
+
+                                {{-- Street --}}
+
+                                <div class="mb-7">
+
+                                    <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+
+                                        Street Address
+
+                                        <span class="text-danger">
+                                            *
+                                        </span>
+
+                                    </label>
+
+
+                                    <input type="text" class="form-control shipping-required" name="street_address"
+                                        id="checkoutStreetAddress"
+                                        value="{{ old('street_address', optional($defaultAddress)->street_address) }}"
+                                        placeholder="House number and street name" autocomplete="street-address">
 
                                 </div>
 
 
-                                <p class="text-body fs-14px mb-0">
 
-                                    You will be redirected to Paystack's secure
-                                    payment page after your order has been created.
-
-                                </p>
-
-                            </div>
+                                <div class="row">
 
 
+                                    {{-- Country --}}
 
-                            @guest
+                                    <div class="col-md-6">
 
-                                <div class="guest-checkout-note border p-5 mb-7">
+                                        <div class="mb-7">
 
-                                    <div class="d-flex">
+                                            <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
 
-                                        <i class="far fa-check-circle me-3 mt-1"></i>
+                                                Country
 
+                                                <span class="text-danger">
+                                                    *
+                                                </span>
 
-                                        <div>
-
-                                            <strong class="d-block mb-1">
-
-                                                Continue without an account
-
-                                            </strong>
+                                            </label>
 
 
-                                            <span class="text-body fs-14px">
+                                            <select name="country_id" id="checkoutCountry"
+                                                class="form-select shipping-required" autocomplete="country">
 
-                                                You can complete this order as
-                                                a guest and create an account
-                                                later using the same email address.
+                                                <option value="">
 
-                                            </span>
+                                                    Select Country
+
+                                                </option>
+
+
+                                                @foreach ($countries as $country)
+                                                    <option value="{{ $country->id }}"
+                                                        {{ (string) $selectedCountryId === (string) $country->id ? 'selected' : '' }}>
+
+                                                        {{ $country->name }}
+
+                                                    </option>
+                                                @endforeach
+
+                                            </select>
+
+                                        </div>
+
+                                    </div>
+
+
+
+                                    {{-- State --}}
+
+                                    <div class="col-md-6">
+
+                                        <div class="mb-7">
+
+                                            <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+
+                                                State
+
+                                                <span class="text-danger">
+                                                    *
+                                                </span>
+
+                                            </label>
+
+
+                                            <select name="state_id" id="checkoutState"
+                                                class="form-select shipping-required"
+                                                data-selected="{{ $selectedStateId }}" autocomplete="address-level1">
+
+                                                <option value="">
+
+                                                    Select State
+
+                                                </option>
+
+                                            </select>
 
                                         </div>
 
@@ -1266,55 +960,400 @@
 
                                 </div>
 
-                            @endguest
+
+
+                                @include('frontend.checkout.terminal-fields')
+                                {{-- Delivery Zone --}}
+
+                                <div class="mb-7">
+
+                                    <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+
+                                        Delivery Zone
+
+                                        <span class="text-danger">
+                                            *
+                                        </span>
+
+                                    </label>
+
+
+                                    <select name="shipping_rate_id" id="checkoutShippingZone"
+                                        class="form-select shipping-required"
+                                        data-selected="{{ $selectedShippingRateId }}" disabled>
+
+                                        <option value="">
+
+                                            Select delivery zone
+
+                                        </option>
+
+                                    </select>
+
+
+                                    <small id="zoneHelpText" class="text-muted d-block mt-2">
+
+                                        Select your state first to see available
+                                        delivery zones.
+
+                                    </small>
 
 
 
-                            {{-- Terms --}}
+                                    {{-- Covered Areas --}}
 
-                            <div class="form-check mb-7">
-                                <input class="form-check-input @error('terms') is-invalid @enderror" type="checkbox"
-                                    name="terms" value="1" id="checkoutTerms" {{ old('terms') ? 'checked' : '' }}
-                                    required>
+                                    <div id="zoneCoverageBox" class="border bg-light p-4 mt-4 d-none">
 
-                                <label class="form-check-label" for="checkoutTerms">
-                                    I have read and agree to the
-                                    <button type="button"
-                                        class="btn btn-link text-black text-decoration-underline p-0 border-0 align-baseline"
-                                        data-bs-toggle="modal" data-bs-target="#termsModal">
-                                        Terms and Conditions
-                                    </button>.
+                                        <div class="mb-2">
+
+                                            <strong id="zoneCoverageTitle">
+
+                                                Delivery Zone
+
+                                            </strong>
+
+                                        </div>
+
+
+                                        <div class="text-body fs-14px mb-3">
+
+                                            This delivery zone covers:
+
+                                        </div>
+
+
+                                        <div id="zoneCoverageAreas" class="d-flex flex-wrap gap-2"></div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+
+                            {{-- ==================================================
+                            PICKUP
+                        ================================================== --}}
+
+                            @if ($storePickupEnabled)
+
+                                <div id="pickupFields" class="d-none mb-8">
+
+                                    <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase">
+
+                                        Pickup Location
+
+                                        <span class="text-danger">
+                                            *
+                                        </span>
+
+                                    </label>
+
+
+
+                                    @forelse ($pickupLocationsCollection as $pickupLocation)
+                                        <div class="mb-3">
+
+                                            <input type="radio" class="btn-check pickup-location-input"
+                                                name="pickup_location_id" id="pickupLocation{{ $pickupLocation->id }}"
+                                                value="{{ $pickupLocation->id }}" autocomplete="off"
+                                                {{ (string) $selectedPickupLocationId === (string) $pickupLocation->id ? 'checked' : '' }}>
+
+
+                                            <label for="pickupLocation{{ $pickupLocation->id }}"
+                                                class="pickup-location-card border w-100 p-5">
+
+                                                <div class="d-flex justify-content-between gap-4">
+
+                                                    <div>
+
+                                                        <div class="d-flex align-items-center mb-2">
+
+                                                            <i class="fa-solid fa-location-dot me-3"></i>
+
+
+                                                            <strong class="fs-5">
+
+                                                                {{ $pickupLocation->name }}
+
+                                                            </strong>
+
+                                                        </div>
+
+
+                                                        <div class="text-body fs-14px mb-2">
+
+                                                            {{ $pickupLocation->address }}
+
+
+                                                            @if ($pickupLocation->state?->name)
+                                                                <br>
+
+                                                                {{ $pickupLocation->state->name }}
+                                                            @endif
+
+                                                        </div>
+
+
+
+                                                        @if ($pickupLocation->opening_hours)
+                                                            <div class="small text-muted mb-1">
+
+                                                                <i class="far fa-clock me-1"></i>
+
+                                                                {{ $pickupLocation->opening_hours }}
+
+                                                            </div>
+                                                        @endif
+
+
+
+                                                        @if ($pickupLocation->pickup_time)
+                                                            <div class="small text-muted">
+
+                                                                <i class="far fa-circle-check me-1"></i>
+
+                                                                {{ $pickupLocation->pickup_time }}
+
+                                                            </div>
+                                                        @endif
+
+                                                    </div>
+
+
+
+                                                    <div class="text-end">
+
+                                                        <span class="badge bg-success">
+
+                                                            FREE
+
+                                                        </span>
+
+
+                                                        @if ($pickupLocation->is_default)
+                                                            <div class="small text-muted mt-2">
+
+                                                                Main Pickup
+
+                                                            </div>
+                                                        @endif
+
+                                                    </div>
+
+                                                </div>
+
+                                            </label>
+
+                                        </div>
+
+
+                                    @empty
+
+
+                                        <div class="alert alert-light border mb-0">
+
+                                            Pickup is currently unavailable.
+
+                                        </div>
+                                    @endforelse
+
+
+
+                                    @if ($hasPickupLocations)
+                                        <div class="alert alert-light border mt-4 mb-0 fs-14px">
+
+                                            <i class="fa-solid fa-circle-info me-2"></i>
+
+                                            You will be notified when your order
+                                            is ready for collection.
+
+                                            Please do not visit the pickup location
+                                            until your order has been confirmed ready.
+
+                                        </div>
+                                    @endif
+
+                                </div>
+
+                            @endif
+
+
+
+                            {{-- ==================================================
+                            NOTE
+                        ================================================== --}}
+
+                            <div class="mb-10">
+
+                                <label class="mb-5 fs-13px letter-spacing-01 fw-semibold text-uppercase"
+                                    id="deliveryNoteLabel">
+
+                                    Delivery Notes
+
+                                    <span class="text-body fw-normal">
+
+                                        (Optional)
+
+                                    </span>
+
                                 </label>
 
-                                @error('terms')
-                                    <div class="invalid-feedback d-block">
-                                        {{ $message }}
+
+                                <textarea name="delivery_note" class="form-control" rows="4" id="deliveryNote"
+                                    placeholder="Special delivery instructions...">{{ old('delivery_note', optional($defaultAddress)->delivery_note) }}</textarea>
+
+                            </div>
+
+
+
+                            {{-- ==================================================
+                            PAYMENT
+                        ================================================== --}}
+
+                        </section>
+                        <section data-checkout-step="2" aria-label="Review and pay">
+                            <div id="checkoutReview" class="checkout-guide p-5 mb-6">
+                                <h4 tabindex="-1">Review your order</h4>
+                                <p>Check your details and the order summary before paying.</p>
+                                <div id="checkoutReviewDetails"></div>
+                                <button type="button" class="btn btn-outline-dark btn-sm mt-3"
+                                    data-checkout-edit="0">Edit details</button>
+                                <button type="button" class="btn btn-outline-dark btn-sm mt-3"
+                                    data-checkout-edit="1">Edit delivery</button>
+                            </div>
+                            <div class="checkout">
+
+                                <h4 class="fs-4 mb-3">
+
+                                    Payment
+
+                                </h4>
+
+
+                                <p class="text-body mb-7">
+
+                                    Complete your order securely with Paystack.
+
+                                </p>
+
+
+
+                                <div class="payment-method-card border p-6 mb-7">
+
+                                    <div class="d-flex align-items-center mb-3">
+
+                                        <i class="far fa-credit-card fs-2 me-4"></i>
+
+
+                                        <strong class="fs-5">
+
+                                            Pay with Paystack
+
+                                        </strong>
+
                                     </div>
-                                @enderror
+
+
+                                    <p class="text-body fs-14px mb-0">
+
+                                        You will be redirected to Paystack's secure
+                                        payment page after your order has been created.
+
+                                    </p>
+
+                                </div>
+
+
+
+                                @guest
+
+                                    <div class="guest-checkout-note border p-5 mb-7">
+
+                                        <div class="d-flex">
+
+                                            <i class="far fa-check-circle me-3 mt-1"></i>
+
+
+                                            <div>
+
+                                                <strong class="d-block mb-1">
+
+                                                    Continue without an account
+
+                                                </strong>
+
+
+                                                <span class="text-body fs-14px">
+
+                                                    You can complete this order as
+                                                    a guest and create an account
+                                                    later using the same email address.
+
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                @endguest
+
+
+
+                                {{-- Terms --}}
+
+                                <div class="form-check mb-7">
+                                    <input class="form-check-input @error('terms') is-invalid @enderror" type="checkbox"
+                                        name="terms" value="1" id="checkoutTerms"
+                                        {{ old('terms') ? 'checked' : '' }} required>
+
+                                    <label class="form-check-label" for="checkoutTerms">
+                                        I have read and agree to the
+                                        <button type="button"
+                                            class="btn btn-link text-black text-decoration-underline p-0 border-0 align-baseline"
+                                            data-bs-toggle="modal" data-bs-target="#termsModal">
+                                            Terms and Conditions
+                                        </button>.
+                                    </label>
+
+                                    @error('terms')
+                                        <div class="invalid-feedback d-block">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+
+
+
+                                {{-- Submit --}}
+
+                                <button type="submit" id="placeOrderBtn"
+                                    class="btn btn-dark btn-hover-bg-primary btn-hover-border-primary px-11 py-5" disabled>
+
+                                    <i class="far fa-lock me-2"></i>
+
+                                    Proceed to Secure Payment
+
+                                </button>
+
+
+
+                                <div id="checkoutLocationNotice" class="small text-muted mt-3">
+
+                                    Select your delivery state and zone
+                                    to calculate shipping.
+
+                                </div>
+
                             </div>
-
-
-
-                            {{-- Submit --}}
-
-                            <button type="submit" id="placeOrderBtn"
-                                class="btn btn-dark btn-hover-bg-primary btn-hover-border-primary px-11 py-5" disabled>
-
-                                <i class="far fa-lock me-2"></i>
-
-                                Proceed to Secure Payment
-
-                            </button>
-
-
-
-                            <div id="checkoutLocationNotice" class="small text-muted mt-3">
-
-                                Select your delivery state and zone
-                                to calculate shipping.
-
-                            </div>
-
+                        </section>
+                        <div id="checkoutStepNavigation" class="d-flex justify-content-between gap-3 mt-6" hidden>
+                            <button type="button" id="checkoutBack" class="btn btn-outline-dark px-6 py-3">Back</button>
+                            <button type="button" id="checkoutNext" class="btn btn-dark px-6 py-3">Next:
+                                Delivery</button>
                         </div>
 
                     </div>
@@ -1330,6 +1369,80 @@
 
 
     <style>
+        #checkoutWizard [hidden] {
+            display: none !important;
+        }
+
+        .checkout-progress ol {
+            display: flex;
+            padding: 0;
+            list-style: none;
+            gap: .5rem;
+        }
+
+        .checkout-progress li {
+            flex: 1;
+            padding: .8rem .5rem;
+            background: #F8F4EC;
+            border-bottom: 3px solid #d8ccbd;
+            font-size: .9rem;
+        }
+
+        .checkout-progress li[aria-current="step"] {
+            background: #4A2C20;
+            border-color: #4A2C20;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .checkout-progress li.is-complete {
+            border-color: #4A2C20;
+        }
+
+        .checkout-guide {
+            background: #F8F4EC;
+            border: 1px solid #d8ccbd;
+            border-radius: 6px;
+        }
+
+        .checkout-step-enter {
+            animation: checkoutSlide .28s ease-out;
+        }
+
+        @keyframes checkoutSlide {
+            from {
+                opacity: 0;
+                transform: translateX(18px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @media(prefers-reduced-motion:reduce) {
+            .checkout-step-enter {
+                animation: none;
+            }
+        }
+
+        #checkoutWizard {
+            scroll-margin-top: 100px;
+        }
+
+        #terminalGetRates {
+            background: #4A2C20;
+            color: #fff;
+            min-height: 48px;
+            white-space: normal;
+        }
+
+        #checkoutNext,
+        #checkoutBack {
+            min-height: 48px;
+        }
+
         .checkout-customer-status>div {
             border-color: rgba(0, 0, 0, .1) !important;
         }
@@ -1348,10 +1461,10 @@
 
 
         /*
-                                |--------------------------------------------------------------------------
-                                | Ship / Pickup
-                                |--------------------------------------------------------------------------
-                                */
+                                        |--------------------------------------------------------------------------
+                                        | Ship / Pickup
+                                        |--------------------------------------------------------------------------
+                                        */
 
         .delivery-method-card,
         .pickup-location-card {
@@ -1406,10 +1519,10 @@
 
 
         /*
-                                |--------------------------------------------------------------------------
-                                | Disabled Pickup
-                                |--------------------------------------------------------------------------
-                                */
+                                        |--------------------------------------------------------------------------
+                                        | Disabled Pickup
+                                        |--------------------------------------------------------------------------
+                                        */
 
         .delivery-method-input:disabled+.delivery-method-card {
 
@@ -1422,10 +1535,10 @@
 
 
         /*
-                                |--------------------------------------------------------------------------
-                                | Shipping Areas
-                                |--------------------------------------------------------------------------
-                                */
+                                        |--------------------------------------------------------------------------
+                                        | Shipping Areas
+                                        |--------------------------------------------------------------------------
+                                        */
 
         #zoneCoverageAreas .zone-area-badge {
 
@@ -1444,10 +1557,10 @@
 
 
         /*
-                                |--------------------------------------------------------------------------
-                                | Coupon
-                                |--------------------------------------------------------------------------
-                                */
+                                        |--------------------------------------------------------------------------
+                                        | Coupon
+                                        |--------------------------------------------------------------------------
+                                        */
 
         .checkout-coupon-box .input-group .form-control {
 
@@ -1874,10 +1987,16 @@
                 if (terminalMode) {
                     for (const id of ['terminalCity', 'terminalZip', 'terminalRate', 'terminalQuoteToken']) {
                         const input = document.getElementById(id);
-                        if (input && method === 'pickup') { input.disabled = true; input.required = false; }
+                        if (input && method === 'pickup') {
+                            input.disabled = true;
+                            input.required = false;
+                        }
                     }
                     const zipInput = document.getElementById('terminalZip');
-                    if (zipInput && method === 'shipping') { zipInput.disabled = false; zipInput.required = !terminalPreview; }
+                    if (zipInput && method === 'shipping') {
+                        zipInput.disabled = false;
+                        zipInput.required = !terminalPreview;
+                    }
                 }
 
 
@@ -2185,7 +2304,10 @@
                 }
 
 
-                if (terminalMode) { await loadTerminalCities(); return; }
+                if (terminalMode) {
+                    await loadTerminalCities();
+                    return;
+                }
                 resetZones();
 
 
@@ -3305,7 +3427,7 @@
                 notice.setAttribute('role', 'alert');
                 notice.appendChild(document.createTextNode(
                     'Your cart changed. Refresh checkout to review the updated quantities and total before paying. '
-                    ));
+                ));
                 const refresh = document.createElement('button');
                 refresh.type = 'button';
                 refresh.className = 'btn btn-sm btn-outline-dark';
@@ -3441,9 +3563,11 @@
             const terminalToken = document.getElementById('terminalQuoteToken');
             const terminalGetRates = document.getElementById('terminalGetRates');
             const terminalNotice = document.getElementById('terminalNotice');
+
             function terminalMessage(message) {
                 if (terminalNotice) terminalNotice.textContent = message;
             }
+
             function invalidateTerminal() {
                 if (!terminalMode) return;
                 terminalRequestVersion++;
@@ -3457,8 +3581,11 @@
             }
             async function terminalJSON(response) {
                 let data;
-                try { data = await response.json(); }
-                catch (_) { throw new Error('Unable to load delivery services. Please try again.'); }
+                try {
+                    data = await response.json();
+                } catch (_) {
+                    throw new Error('Unable to load delivery services. Please try again.');
+                }
                 if (!response.ok) {
                     const first = data.errors ? Object.values(data.errors).flat().find(Boolean) : null;
                     throw new Error(first || data.message || 'Unable to load delivery services.');
@@ -3478,7 +3605,11 @@
                 try {
                     const url = new URL(@json(route('checkout.terminal.cities')), window.location.origin);
                     url.searchParams.set('state_id', stateSelect.value);
-                    const data = await terminalJSON(await fetch(url, {headers: {'Accept': 'application/json'}}));
+                    const data = await terminalJSON(await fetch(url, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    }));
                     if (version !== terminalRequestVersion || deliveryMethod() !== 'shipping') return;
                     terminalCity.replaceChildren(new Option('Select delivery city', ''));
                     for (const city of data.cities) terminalCity.add(new Option(city, city));
@@ -3520,8 +3651,10 @@
                 terminalGetRates.addEventListener('click', async () => {
                     invalidateTerminal();
                     const version = terminalRequestVersion;
-                    if (!countrySelect.value || !stateSelect.value || !terminalCity.value || !streetAddress.value.trim() || (!terminalPreview && !terminalZip.value.trim())) {
-                        terminalMessage('Complete your street address, state, city and postal code first.');
+                    if (!countrySelect.value || !stateSelect.value || !terminalCity.value || !
+                        streetAddress.value.trim() || (!terminalPreview && !terminalZip.value.trim())) {
+                        terminalMessage(
+                            'Complete your street address, state, city and postal code first.');
                         return;
                     }
                     terminalGetRates.disabled = true;
@@ -3529,42 +3662,55 @@
                     terminalMessage('Fetching carrier rates. This can take up to 90 seconds.');
                     try {
                         const data = await terminalJSON(await fetch(@json(route('checkout.terminal.rates')), {
-                            method: 'POST', headers: {'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken},
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            },
                             body: JSON.stringify({
-                                country_id: countrySelect.value, state_id: stateSelect.value,
-                                terminal_city: terminalCity.value, terminal_zip: terminalZip.value,
+                                country_id: countrySelect.value,
+                                state_id: stateSelect.value,
+                                terminal_city: terminalCity.value,
+                                terminal_zip: terminalZip.value,
                                 street_address: streetAddress.value
                             })
                         }));
-                        if (version !== terminalRequestVersion || deliveryMethod() !== 'shipping') return;
+                        if (version !== terminalRequestVersion || deliveryMethod() !== 'shipping')
+                            return;
                         terminalRates = data.rates;
                         terminalToken.value = data.quote_token;
                         terminalRate.replaceChildren(new Option('Select delivery service', ''));
                         for (const rate of terminalRates) {
-                            terminalRate.add(new Option(rate.carrier + ' / ' + rate.service + ' — ' + formatMoney(rate.total) + ' (' + rate.estimate + ')', rate.id));
+                            terminalRate.add(new Option(rate.carrier + ' / ' + rate.service + ' — ' +
+                                formatMoney(rate.total) + ' (' + rate.estimate + ')', rate.id));
                         }
                         terminalRate.disabled = terminalRates.length === 0;
-                        terminalMessage(terminalRates.length
-                            ? 'Choose a delivery service. Rates expire in five minutes.'
-                            : 'No delivery services are available for this parcel and destination.');
+                        terminalMessage(terminalRates.length ?
+                            'Choose a delivery service. Rates expire in five minutes.' :
+                            'No delivery services are available for this parcel and destination.');
                         terminalExpiryTimer = setTimeout(() => {
-                            invalidateTerminal(); terminalMessage('Rates expired. Please request delivery rates again.');
+                            invalidateTerminal();
+                            terminalMessage(
+                                'Rates expired. Please request delivery rates again.');
                         }, data.expires_in * 1000);
                     } catch (error) {
                         if (version === terminalRequestVersion) terminalMessage(error.message);
                     } finally {
                         terminalGetRates.disabled = deliveryMethod() !== 'shipping';
-                        terminalGetRates.textContent = 'Get delivery rates';
+                        terminalGetRates.textContent = 'Get delivery dates & cost';
                     }
                 });
                 terminalRate.addEventListener('change', () => {
                     const rate = terminalRates.find(rate => rate.id === terminalRate.value);
                     shippingAmount = rate ? Number(rate.total) : 0;
                     shippingReady = Boolean(rate && terminalToken.value);
-                    shippingDisplay.textContent = rate ? formatMoney(shippingAmount) : 'Select delivery service';
+                    shippingDisplay.textContent = rate ? formatMoney(shippingAmount) :
+                        'Select delivery service';
                     refreshCheckoutTotal();
                     placeOrderBtn.disabled = !shippingReady || terminalPreview || checkoutCartChanged;
-                    locationNotice.textContent = rate ? rate.carrier + ' / ' + rate.service + '' : 'Select a delivery service.';
+                    locationNotice.textContent = rate ? rate.carrier + ' / ' + rate.service + '' :
+                        'Select a delivery service.';
                 });
             }
 
@@ -3576,6 +3722,178 @@
 
             applyDeliveryMethod();
 
+            // Animated checkout: one form, existing delivery/payment handlers stay authoritative.
+            const wizard = document.getElementById('checkoutWizard');
+            const panels = Array.from(wizard.querySelectorAll('[data-checkout-step]'));
+            const back = document.getElementById('checkoutBack');
+            const next = document.getElementById('checkoutNext');
+            const stepStatus = document.getElementById('checkoutStepStatus');
+            const wizardError = document.getElementById('checkoutWizardError');
+            let currentStep = 0;
+            let wizardStarted = false;
+            const stepNames = ['Your details', 'Delivery', 'Review & pay'];
+
+            function deliveryComplete() {
+                if (checkoutCartChanged) return false;
+                if (deliveryMethod() === 'pickup') return Boolean(document.querySelector(
+                    '.pickup-location-input:checked'));
+                return shippingReady && (!terminalMode || Boolean(terminalToken.value && terminalRate.value)) && !
+                    terminalPreview;
+            }
+
+            function wizardMessage(message) {
+                wizardError.textContent = message;
+                wizardError.hidden = !message;
+            }
+
+            function renderReview() {
+                const review = document.getElementById('checkoutReviewDetails');
+                review.replaceChildren();
+                const value = name => checkoutForm.elements.namedItem(name)?.value || '';
+                const add = (label, value) => {
+                    const row = document.createElement('p');
+                    const strong = document.createElement('strong');
+                    strong.textContent = label + ': ';
+                    row.append(strong, document.createTextNode(value));
+                    review.append(row);
+                };
+                add('Recipient', value('first_name') + ' ' + value('last_name'));
+                add('Email', value('email'));
+                add('Phone', value('phone'));
+                if (deliveryMethod() === 'pickup') {
+                    const pickup = document.querySelector('.pickup-location-input:checked');
+                    add('Pickup location', pickup ? document.querySelector('label[for="' + pickup.id + '"]')
+                        ?.textContent.trim().replace(/\s+/g, ' ') || 'Selected pickup location' : 'Not selected'
+                        );
+                } else {
+                    add('Address', [streetAddress.value, terminalMode ? terminalCity.value : '', stateSelect
+                        .selectedOptions[0]?.textContent, terminalMode ? terminalZip.value : ''
+                    ].filter(Boolean).join(', '));
+                    add('Delivery service', terminalMode ? terminalRate.selectedOptions[0]?.textContent || '' :
+                        zoneSelect.selectedOptions[0]?.textContent || '');
+                }
+                add('Delivery charge', shippingDisplay.textContent.trim());
+                add('Total', totalDisplay.textContent.trim());
+            }
+
+            function showCheckoutStep(index, focus = true) {
+                currentStep = index;
+                panels.forEach((panel, i) => {
+                    panel.hidden = i !== index;
+                    panel.classList.remove('checkout-step-enter');
+                });
+                void panels[index].offsetWidth;
+                panels[index].classList.add('checkout-step-enter');
+                wizard.querySelectorAll('[data-progress]').forEach((item, i) => {
+                    item.classList.toggle('is-complete', i < index);
+                    if (i === index) item.setAttribute('aria-current', 'step');
+                    else item.removeAttribute('aria-current');
+                });
+                stepStatus.textContent = 'Step ' + (index + 1) + ' of 3: ' + stepNames[index];
+                back.hidden = index === 0;
+                next.hidden = index === 2;
+                next.textContent = index === 0 ? 'Next: Delivery' : 'Next: Review order';
+                if (index === 2) renderReview();
+                if (focus) {
+                    wizard.scrollIntoView({
+                        block: 'start',
+                        behavior: 'auto'
+                    });
+                    stepStatus.setAttribute('tabindex', '-1');
+                    stepStatus.focus({
+                        preventScroll: true
+                    });
+                }
+            }
+
+            function validatePanel(index) {
+                const invalid = Array.from(panels[index].querySelectorAll('input, select, textarea')).find(input =>
+                    input.willValidate && !input.checkValidity());
+                if (invalid) {
+                    showCheckoutStep(index);
+                    wizardMessage('Please complete the highlighted field before continuing.');
+                    invalid.reportValidity();
+                    return false;
+                }
+                return true;
+            }
+
+            function requireDelivery() {
+                if (deliveryComplete()) return true;
+                showCheckoutStep(1);
+                wizardMessage(checkoutCartChanged ? 'Your cart changed. Refresh checkout before continuing.' :
+                    deliveryMethod() === 'pickup' ?
+                    'Select a pickup location before continuing.' :
+                    terminalMode ?
+                    'Complete your address, click Get delivery dates & cost, then select a delivery service before continuing.' :
+                    'Complete your address and select a delivery zone before continuing.');
+                return false;
+            }
+            next.addEventListener('click', () => {
+                wizardMessage('');
+                if (currentStep === 1 && !requireDelivery()) return;
+                if (!validatePanel(currentStep)) return;
+                showCheckoutStep(currentStep + 1);
+            });
+            back.addEventListener('click', () => {
+                wizardMessage('');
+                showCheckoutStep(Math.max(0, currentStep - 1));
+            });
+            wizard.querySelectorAll('[data-checkout-edit]').forEach(button => button.addEventListener('click',
+        () => {
+                wizardMessage('');
+                showCheckoutStep(Number(button.dataset.checkoutEdit));
+            }));
+            // Capture before the existing order-creation handler; also handle Enter safely.
+            checkoutForm.addEventListener('submit', event => {
+                const stop = () => {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                };
+                if (currentStep < 2) {
+                    stop();
+                    next.click();
+                    return;
+                }
+                if (!validatePanel(0) || !validatePanel(1) || !requireDelivery() || !validatePanel(2)) {
+                    stop();
+                    return;
+                }
+            }, true);
+
+            function syncWizardDelivery() {
+                if (!wizardStarted) return;
+                const instructions = document.getElementById('wizardDeliveryInstructions');
+                instructions.textContent = deliveryMethod() === 'pickup' ?
+                    'Select a pickup location, then click Next: Review order.' :
+                    terminalMode ?
+                    'Complete your address → click Get delivery dates & cost → select a delivery service → click Next: Review order.' :
+                    'Complete your address and select a delivery zone, then click Next: Review order.';
+                if (currentStep === 2 && !deliveryComplete()) {
+                    showCheckoutStep(1);
+                    wizardMessage(
+                        'Your delivery selection needs updating. Request fresh delivery dates and cost, then select a service before continuing.'
+                        );
+                } else if (currentStep === 2) renderReview();
+            }
+            checkoutForm.addEventListener('change', syncWizardDelivery);
+            new MutationObserver(syncWizardDelivery).observe(placeOrderBtn, {
+                attributes: true,
+                attributeFilter: ['disabled']
+            });
+            if (terminalGetRates) terminalGetRates.textContent = 'Get delivery dates & cost';
+            document.getElementById('checkoutProgress').hidden = false;
+            document.getElementById('checkoutStepNavigation').hidden = false;
+            stepStatus.hidden = false;
+            checkoutForm.noValidate = true;
+            wizardStarted = true;
+            showCheckoutStep(0, false);
+            syncWizardDelivery();
+            const serverError = wizard.querySelector('.is-invalid, .invalid-feedback');
+            if (serverError) {
+                const panel = serverError.closest('[data-checkout-step]');
+                if (panel) showCheckoutStep(Number(panel.dataset.checkoutStep), false);
+            }
 
             if (
                 (localDeliveryAvailable || terminalMode) &&
